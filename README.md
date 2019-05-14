@@ -1,5 +1,3 @@
-# Ideas
-
 ## Project Aim
 
 Provide a user-friendly interface using C++ Standard Library paradigms and concepts
