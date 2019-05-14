@@ -24,18 +24,15 @@ From a technical point of view, it should:
 
 ## Components
 
-## Helpers
-
-- `clamping_iterator` 
-
-### C++ Standard Library interop
+### C++ Standard Library Interop
 
 - `buffer_iterator` for providing a std like algorithm interface for celerity buffers
-- `begin(celerity::buffer<>)`, `end(celerity::buffer<>)` to enable range-based for loops on master
-- `copy`, `copy_if`, `copy_n` for copying data from/to a std container
+- `copy`, `copy_if`, `copy_n` for copying data from/to STD containers
+- STD-like constructors for celerity buffers (using ranges or iterator-pairs)
 
 ### Algorithms
 
+- `begin(celerity::buffer<>)`, `end(celerity::buffer<>)` to enable range-based for loops on master
 - use execution policies akin to STD execution policies to decide where to run the algorithm (on the master or some node)
 
 #### STD Algorithms
@@ -63,8 +60,9 @@ From a technical point of view, it should:
 
 - multi-dimensional `buffer_iterator`
 - multi-dimensional `filter_iterator` maps to neighbour accessor
-- `slice_iterator` maps to slice accessor
-- `n_dim_iterator` for STD containers
+- multi-dimensional `clamping_filter_iterator`
+- multi-dimensional `slice_iterator` maps to slice accessor
+- multi-dimensional `n_dim_iterator` for STD containers
 
 #### Multi-dimensional Algorithms
 
