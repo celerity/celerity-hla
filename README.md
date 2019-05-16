@@ -4,7 +4,6 @@ Provide a user-friendly interface using C++ Standard Library paradigms and conce
 
 As a library user, I want:
 
-- helpers to improve readability (e.g. when creating buffer accessors)
 - interop with C++ Standard Library types especially with containers std::vector and std::array
 - standard implementations of common algorithms and selected C++ Standard Library algorithms
 - extensive support for multi-dimensional buffers including multi-dimensional versions of selected standard algorithms
@@ -25,13 +24,15 @@ From a technical point of view, it should:
 
 ### C++ Standard Library Interop
 
-- `buffer_iterator` for providing a std like algorithm interface for celerity buffers
+- `device_vector` for wrapping celerity buffers avoid intrusive changes of the public inteface of the celerity core.
+- iterators for `device_vector` for providing a std like algorithm interface
 - `copy`, `copy_if`, `copy_n` for copying data from/to STD containers
 - STD-like constructors for celerity buffers (using ranges or iterator-pairs)
+- C++20 ranges for expressing (sub-) regions
 
 ### Algorithms
 
-- `begin(celerity::buffer<>)`, `end(celerity::buffer<>)` to enable range-based for loops on master
+- `begin(device_vector)`, `end(device_vector)` to enable range-based for loops on master
 - use execution policies akin to STD execution policies to decide where to run the algorithm (on the master or some node)
 
 #### STD Algorithms
@@ -57,8 +58,8 @@ From a technical point of view, it should:
 
 ### Multi-dimensional Buffer Support
 
-- multi-dimensional `buffer_iterator`
-- multi-dimensional `filter_iterator` maps to neighbour accessor
+- multi-dimensional `one_to_one_iterator`
+- multi-dimensional `neighbour_iterator` maps to neighbour accessor
 - multi-dimensional `clamping_filter_iterator`
 - multi-dimensional `slice_iterator` maps to slice accessor
 - multi-dimensional `n_dim_iterator` for STD containers
