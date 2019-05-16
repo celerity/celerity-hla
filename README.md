@@ -1,6 +1,6 @@
 ## Project Aim
 
-Provide a user-friendly interface using C++ Standard Library paradigms and concepts
+Provide a user-friendly interface using C++ Standard Library paradigms and concepts to ease first steps for users without experience with SYCL.
 
 As a library user, I want:
 
