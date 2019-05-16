@@ -35,7 +35,7 @@ From a technical point of view, it should:
 ### Algorithms
 
 - `begin(device_vector)`, `end(device_vector)` to enable range-based for loops on master
-- use execution policies akin to STD execution policies to decide where to run the algorithm (on the master or some node)
+- use execution policies akin to STD execution policies to decide where to run the algorithm (distributed or master-only)
 
 #### STD Algorithms
 
