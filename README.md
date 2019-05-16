@@ -26,9 +26,11 @@ From a technical point of view, it should:
 
 - `device_vector` for wrapping celerity buffers avoid intrusive changes of the public inteface of the celerity core.
 - iterators for `device_vector` for providing a std like algorithm interface
-- `copy`, `copy_if`, `copy_n` for copying data from/to STD containers
+  - `one_to_one_iterator`
+  - `neighbour_iterator`
+  - `clamping_neighbour_iterator`
+- `copy`, `copy_if`, `copy_n`, `transform` for copying data from/to STD containers
 - STD-like constructors for celerity buffers (using ranges or iterator-pairs)
-- C++20 ranges for expressing (sub-) regions
 
 ### Algorithms
 
@@ -60,7 +62,7 @@ From a technical point of view, it should:
 
 - multi-dimensional `one_to_one_iterator`
 - multi-dimensional `neighbour_iterator` maps to neighbour accessor
-- multi-dimensional `clamping_filter_iterator`
+- multi-dimensional `clamping_neighbour_iterator`
 - multi-dimensional `slice_iterator` maps to slice accessor
 - multi-dimensional `n_dim_iterator` for STD containers
 
@@ -80,3 +82,9 @@ From a technical point of view, it should:
 - `partial_sum` ?
 - `exclusive_scan` ?
 - `inclusive_scan` ?
+
+### Ranges
+
+- C++20 ranges for expressing (sub-) regions
+- Range adaptors/actions
+- `ContiguousIterator` concept
