@@ -12,9 +12,9 @@ As a library user, I want:
 
 As a library user, it would be nice to have
 
-- a C++20 modules
 - a Conan package
 - a vcpkg package
+- C++20 modules
 
 From a technical point of view, it should:
 
