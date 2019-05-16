@@ -58,7 +58,7 @@ From a technical point of view, it should:
 
 #### Common distributed algorithms
 
--
+- coming soon
 
 ### Multi-dimensional Buffer Support
 
