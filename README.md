@@ -15,10 +15,9 @@ As a library user, it would be nice to have
 
 From a technical point of view, it should:
 
-- impose zero overhead (ideally)
+- impose zero runtime overhead (ideally)
 - use an iterator-based algorithms interface (preferably using sentinels for end iterators, requires C++17 for support in range-based for loops)
 - work with all major compilers (clang, gcc, msvc, icc)
-- be extensible and configurable
 
 ## Components
 
