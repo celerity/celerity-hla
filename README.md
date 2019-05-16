@@ -2,12 +2,12 @@
 
 Provide a user-friendly interface using C++ Standard Library paradigms and concepts.
 
-Goals
+#### Goals
 
  - ease first steps for users without experience with SYCL
  - provide standard facilities for common tasks
 
-As a library user, I want:
+#### As a library user, I want:
 
 - interop with C++ Standard Library types especially with containers std::vector and std::array
 - standard implementations of common algorithms and selected C++ Standard Library algorithms
@@ -15,13 +15,13 @@ As a library user, I want:
 - a C++20 ranges-like interface including kernel composition for exposing task sequences to the runtime
 - CMake integration
 
-As a library user, it would be nice to have
+#### As a library user, it would be nice to have
 
 - a Conan package
 - a vcpkg package
 - C++20 modules
 
-From a technical point of view, it should:
+#### From a technical point of view, it should:
 
 - impose zero runtime overhead (ideally)
 - use an iterator-based algorithms interface (preferably using sentinels for end iterators, requires C++17 for support in range-based for loops)
