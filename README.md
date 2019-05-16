@@ -8,10 +8,13 @@ As a library user, I want:
 - standard implementations of common algorithms and selected C++ Standard Library algorithms
 - extensive support for multi-dimensional buffers including multi-dimensional versions of selected standard algorithms
 - a C++20 ranges-like interface including kernel composition for exposing multiple, dependent tasks to the runtime
+- CMake integration
 
 As a library user, it would be nice to have
 
-- a C++20 module library
+- a C++20 modules
+- a Conan package
+- a vcpkg package
 
 From a technical point of view, it should:
 
@@ -25,9 +28,9 @@ From a technical point of view, it should:
 
 - `device_vector` for wrapping celerity buffers avoid intrusive changes of the public inteface of the celerity core.
 - iterators for `device_vector` for providing a std like algorithm interface
-  - `one_to_one_iterator`
-  - `neighbour_iterator`
-  - `clamping_neighbour_iterator`
+  - `one_to_one_iterator` maps to one-to-one accessor
+  - `neighbour_iterator` maps to neighbour accessor
+    - `clamping_neighbour_iterator`
 - `copy`, `copy_if`, `copy_n`, `transform` for copying data from/to STD containers
 - STD-like constructors for celerity buffers (using ranges or iterator-pairs)
 
@@ -60,7 +63,7 @@ From a technical point of view, it should:
 ### Multi-dimensional Buffer Support
 
 - multi-dimensional `one_to_one_iterator`
-- multi-dimensional `neighbour_iterator` maps to neighbour accessor
+- multi-dimensional `neighbour_iterator` 
 - multi-dimensional `clamping_neighbour_iterator`
 - multi-dimensional `slice_iterator` maps to slice accessor
 - multi-dimensional `n_dim_iterator` for STD containers
@@ -85,5 +88,6 @@ From a technical point of view, it should:
 ### Ranges
 
 - C++20 ranges for expressing (sub-) regions
-- Range adaptors/actions
+- Range adaptors/actions for composing task graph
+    - adaptor/action for custom kernels using the traditional celerity programming model
 - `ContiguousIterator` concept
