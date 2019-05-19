@@ -1,38 +1,48 @@
 ## Project Aim
 
-Provide a user-friendly interface using C++ Standard Library paradigms and concepts
+Provide a user-friendly interface using C++ Standard Library paradigms and concepts.
 
-As a library user, I want:
+#### Goals
 
-- helpers to improve readability (e.g. when creating buffer accessors)
+ - ease first steps for users without experience with SYCL
+ - provide standard facilities for common tasks
+
+#### As a library user, I want:
+
 - interop with C++ Standard Library types especially with containers std::vector and std::array
 - standard implementations of common algorithms and selected C++ Standard Library algorithms
 - extensive support for multi-dimensional buffers including multi-dimensional versions of selected standard algorithms
-- a C++20 ranges-like interface including kernel composition for exposing multiple, dependent tasks to the runtime
+- a C++20 ranges-like interface including kernel composition for exposing task sequences to the runtime
+- CMake integration
 
-As a library user, it would be nice to have
+#### As a library user, it would be nice to have
 
-- a C++20 module library
+- a Conan package
+- a vcpkg package
+- C++20 modules
 
-From a technical point of view, it should:
+#### From a technical point of view, it should:
 
-- impose zero overhead (ideally)
+- impose zero runtime overhead (ideally)
 - use an iterator-based algorithms interface (preferably using sentinels for end iterators, requires C++17 for support in range-based for loops)
 - work with all major compilers (clang, gcc, msvc, icc)
-- be extensible and configurable
 
 ## Components
 
 ### C++ Standard Library Interop
 
-- `buffer_iterator` for providing a std like algorithm interface for celerity buffers
-- `copy`, `copy_if`, `copy_n` for copying data from/to STD containers
+- `device_vector` for wrapping celerity buffers avoid intrusive changes of the public inteface of the celerity core.
+- iterators for `device_vector` for providing a std like algorithm interface
+  - `one_to_one_iterator` maps to one-to-one accessor
+  - `neighbour_iterator` maps to neighbour accessor
+    - `clamping_neighbour_iterator`
+- `copy`, `copy_if`, `copy_n`, `transform` for copying data from/to STD containers
 - STD-like constructors for celerity buffers (using ranges or iterator-pairs)
 
 ### Algorithms
 
-- `begin(celerity::buffer<>)`, `end(celerity::buffer<>)` to enable range-based for loops on master
-- use execution policies akin to STD execution policies to decide where to run the algorithm (on the master or some node)
+- `begin(device_vector)`, `end(device_vector)` to enable range-based for loops on master
+- use execution policies akin to STD execution policies to decide where to run the algorithm (distributed or master-only)
 
 #### STD Algorithms
 
@@ -53,13 +63,13 @@ From a technical point of view, it should:
 
 #### Common distributed algorithms
 
--
+- coming soon
 
 ### Multi-dimensional Buffer Support
 
-- multi-dimensional `buffer_iterator`
-- multi-dimensional `filter_iterator` maps to neighbour accessor
-- multi-dimensional `clamping_filter_iterator`
+- multi-dimensional `one_to_one_iterator`
+- multi-dimensional `neighbour_iterator` 
+- multi-dimensional `clamping_neighbour_iterator`
 - multi-dimensional `slice_iterator` maps to slice accessor
 - multi-dimensional `n_dim_iterator` for STD containers
 
@@ -79,3 +89,11 @@ From a technical point of view, it should:
 - `partial_sum` ?
 - `exclusive_scan` ?
 - `inclusive_scan` ?
+
+### Ranges
+
+- C++20 ranges for expressing (sub-) regions
+- Range adaptors/actions for composing task graph
+    - adaptor/action for custom kernels using the traditional celerity programming model
+    - explore possibility to fuse compatible kernels
+- `ContiguousIterator` concept
