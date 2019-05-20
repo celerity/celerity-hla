@@ -4,9 +4,7 @@ using namespace std;
 
 int main() {
 
-	int i = 0;
-
-	invoke(hello_world() | hello_world() | []() { cout << "Hello Lambda" << endl; } | task([](/*cgh*/) {
+	hello_world() | hello_world() | []() { cout << "Hello Lambda" << endl; } | task([](/*cgh*/) {
 
 		/*
 
@@ -31,9 +29,13 @@ int main() {
 
 		*/
 	
-	}) | submit_to(distr_queue{}));
+	}) | submit_to(distr_queue{}) | dispatch();
 
-	invoke(incr(i) | incr(i));
+	int i = 0;
+
+	auto seq = incr(i) | incr(i);
+
+	invoke(seq);
 
 	cout << i << endl;
 

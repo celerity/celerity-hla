@@ -62,6 +62,15 @@ auto task(const T& invocable)
 	}; 
 }
 
+struct Dispatcher { }
+
+Invoker dispatch() { return Dispatcher{}; }
+
+template<typename...Actions>
+decltype(auto) operator | (const Sequence<Actions...>& sequence, const Dispatcher& dispatcher)
+{
+	return std::invoke(sequence);
+}
 
 class distr_queue { };
 
@@ -70,7 +79,6 @@ class Runner
 public:
 	Runner(distr_queue q)
 		: queue_(q) { }
-
 
 	void operator()() const {}
 
