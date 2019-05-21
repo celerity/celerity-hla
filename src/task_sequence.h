@@ -20,6 +20,11 @@ private:
   Sequence<Actions...> sequence_;
 };
 
+auto submit_to(distr_queue q)
+{
+	return q;
+}
+
 template<template <typename...> typename Sequence, typename...Actions>
 task_sequence<Sequence, Actions...> operator | (Sequence<Actions...>&& seq, const distr_queue& queue)
 {

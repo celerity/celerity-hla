@@ -78,22 +78,22 @@ private:
 };
 
 template<template <typename...> typename Sequence, typename...Actions, typename ActionType>
-sequence<Actions..., ActionType> operator | (Sequence<Actions...>&& seq, ActionType action)
+auto operator | (Sequence<Actions...>&& seq, ActionType action)
 {
 	return sequence<Actions..., ActionType>{ std::move(seq), action };
 }
 
-template<template <typename...> typename FirstSequence, typename...FirstActions,          
-         template <typename...> typename SecondSequence, typename...SecondActions>
-sequence<FirstSequence<FirstActions...>, SecondSequence<SecondActions...>> operator | (FirstSequence<FirstActions...>&& lhs, SecondSequence<SecondActions...>&& rhs)
+template<template <typename...> typename T, typename...Ts,          
+         template <typename...> typename U, typename...Us>
+auto operator | (T<Ts...>&& lhs, T<Us...>&& rhs)
 {
-	return sequence<FirstSequence<FirstActions...>, SecondSequence<SecondActions...>>{ lhs, rhs };
+	return sequence<T<Ts...>, U<Us...>>{ lhs, rhs };
 }
 
 template<typename T, typename U/*, typename = std::enable_if_t<std::is_invocable_v<T> && std::is_invocable_v<U>>*/>
-sequence<T, U> operator | (const T& lhs, const U& rhs)
+auto operator | (const T& lhs, const U& rhs)
 {
 	return sequence<T, U>{lhs, rhs};
 }
 
-#endif
+#endif 
