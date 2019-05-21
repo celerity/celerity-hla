@@ -62,7 +62,7 @@ private:
   {
     if constexpr (is_invocable_v<Invocable, Args...>)
     {
-        invocable(args...);
+        invocable(std::forward<Args>(args)...);
     }
     else
     {
@@ -77,10 +77,10 @@ private:
 	}
 };
 
-template<template <typename...> typename Sequence, typename...Actions, typename ActionType>
-auto operator | (Sequence<Actions...>&& seq, ActionType action)
+template<template <typename...> typename Sequence, typename...Actions, typename Action>
+auto operator | (Sequence<Actions...>&& seq, Action action)
 {
-	return sequence<Actions..., ActionType>{ std::move(seq), action };
+	return sequence<Actions..., Action>{ std::move(seq), action };
 }
 
 template<template <typename...> typename T, typename...Ts,          
