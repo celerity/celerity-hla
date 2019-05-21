@@ -3,10 +3,9 @@
 
 #include "celerity.h"
 
-struct cgh{};
-struct cgh_action { };
+struct handler_action { };
 
-auto using_cgh() { return cgh_action{}; }
+auto using_handler() { return handler_action{}; }
 
 template<typename...Actions>
 class kernel_sequence
@@ -17,11 +16,7 @@ public:
     
 	void operator()(distr_queue q) const 
   {
-      // TODO
-      // queue.submit([=](celerity::handler& cgh) {
-      //std::invoke(invocable/*, cgh*/);
-      sequence_(cgh{});
-      // }
+      q.submit([&](auto cgh) { sequence_(cgh); });
   }
 
 private:
@@ -29,7 +24,7 @@ private:
 };
 
 template<template <typename...> typename Sequence, typename...Actions>
-kernel_sequence<Actions...> operator | (Sequence<Actions...>&& seq, const cgh_action&)
+kernel_sequence<Actions...> operator | (Sequence<Actions...>&& seq, const handler_action&)
 {
   return { std::move(seq) };
 }

@@ -13,7 +13,7 @@ auto incr(int& i) { return [&i]() { ++i; }; }
 template<typename T>
 auto task(const T& invocable)
 { 
-  using sequence_type = sequence<decltype(l)>;
+  using sequence_type = sequence<decltype(invocable)>;
   return kernel_sequence<sequence_type>{sequence_type{invocable}};
 }
 
@@ -27,11 +27,14 @@ auto submit_to(distr_queue q)
 struct dispatcher { };
 dispatcher dispatch() { return {}; }
 
-template<typename Invocable>
-decltype(auto) operator | (Invocable&& sequence, const dispatcher& dispatcher)
+template<template <typename...> typename Sequence, typename...Actions>
+decltype(auto) operator | (Sequence<Actions...>&& sequence, const dispatcher& dispatcher)
 {
 	//TODO return std::invoke(sequence);
   return sequence();
 }
 
 #endif
+
+
+

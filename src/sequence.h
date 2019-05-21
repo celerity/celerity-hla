@@ -62,12 +62,10 @@ private:
   {
     if constexpr (is_invocable_v<Invocable, Args...>)
     {
-		// TODO: std::invoke(invocable, args...);
         invocable(args...);
     }
     else
     {
-		// TODO: std::invoke(invocable);
         invocable();
     }
   }
@@ -98,4 +96,4 @@ sequence<T, U> operator | (const T& lhs, const U& rhs)
 	return sequence<T, U>{lhs, rhs};
 }
 
-#endif 
+#endif

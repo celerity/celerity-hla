@@ -1,13 +1,35 @@
-#include "../../src/sequence.h"
-#include <iomanip>
+#include "../../sequence.h"
+#include "../../actions.h"
+#include "../../task_sequence.h"
+#include "../../kernel_sequence.h"
+
+#include <iostream>
+
 using namespace std;
 
 int main() {
 
-	hello_world() | hello_world() | []() { cout << "Hello Lambda" << endl; } | task([](/*cgh*/) {
+  // example 1: generic action sequence
 
-		/*
+  int i = 0;
+  hello_world() | incr(i) | incr(i) | incr(i) | dispatch();
+  cout << i << endl;
 
+  // example 2: celerity task sequence
+
+  auto zero = [](handler cgh) 
+  { 
+    /*
+    auto dw_buf = buf.get_access<cl::sycl::access::mode::discard_write>(cgh, celerity::access::one_to_one<2>());
+		cgh.parallel_for<class zero>(buf.get_range(), [=](cl::sycl::item<2> item) { dw_buf[item] = 0.f; });
+    */
+
+    cout << "zero" << endl;
+  };
+
+  auto step = [](handler cgh) 
+  { 
+    /*
 		auto rw_up = up.template get_access<cl::sycl::access::mode::read_write>(cgh, celerity::access::one_to_one<2>());
 		auto r_u = u.template get_access<cl::sycl::access::mode::read>(cgh, celerity::access::neighborhood<2>(1, 1));
 
@@ -26,20 +48,14 @@ int main() {
 			                  + (dt / delta2.x()) * (dt / delta2.x()) * ((r_u[{item[0], px}] - r_u[item]) - (r_u[item] - r_u[{item[0], mx}]));
 			rw_up[item] = Config::a * 2 * r_u[item] - Config::b * rw_up[item] + Config::c * lap;
 		});
+    */
 
-		*/
-	
-	}) | submit_to(distr_queue{}) | dispatch();
+    cout << "step" << endl;
+  };
 
-	int i = 0;
+  distr_queue q{};
 
-	auto seq = incr(i) | incr(i);
+  task(zero) | task(step) | submit_to(q);
 
-	invoke(seq);
-
-	cout << i << endl;
-
-	cin.get();
-
-	return i;
+  return i;
 }

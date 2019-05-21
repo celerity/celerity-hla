@@ -10,9 +10,8 @@ public:
 	task_sequence(distr_queue q, Sequence<Actions...>&& s)
 		: queue_(q), sequence_(std::move(s)) { }
 
-  void operator()() const 
+	void operator()() const 
   {
-      // TODO: std::invoke(queue_);
       sequence_(queue_);
   }
 
@@ -24,8 +23,8 @@ private:
 template<template <typename...> typename Sequence, typename...Actions>
 task_sequence<Sequence, Actions...> operator | (Sequence<Actions...>&& seq, const distr_queue& queue)
 {
+	//return std::invoke(sequence);
   task_sequence<Sequence, Actions...> qs { queue, std::move(seq) };
-  // TODO: std::invoke(qs);
   qs();
   return qs;
 }
