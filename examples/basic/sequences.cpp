@@ -24,7 +24,7 @@ int main() {
 		cgh.parallel_for<class zero>(buf.get_range(), [=](cl::sycl::item<2> item) { dw_buf[item] = 0.f; });
     */
 
-    cout << "zero" << endl;
+    cout << cgh.invocations << ": zero" << endl;
   };
 
   auto step = [](handler cgh) 
@@ -50,12 +50,12 @@ int main() {
 		});
     */
 
-    cout << "step" << endl;
+    cout << cgh.invocations << ": step" << endl;
   };
 
   distr_queue q{};
 
-  task(hello_world()) | task(zero) | task(step | step | step) | submit_to(q);
-  
+  hello_world() | task(zero) | task(step | step | step) | task(step) | submit_to(q);
+
   return i;
 }
