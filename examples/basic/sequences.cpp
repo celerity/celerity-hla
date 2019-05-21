@@ -1,7 +1,7 @@
-#include "../../sequence.h"
-#include "../../actions.h"
-#include "../../task_sequence.h"
-#include "../../kernel_sequence.h"
+#include "sequence.h"
+#include "actions.h"
+#include "task_sequence.h"
+#include "kernel_sequence.h"
 
 #include <iostream>
 
@@ -55,7 +55,7 @@ int main() {
 
   distr_queue q{};
 
-  task(zero) | task(step) | submit_to(q);
-
+  task(hello_world()) | task(zero) | task(step | step | step) | submit_to(q);
+  
   return i;
 }
