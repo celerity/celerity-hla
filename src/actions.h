@@ -1,4 +1,3 @@
-
 #ifndef ACTIONS_H
 #define ACTIONS_H
 
@@ -19,7 +18,7 @@ template<template <typename...> typename Sequence, typename...Actions>
 decltype(auto) operator | (Sequence<Actions...>&& sequence, const dispatcher& dispatcher)
 {
 	//TODO return std::invoke(sequence);
-  return sequence();
+	return sequence();
 }
 
 #endif
