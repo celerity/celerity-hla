@@ -12,25 +12,6 @@
 #include "celerity.h"
 #include "sequence_traits.h"
 
-template <typename F, typename... Args>
-struct is_invocable :
-	std::is_constructible<
-	std::function<void(Args ...)>,
-	std::reference_wrapper<typename std::remove_reference<F>::type>
-	>
-{
-};
-
-template <typename F, typename... Args>
-constexpr inline bool is_invocable_v = is_invocable<F, Args...>::value;
-
-template<typename F>
-struct is_kernel : std::integral_constant<bool, is_invocable_v<F, handler>> { };
-
-template <typename F, typename... Args>
-constexpr inline bool is_kernel_v = is_kernel<F>::value;
-
-
 template<typename... Actions>
 class sequence
 {
@@ -70,7 +51,7 @@ private:
 	template<typename Invocable, typename...Args>
 	void invoke(const Invocable& invocable, Args&&...args) const
 	{
-		if constexpr (is_invocable_v<Invocable, Args...>)
+		if constexpr (::is_invocable_v<Invocable, Args...>)
 		{
 			invocable(std::forward<Args>(args)...);
 		}

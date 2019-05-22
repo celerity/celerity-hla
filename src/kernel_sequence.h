@@ -15,7 +15,7 @@ public:
 		q.submit([&](auto cgh) { sequence_(cgh); });
 	}
 
-	auto& sequence() { return sequence_; }
+	auto sequence() { return sequence_; }
 
 private:
 	::sequence<Actions...> sequence_;
@@ -25,7 +25,7 @@ template<typename...Ts, typename...Us>
 auto operator | (kernel_sequence<Ts...>&& lhs, kernel_sequence<Us...>&& rhs)
 {
 	auto seq = lhs.sequence() | rhs.sequence();
-	return kernel_sequence<decltype(seq)>{ seq };
+	return kernel_sequence<Ts..., Us...>{ seq };
 }
 
 template<typename...Actions>

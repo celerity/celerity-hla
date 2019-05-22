@@ -55,14 +55,60 @@ int main() {
 
 	distr_queue q{};
 
-	auto seq = hello_world() | task(zero) | task(step | step | step) | task(step) | submit_to(q);
+	hello_world() | zero | fuse(step | step | step) /*| step*/ | submit_to(q);
+
+
+	using zero_t = decltype(zero);
+	using hello_world_t = decltype(hello_world());
 
 	static_assert(std::is_same<
 		decltype(zero | task(zero)),
-		sequence<task_t<decltype(zero)>, task_t<decltype(zero)>>>::value,
-		"zero not promoted to task_t");
+		sequence<task_t<zero_t>, task_t<zero_t>>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(zero | zero),
+		kernel_sequence<zero_t, zero_t>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(zero | zero | zero),
+		kernel_sequence<zero_t, zero_t, zero_t>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(hello_world() | zero),
+		sequence<hello_world_t, task_t<zero_t>>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(zero | hello_world()),
+		sequence<task_t<zero_t>, hello_world_t>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(task(zero)),
+		task_t<zero_t>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(fuse(zero | zero)),
+		task_t<zero_t, zero_t>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(fuse(zero | zero | zero)),
+		task_t<zero_t, zero_t, zero_t>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(zero | zero | task(zero)),
+		sequence<task_t<zero_t>, task_t<zero_t>, task_t<zero_t>>>::value,
+		"action not promoted to task_t");
 
 	cout << endl;
+
+	cin.get();
 
 	return i;
 }
