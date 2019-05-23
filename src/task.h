@@ -13,7 +13,7 @@ public:
 
 	void operator()(distr_queue& q) const
 	{
-		sequence_(q);
+		std::invoke(sequence_, q);
 	}
 
 private:
@@ -28,7 +28,7 @@ public:
 
 	void operator()(distr_queue& q) const
 	{
-		sequence_(q);
+		std::invoke(sequence_, q);
 	}
 
 private:
@@ -44,7 +44,7 @@ auto fuse(kernel_sequence<Actions...>&& seq)
 template<typename T, typename = std::enable_if_t<is_kernel_v<T>>>
 auto task(const T& invocable)
 {
-	return task_t<T>{ {invocable} };
+	return task_t<T>{ invocable };
 }
 
 template<typename T>

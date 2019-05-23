@@ -3,29 +3,34 @@
 
 #include "celerity.h"
 
-template<typename View, typename F>
-class kernel
+template<typename F, typename OutputView, typename InputView>
+class transform_kernel
 {
 public:
-  using view_type = View;
-  
-  kernel(View view, F f)
-    : view_(view), f_(f) {}
-    
-  void operator()(handler cgh) 
-  {
-    f_(cgh);
-  }
+	transform_kernel(F f, OutputView output_view, InputView input_view)
+		: f_(f), output_view_(output_view), input_view_(input_view) {}
+
+	void operator()(handler cgh) const
+	{
+		auto output = create_accessor<write>(cgh, output_view_);
+		auto input = create_accessor<read>(cgh, input_view_);
+
+		cgh.parallel_for<class test>(input_view_.range(), [=](auto item)
+		{
+			auto r = f_(input[item]);
+		});
+	}
 
 private:
-  View view_;
-  F f_;
+	F f_;
+	OutputView output_view_;
+	InputView input_view_;
 };
 
-template<typename View, typename F>
-constexpr auto make_kernel(View view, F f)
+template<typename F, typename OutputView, typename InputView>
+auto transform(InputView in_view, OutputView out_view, F f)
 {
-  return kernel<View, F>{view, f};
+	return transform_kernel<F, OutputView, InputView>{f, out_view, in_view};
 }
 
 #endif

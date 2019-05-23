@@ -12,7 +12,9 @@ public:
 
 	void operator()(distr_queue& q) const
 	{
-		q.submit([&](auto cgh) { sequence_(cgh); });
+		std::cout << "queue.submit([](handler cgh){" << std::endl;
+		q.submit([&](auto cgh) { std::invoke(sequence_, cgh); });
+		std::cout << "});" << std::endl << std::endl;
 	}
 
 	auto sequence() { return sequence_; }

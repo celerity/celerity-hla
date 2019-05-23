@@ -51,13 +51,13 @@ private:
 	template<typename Invocable, typename...Args>
 	void invoke(const Invocable& invocable, Args&&...args) const
 	{
-		if constexpr (::is_invocable_v<Invocable, Args...>)
+		if constexpr (std::is_invocable_v<Invocable, Args...>)
 		{
-			invocable(std::forward<Args>(args)...);
+			std::invoke(invocable, std::forward<Args>(args)...);
 		}
 		else
 		{
-			invocable();
+			std::invoke(invocable);
 		}
 	}
 
