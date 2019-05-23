@@ -2,14 +2,78 @@
 #include "../../src/actions.h"
 #include "../../src/task_sequence.h"
 #include "../../src/kernel_sequence.h"
+#include "../../src/kernel.h"
+#include "../../src/kernel_traits.h"
 
 #include <iostream>
 
 using namespace std;
 
-int main() {
+template<typename T, typename U>
+void sequence_static_assertions(T zero, U hello_world)
+{
+	using zero_t = T;
+	using hello_world_t = U;
 
-	// example 1: generic action sequence
+	static_assert(std::is_same<
+		decltype(zero | task(zero)),
+		sequence<task_t<zero_t>, task_t<zero_t>>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(zero | zero),
+		kernel_sequence<zero_t, zero_t>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(zero | zero | zero),
+		kernel_sequence<zero_t, zero_t, zero_t>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(hello_world | zero),
+		sequence<hello_world_t, task_t<zero_t>>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(zero | hello_world),
+		sequence<task_t<zero_t>, hello_world_t>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(task(zero)),
+		task_t<zero_t>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(fuse(zero | zero)),
+		task_t<zero_t, zero_t>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(fuse(zero | zero | zero)),
+		task_t<zero_t, zero_t, zero_t>>::value,
+		"action not promoted to task_t");
+
+	static_assert(std::is_same<
+		decltype(zero | zero | task(zero)),
+		sequence<task_t<zero_t>, task_t<zero_t>, task_t<zero_t>>>::value,
+		"action not promoted to task_t");
+
+  static_assert(std::is_same<
+		decltype(zero | task(zero) | zero),
+		sequence<task_t<zero_t>, task_t<zero_t>, task_t<zero_t>>>::value,
+		"action not promoted to task_t");
+
+  static_assert(std::is_same<
+		decltype(hello_world | zero | task(zero) | zero),
+		sequence<hello_world_t, task_t<zero_t>, task_t<zero_t>, task_t<zero_t>>>::value,
+		"action not promoted to task_t");
+}
+
+void sequence_examples()
+{
+  // example 1: generic action sequence
 
 	int i = 0;
 	hello_world() | incr(i) | incr(i) | incr(i) | dispatch();
@@ -57,68 +121,72 @@ int main() {
 
 	hello_world() | zero | fuse(step | step | step) | step | submit_to(q);
 
+  sequence_static_assertions(zero, hello_world());
+}
 
-	using zero_t = decltype(zero);
-	using hello_world_t = decltype(hello_world());
+void iterator_static_assertions()
+{
+  static_assert(static_index<1>::rank == 1, "static_index rank");
+  static_assert(static_index<1, 2, 3>::rank == 3, "static_index rank");
 
-	static_assert(std::is_same<
-		decltype(zero | task(zero)),
-		sequence<task_t<zero_t>, task_t<zero_t>>>::value,
-		"action not promoted to task_t");
+  static_assert(static_index<1>::components[0] == 1, "static_index::components");
+  static_assert(static_index<1, 2>::components[0] == 1 && 
+                static_index<1, 2>::components[1] == 2, "static_index::components");
 
-	static_assert(std::is_same<
-		decltype(zero | zero),
-		kernel_sequence<zero_t, zero_t>>::value,
-		"action not promoted to task_t");
+  static_assert(is_same<static_index<1>, static_index<1>>::value, "static_index equality");
+  static_assert(is_same<static_index<1, 3>, static_index<1, 3>>::value, "static_index equality");
+  static_assert(!is_same<static_index<1, 3>, static_index<1, 2>>::value, "static_index inequality");
 
-	static_assert(std::is_same<
-		decltype(zero | zero | zero),
-		kernel_sequence<zero_t, zero_t, zero_t>>::value,
-		"action not promoted to task_t");
+  static_assert(static_iterator<float, 1, 2, 3>::rank == 3, "static_iterator::rank");
+  static_assert(is_same<static_iterator<float, 1, 2, 3>::value_type, float>::value, "static_iterator value_type");
+  static_assert(is_same<static_iterator<float, 1, 2, 3>::index_type, static_index<1, 2, 3>>::value, "static_iterator::value_type");
+  static_assert(is_same<static_iterator<float, 1, 2, 3>, static_iterator<float, 1, 2, 3>>::value, "static_iterator equality");
+  static_assert(!is_same<static_iterator<float, 1, 2, 3>, static_iterator<float, 3, 3, 3>>::value, "static_iterator inequality");
 
-	static_assert(std::is_same<
-		decltype(hello_world() | zero),
-		sequence<hello_world_t, task_t<zero_t>>>::value,
-		"action not promoted to task_t");
 
-	static_assert(std::is_same<
-		decltype(zero | hello_world()),
-		sequence<task_t<zero_t>, hello_world_t>>::value,
-		"action not promoted to task_t");
+  static_assert(static_view<1, static_iterator<float, 0>, static_iterator<float, 0>>::id == 1, "static_view::id");
+  static_assert(static_view<1, static_iterator<float, 0, 0>, static_iterator<float, 1, 1>>::rank == 2, "static_view::rank");
 
-	static_assert(std::is_same<
-		decltype(task(zero)),
-		task_t<zero_t>>::value,
-		"action not promoted to task_t");
+  static_assert(is_same<static_view<1, static_iterator<float, 0, 0>, static_iterator<float, 1, 1>>,
+                        static_view<1, static_iterator<float, 0, 0>, static_iterator<float, 1, 1>>>::value, 
+                "static_view::rank");
 
-	static_assert(std::is_same<
-		decltype(fuse(zero | zero)),
-		task_t<zero_t, zero_t>>::value,
-		"action not promoted to task_t");
+  static_assert(!is_same<static_view<1, static_iterator<float, 0, 0>, static_iterator<float, 1, 1>>,
+                         static_view<1, static_iterator<float, 0, 1>, static_iterator<float, 1, 1>>>::value, 
+                "static_view::rank");
 
-	static_assert(std::is_same<
-		decltype(fuse(zero | zero | zero)),
-		task_t<zero_t, zero_t, zero_t>>::value,
-		"action not promoted to task_t");
+  static_assert(is_same<decltype(begin(buffer<float, 1>{})), static_iterator<float, 0>>::value, "begin");
 
-	static_assert(std::is_same<
-		decltype(zero | zero | task(zero)),
-		sequence<task_t<zero_t>, task_t<zero_t>, task_t<zero_t>>>::value,
-		"action not promoted to task_t");
+  static_assert(is_same<decltype(end(buffer<float, 1>{})), static_iterator<float, 0>>::value, "end");
 
-  static_assert(std::is_same<
-		decltype(zero | task(zero) | zero),
-		sequence<task_t<zero_t>, task_t<zero_t>, task_t<zero_t>>>::value,
-		"action not promoted to task_t");
+  static_assert(is_same<decltype(make_view<1>(buffer<float, 1>{})), static_view<1, static_iterator<float, 0>, static_iterator<float, 0>>>::value, "make_view return type");
 
-  static_assert(std::is_same<
-		decltype(hello_world() | zero | task(zero) | zero),
-		sequence<hello_world_t, task_t<zero_t>, task_t<zero_t>, task_t<zero_t>>>::value,
-		"action not promoted to task_t");
+  {
+    const auto view = make_view<1>(buffer<float, 1>{});
+    const auto first_kernel = make_kernel(view, [](handler){});
+    const auto second_kernel = make_kernel(view, [](handler){});
+
+    static_assert(is_combinable_v<decltype(first_kernel), decltype(second_kernel)>, "is_combinable_v");
+  }
+
+  {
+    const auto first_view = make_view<1>(buffer<float, 1>{});
+    const auto first_kernel = make_kernel(first_view, [](handler){});
+
+    const auto second_view = make_view<2>(buffer<float, 2>{});
+    const auto second_kernel = make_kernel(second_view, [](handler){});
+
+    static_assert(!is_combinable_v<decltype(first_kernel), decltype(second_kernel)>, "!is_combinable_v");
+  }
+}
+
+int main() {
+
+  iterator_static_assertions();
+  sequence_examples();
 
 	cout << endl;
-
 	cin.get();
 
-	return i;
+	return 0;
 }
