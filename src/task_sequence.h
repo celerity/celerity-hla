@@ -4,10 +4,6 @@
 #include "celerity.h"
 #include "task.h"
 
-template<typename F>
-constexpr inline bool is_argless_invokable_v = ::is_invocable_v<F, void>;
-
-
 auto submit_to(distr_queue q)
 {
 	return q;
@@ -58,7 +54,7 @@ template<typename...T, typename U,
 	std::enable_if_t<is_kernel_v<U>, int> = 0>
 auto operator | (kernel_sequence<T...> lhs, U rhs)
 {
-	return kernel_sequence<T..., U>{ lhs.sequence() | rhs };
+	return kernel_sequence<T..., U>{ { lhs.sequence(), rhs } };
 }
 
 template<typename T, typename U,
@@ -68,18 +64,18 @@ template<typename T, typename U,
 	return sequence<T, task_t<U>>{ lhs, { rhs }};
 }
 
-template<typename...T, typename U, size_t...Ids>
-auto unpack_kernel_sequence(kernel_sequence<T...> lhs, task_t<U> rhs, std::index_sequence<Ids...>)
+template<typename...Ts, typename U, size_t...Ids>
+auto unpack_kernel_sequence(kernel_sequence<Ts...> lhs, task_t<U> rhs, std::index_sequence<Ids...>)
 {
-	sequence<task_t<T>...> seq{ task(std::get<Ids>(lhs.sequence().actions()))... };
-	return sequence<task_t<T>..., task_t<U>>{ std::move(seq) | rhs };
+	sequence<task_t<Ts>...> seq{ task(std::get<Ids>(lhs.sequence().actions()))... };
+	return sequence<task_t<Ts>..., task_t<U>>{ std::move(seq), rhs };
 }
 
-template<typename...T, typename U,
+template<typename...Ts, typename U,
 	std::enable_if_t<is_kernel_v<U>, int> = 0>
-auto operator | (kernel_sequence<T...> lhs, task_t<U> rhs)
+auto operator | (kernel_sequence<Ts...> lhs, task_t<U> rhs)
 {
-	return unpack_kernel_sequence(lhs, rhs, std::index_sequence_for<T...>{});
+	return unpack_kernel_sequence(lhs, rhs, std::index_sequence_for<Ts...>{});
 }
 
 template<typename T, typename U>
@@ -117,13 +113,18 @@ auto operator | (T lhs, task_t<U> rhs)
 }
 
 template<template <typename...> typename Sequence, typename...Actions, typename Action,
-	typename = std::enable_if_t<is_sequence_v<Sequence<Actions...>>>>
+	std::enable_if_t<is_sequence_v<Sequence<Actions...>> && !is_kernel_v<Action>, int> = 0>
 auto operator | (Sequence<Actions...>&& seq, Action action)
 {
 	return sequence<Actions..., Action>{ std::move(seq), action };
 }
 
-
+template<template <typename...> typename Sequence, typename...Actions, typename Action,
+	std::enable_if_t<is_sequence_v<Sequence<Actions...>> && is_kernel_v<Action>, int> = 0>
+auto operator | (Sequence<Actions...>&& seq, Action action)
+{
+	return sequence<Actions..., task_t<Action>>{ std::move(seq), task(action) };
+}
 
 
 #endif

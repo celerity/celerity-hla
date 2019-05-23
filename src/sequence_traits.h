@@ -28,4 +28,7 @@ struct is_kernel : std::integral_constant<bool, ::is_invocable_v<F, handler>> { 
 template <typename F, typename... Args>
 constexpr inline bool is_kernel_v = is_kernel<F>::value;
 
+template<typename F>
+constexpr inline bool is_argless_invokable_v = ::is_invocable_v<F>;
+
 #endif
