@@ -6,6 +6,7 @@
 #include <iostream>
 
 using namespace std;
+
 int main() {
 
 	// example 1: generic action sequence
@@ -108,6 +109,11 @@ int main() {
   static_assert(std::is_same<
 		decltype(zero | task(zero) | zero),
 		sequence<task_t<zero_t>, task_t<zero_t>, task_t<zero_t>>>::value,
+		"action not promoted to task_t");
+
+  static_assert(std::is_same<
+		decltype(hello_world() | zero | task(zero) | zero),
+		sequence<hello_world_t, task_t<zero_t>, task_t<zero_t>, task_t<zero_t>>>::value,
 		"action not promoted to task_t");
 
 	cout << endl;
