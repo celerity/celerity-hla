@@ -23,12 +23,12 @@ void sequence_static_assertions(T zero, U hello_world)
 	static_assert(std::is_same<
 		decltype(zero | zero),
 		kernel_sequence<zero_t, zero_t>>::value,
-		"action not promoted to task_t");
+		"actions not promoted to kernel_sequence");
 
 	static_assert(std::is_same<
 		decltype(zero | zero | zero),
 		kernel_sequence<zero_t, zero_t, zero_t>>::value,
-		"action not promoted to task_t");
+		"action not appended to kernel_sequence");
 
 	static_assert(std::is_same<
 		decltype(hello_world | zero),
@@ -48,24 +48,24 @@ void sequence_static_assertions(T zero, U hello_world)
 	static_assert(std::is_same<
 		decltype(fuse(zero | zero)),
 		task_t<zero_t, zero_t>>::value,
-		"action not promoted to task_t");
+		"actions to fused");
 
 	static_assert(std::is_same<
 		decltype(fuse(zero | zero | zero)),
 		task_t<zero_t, zero_t, zero_t>>::value,
-		"action not promoted to task_t");
+		"actions to fused");
 
 	static_assert(std::is_same<
 		decltype(zero | zero | task(zero)),
 		sequence<task_t<zero_t>, task_t<zero_t>, task_t<zero_t>>>::value,
-		"action not promoted to task_t");
+		"action sequence not promoted to task_t sequence");
 
-	static_assert(std::is_same<
+  	static_assert(std::is_same<
 		decltype(zero | task(zero) | zero),
 		sequence<task_t<zero_t>, task_t<zero_t>, task_t<zero_t>>>::value,
 		"action not promoted to task_t");
 
-	static_assert(std::is_same<
+  	static_assert(std::is_same<
 		decltype(hello_world | zero | task(zero) | zero),
 		sequence<hello_world_t, task_t<zero_t>, task_t<zero_t>, task_t<zero_t>>>::value,
 		"action not promoted to task_t");
