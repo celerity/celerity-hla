@@ -23,7 +23,7 @@ struct handler
 {
 	int invocations;
 
-	template<typename T, size_t Rank, typename F>
+	template<typename KernelName, size_t Rank, typename F>
 	void parallel_for(range<Rank> r, F f)
 	{
 		for (int i = 0; i < count(r); ++i)
@@ -47,7 +47,7 @@ private:
 	int invocation_count_ = 0;
 };
 
-enum access_mode
+enum class access_mode
 {
 	read,
 	write,
@@ -57,7 +57,7 @@ enum access_mode
 template<access_mode mode, typename T, size_t Rank>
 struct accessor
 {
-	T operator[](item<Rank>) { return T{}; }
+	T& operator[](item<Rank>) { static T x{}; return x; }
 	T operator[](item<Rank>) const { return T{}; }
 };
 
@@ -66,6 +66,8 @@ struct buffer
 {
 	template<access_mode mode>
 	auto get_access(handler cgh, range<Rank> range) { return accessor<mode, T, Rank>{}; }
+
+	size_t size() const { return 1; }
 };
 
 #endif

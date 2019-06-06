@@ -23,6 +23,13 @@ auto operator | (Sequence<Actions...>&& lhs, distr_queue&& queue)
 	return lhs;
 }
 
+template<typename T, typename...Actions>
+auto operator | (task_t<T>&& lhs, distr_queue&& queue)
+{
+	std::invoke(lhs, queue);
+	return lhs;
+}
+
 template<typename...Ts, typename...Us>
 auto operator | (task_t<Ts...> lhs, task_t<Us...> rhs)
 {

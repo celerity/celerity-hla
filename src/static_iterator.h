@@ -1,5 +1,5 @@
-#ifndef ITERATOR_H
-#define ITERATOR_H
+#ifndef STATIC_ITERATOR_H
+#define STATIC_ITERATOR_H
 
 #include <array>
 #include <type_traits>

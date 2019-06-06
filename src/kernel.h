@@ -12,8 +12,8 @@ public:
 
 	void operator()(handler cgh) const
 	{
-		auto output = create_accessor<write>(cgh, output_view_);
-		auto input = create_accessor<read>(cgh, input_view_);
+		auto output = create_accessor<access_mode::write>(cgh, output_view_);
+		auto input = create_accessor<access_mode::read>(cgh, input_view_);
 
 		cgh.parallel_for<class test>(input_view_.range(), [=](auto item)
 		{

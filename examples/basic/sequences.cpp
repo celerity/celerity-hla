@@ -4,6 +4,8 @@
 #include "../../src/kernel_sequence.h"
 #include "../../src/kernel.h"
 #include "../../src/kernel_traits.h"
+#include "../../src/static_iterator.h"
+#include "../../src/algorithm.h"
 
 #include <iostream>
 
@@ -134,11 +136,17 @@ void sequence_examples()
 	static_assert(is_same_v<decltype(task(kernel)), task_t<decltype(kernel)>>, "is task");
 	static_assert(is_invocable_v<decltype(task(kernel)), distr_queue&>, "task(kernel) invocable with queue");
 
+	buffer<float, 1> b;
+	buffer<float, 1> b_out;
 
+	auto add_one = algorithm::tasks::transform(algorithm::begin(b), algorithm::end(b), algorithm::begin(b_out), [](float x) { return x + 1; });
+	
 	invoke(task(kernel), q);
 
-	hello_world() | zero | fuse(step | step | step) | step | task(kernel) | submit_to(q);
+	hello_world() | zero | fuse(step | step | step) | step | task(kernel) | add_one | submit_to(q);
 
+	algorithm::transform(algorithm::dist(q), algorithm::begin(b), algorithm::end(b), algorithm::begin(b_out), [](float x) { return x + 5; });
+	
 	// ASSERTIONS
 
 	sequence_static_assertions(zero, hello_world());
