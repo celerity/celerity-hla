@@ -1,3 +1,5 @@
+#define MOCK_CELERITY
+
 #include "../../src/sequence.h"
 #include "../../src/actions.h"
 #include "../../src/task_sequence.h"
@@ -14,6 +16,9 @@ using namespace std;
 template<typename T, typename U>
 void sequence_static_assertions(T zero, U hello_world)
 {
+	using namespace celerity;
+	using namespace sequencing;
+
 	using zero_t = T;
 	using hello_world_t = U;
 
@@ -77,6 +82,10 @@ void sequence_examples()
 {
 	// example 1: generic action sequence
 
+	using namespace celerity;
+	using namespace sequencing;
+	using namespace actions;
+
 	int i = 0;
 	hello_world() | incr(i) | incr(i) | incr(i) | dispatch();
 	cout << i << endl << endl;
@@ -119,7 +128,7 @@ void sequence_examples()
 		cout << cgh.invocations << ": step" << endl;
 	};
 
-	distr_queue q{};
+	queue q{};
 
 	hello_world() | zero | fuse(step | step | step) | step | submit_to(q);
 
@@ -127,25 +136,20 @@ void sequence_examples()
 
 	// 
 
-	const auto src_view = make_view<1>(buffer<float, 1>{});
-	const auto dst_view = make_view<2>(buffer<float, 1>{});
+	buffer<float, 1> b{ {5} };
+	buffer<float, 1> b_out{ {5 } };
 
-	auto kernel = transform(src_view, dst_view, [](float x) { return 2 * x; });
+	{
+		using namespace algorithm;
+		using namespace tasks;
 
-	static_assert(is_invocable_v<decltype(kernel), handler>, "kernel invocable with handler");
-	static_assert(is_same_v<decltype(task(kernel)), task_t<decltype(kernel)>>, "is task");
-	static_assert(is_invocable_v<decltype(task(kernel)), distr_queue&>, "task(kernel) invocable with queue");
+		auto add_one = tasks::transform(algorithm::dist<class add_one>(q), begin(b), end(b), begin(b_out), [](float x) { return x + 1; });
 
-	buffer<float, 1> b;
-	buffer<float, 1> b_out;
+		zero | fuse(step | step | step) | step | add_one | submit_to(q);
+	}
 
-	auto add_one = algorithm::tasks::transform(algorithm::begin(b), algorithm::end(b), algorithm::begin(b_out), [](float x) { return x + 1; });
-	
-	invoke(task(kernel), q);
 
-	hello_world() | zero | fuse(step | step | step) | step | task(kernel) | add_one | submit_to(q);
-
-	algorithm::transform(algorithm::dist(q), algorithm::begin(b), algorithm::end(b), algorithm::begin(b_out), [](float x) { return x + 5; });
+	algorithm::transform(algorithm::dist<class add_five>(q), begin(b), end(b), begin(b_out), [](float x) { return x + 5; });
 	
 	// ASSERTIONS
 
@@ -154,6 +158,8 @@ void sequence_examples()
 
 void iterator_static_assertions()
 {
+	using namespace celerity::algorithm::fixed;
+
 	static_assert(static_index<1>::rank == 1, "static_index rank");
 	static_assert(static_index<1, 2, 3>::rank == 3, "static_index rank");
 
@@ -183,11 +189,25 @@ void iterator_static_assertions()
 		static_view<1, static_iterator<float, 0, 1>, static_iterator<float, 1, 1>>>::value,
 		"static_view::rank");
 
-	static_assert(is_same<decltype(begin(buffer<float, 1>{})), static_iterator<float, 0 >> ::value, "begin");
+	static_assert(is_same<decltype(begin(celerity::buffer<float, 1>{{1}})), static_iterator<float, 0 >> ::value, "begin");
 
-	static_assert(is_same<decltype(end(buffer<float, 1>{})), static_iterator<float, 0 >> ::value, "end");
+	static_assert(is_same<decltype(end(celerity::buffer<float, 1>{{1}})), static_iterator<float, 0 >> ::value, "end");
 
-	static_assert(is_same<decltype(make_view<1>(buffer<float, 1>{})), static_view<1, static_iterator<float, 0>, static_iterator<float, 0>> > ::value, "make_view return type");
+	static_assert(is_same<decltype(make_view<1>(celerity::buffer<float, 1>{{1}})), static_view<1, static_iterator<float, 0>, static_iterator<float, 0>> > ::value, "make_view return type");
+
+	using namespace celerity;
+	using namespace algorithm;
+	using namespace sequencing;
+	using namespace tasks;
+
+	const auto src_view = fixed::make_view<1>(celerity::buffer<float, 1>{ {1}});
+	const auto dst_view = fixed::make_view<2>(celerity::buffer<float, 1>{ {1}});
+
+	auto kernel = transform(src_view, dst_view, [](float x) { return 2 * x; });
+
+	static_assert(is_invocable_v<decltype(kernel), handler>, "kernel invocable with handler");
+	static_assert(is_same_v<decltype(task(kernel)), task_t<decltype(kernel)>>, "is task");
+	static_assert(is_invocable_v<decltype(task(kernel)), queue&>, "task(kernel) invocable with queue");
 
 	/*
 	{

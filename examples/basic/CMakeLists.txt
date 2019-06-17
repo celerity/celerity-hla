@@ -1,12 +1,12 @@
+find_package(Boost 1.65.0 COMPONENTS graph REQUIRED)
+find_package(MPI 2.0 REQUIRED)
+
 add_executable(
   sequences
   sequences.cpp
 )
 
 set_property(TARGET sequences PROPERTY CXX_STANDARD 17)
-
-find_package(Boost 1.65.0 COMPONENTS graph REQUIRED)
-find_package(MPI 2.0 REQUIRED)
 
 target_link_libraries(sequences
 	PUBLIC

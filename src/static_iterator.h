@@ -7,6 +7,9 @@
 
 #include "celerity.h"
 
+namespace celerity::algorithm::fixed
+{
+
 template<int...Components>
 struct static_index
 {
@@ -35,21 +38,21 @@ struct static_view
 	static constexpr size_t id = Id;
 	static constexpr size_t rank = BeginIter::rank;
 
-	explicit static_view(::buffer<value_type, rank> buf)
+	explicit static_view(buffer<value_type, rank> buf)
 		: buffer_(buf) {}
 
 	auto& buffer() { return buffer_; }
 
-	::range<rank> range() const
+	[[nodiscard]] range<rank> range() const
 	{
 		return dispatch_range(std::make_index_sequence<rank>{});
 	}
 
 private:
-	::buffer<value_type, rank> buffer_;
+	celerity::buffer<value_type, rank> buffer_;
 
 	template<size_t...Is>
-	::range<rank> dispatch_range(std::index_sequence<Is...>) const
+	celerity::range<rank> dispatch_range(std::index_sequence<Is...>) const
 	{
 		using begin_index_type = typename begin_iterator_type::index_type;
 		using end_index_type = typename end_iterator_type::index_type;
@@ -80,7 +83,7 @@ constexpr auto end(Buffer<T, Rank> b)
 template<size_t Id, typename Buffer>
 constexpr auto make_view(Buffer buffer)
 {
-	return static_view<Id, decltype(begin(buffer)), decltype(end(buffer))>{buffer};
+	return static_view<Id, decltype(fixed::begin(buffer)), decltype(fixed::end(buffer))>{buffer};
 }
 
 template<access_mode mode, size_t Id, typename BeginIter, typename EndIter>
@@ -89,5 +92,6 @@ auto create_accessor(handler cgh, static_view<Id, BeginIter, EndIter> view)
 	return view.buffer().template get_access<mode>(cgh, view.range());
 }
 
+}
 
 #endif

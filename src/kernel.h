@@ -2,7 +2,11 @@
 #define KERNEL_H
 
 #include "celerity.h"
+#include "static_iterator.h"
 
+namespace celerity::sequencing
+{
+	
 template<typename F, typename OutputView, typename InputView>
 class transform_kernel
 {
@@ -12,8 +16,8 @@ public:
 
 	void operator()(handler cgh) const
 	{
-		auto output = create_accessor<access_mode::write>(cgh, output_view_);
-		auto input = create_accessor<access_mode::read>(cgh, input_view_);
+		auto output = algorithm::fixed::create_accessor<access_mode::write>(cgh, output_view_);
+		auto input = algorithm::fixed::create_accessor<access_mode::read>(cgh, input_view_);
 
 		cgh.parallel_for<class test>(input_view_.range(), [=](auto item)
 		{
@@ -33,4 +37,5 @@ auto transform(InputView in_view, OutputView out_view, F f)
 	return transform_kernel<F, OutputView, InputView>{f, out_view, in_view};
 }
 
+}
 #endif

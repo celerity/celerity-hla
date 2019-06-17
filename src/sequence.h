@@ -7,79 +7,87 @@
 #include <type_traits>
 #include <optional>
 #include <variant>
-#include <iostream>
 
-#include "celerity.h"
 #include "sequence_traits.h"
 
-template<typename... Actions>
-class sequence
+namespace celerity::sequencing
 {
-public:
-	using actions_t = std::tuple<Actions...>;
-
-	sequence(Actions... actions)
-		: actions_(actions...)
+	template<typename... Actions>
+	class sequence
 	{
+	public:
+		using actions_t = std::tuple<Actions...>;
 
-	}
-
-	template<typename...SequenceActions, typename Action>
-	sequence(sequence<SequenceActions...>&& seq, Action action)
-		: sequence(std::move(seq), action, std::index_sequence_for<SequenceActions...>{})
-	{
-
-	}
-
-	template<typename...Args>
-	void operator()(Args&&...args) const
-	{
-		dispatch(std::index_sequence_for<Actions...>{}, std::forward<Args>(args)...);
-	}
-
-	constexpr actions_t& actions() { return actions_; }
-
-private:
-	actions_t actions_;
-
-	template<typename...SequenceActions, typename Action, size_t...Ids>
-	sequence(sequence<SequenceActions...>&& sequence, Action action, std::index_sequence<Ids...>)
-		: actions_(std::move(std::get<Ids>(sequence.actions()))..., action)
-	{
-	}
-
-	template<typename Invocable, typename...Args>
-	void invoke(const Invocable& invocable, Args&&...args) const
-	{
-		if constexpr (std::is_invocable_v<Invocable, Args...>)
+		sequence(Actions... actions)
+			: actions_(actions...)
 		{
-			std::invoke(invocable, std::forward<Args>(args)...);
+
 		}
-		else
+
+		template<typename...SequenceActions, typename Action>
+		sequence(sequence<SequenceActions...>&& seq, Action action)
+			: sequence(std::move(seq), action, std::index_sequence_for<SequenceActions...>{})
 		{
-			std::invoke(invocable);
+
 		}
-	}
 
-	template<typename...Args, size_t...Is>
-	void dispatch(std::index_sequence<Is...>, Args&&...args) const
+		template<typename...Args>
+		void operator()(Args&& ...args) const
+		{
+			dispatch(std::index_sequence_for<Actions...>{}, std::forward<Args>(args)...);
+		}
+
+		constexpr actions_t& actions() { return actions_; }
+
+	private:
+		actions_t actions_;
+
+		template<typename...SequenceActions, typename Action, size_t...Ids>
+		sequence(sequence<SequenceActions...>&& sequence, Action action, std::index_sequence<Ids...>)
+			: actions_(std::move(std::get<Ids>(sequence.actions()))..., action)
+		{
+		}
+
+		template<typename Invocable, typename...Args>
+		void invoke(const Invocable& invocable, Args&& ...args) const
+		{
+			if constexpr (std::is_invocable_v<Invocable, Args...>)
+			{
+				std::invoke(invocable, std::forward<Args>(args)...);
+			}
+			else
+			{
+				std::invoke(invocable);
+			}
+		}
+
+		template<typename...Args, size_t...Is>
+		void dispatch(std::index_sequence<Is...>, Args&& ...args) const
+		{
+			((invoke(std::get<Is>(actions_), std::forward<Args>(args)...)), ...);
+		}
+	};
+}
+
+namespace celerity::traits
+{
+	template<typename...Actions>
+	struct sequence_traits<sequencing::sequence<Actions...>>
 	{
-		((invoke(std::get<Is>(actions_), std::forward<Args>(args)...)), ...);
+		using is_sequence_type = std::integral_constant<bool, true>;
+	};
+}
+
+namespace celerity::sequencing
+{
+	template<template <typename...> typename T, template <typename...> typename U,
+		typename...Ts, typename...Us,
+		typename = std::enable_if_t<traits::is_sequence_v<T<Ts...>> && traits::is_sequence_v<U<Us...>>>>
+		auto operator | (T<Ts...> && lhs, T<Us...> && rhs)
+	{
+		return sequence<Ts..., Us...>{ lhs, rhs };
 	}
-};
 
-template<typename...Actions>
-struct sequence_traits<sequence<Actions...>>
-{
-	using is_sequence_type = std::integral_constant<bool, true>;
-};
-
-template<template <typename...> typename T, template <typename...> typename U,
-	typename...Ts, typename...Us,
-	typename = std::enable_if_t<is_sequence_v<T<Ts...>> && is_sequence_v<U<Us...>>>>
-	auto operator | (T<Ts...>&& lhs, T<Us...>&& rhs)
-{
-	return sequence<Ts..., Us...>{ lhs, rhs };
 }
 
 #endif 

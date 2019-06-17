@@ -1,73 +1,142 @@
+// ReSharper disable once CppMissingIncludeGuard
+#ifndef MOCK_CELERITY
+#include <celerity>
+#else
 #ifndef CELERITY_H
 #define CELERITY_H
 
-template<size_t Rank>
-using range = std::array<int, Rank>;
+#include <iostream>
+#include <iterator>
 
-template<size_t Rank, size_t...Is>
-int dispatch_count(range<Rank> r, std::index_sequence<Is...>)
+namespace celerity
 {
-	return (std::get<Is>(r) * ... * 1);
-}
+	template<size_t Rank>
+	using range = std::array<int, Rank>;
 
-template<size_t Rank>
-int count(range<Rank> r)
-{
-	return dispatch_count(r, std::make_index_sequence<Rank>{});
-}
-
-template<size_t Rank>
-using item = std::array<int, Rank>;
-
-struct handler
-{
-	int invocations;
-
-	template<typename KernelName, size_t Rank, typename F>
-	void parallel_for(range<Rank> r, F f)
+	template<size_t Rank, size_t...Is>
+	int dispatch_count(range<Rank> r, std::index_sequence<Is...>)
 	{
-		for (int i = 0; i < count(r); ++i)
+		return (std::get<Is>(r) * ... * 1);
+	}
+
+	template<size_t Rank>
+	int count(range<Rank> r)
+	{
+		return dispatch_count(r, std::make_index_sequence<Rank>{});
+	}
+
+	template<size_t Rank>
+	using item = std::array<int, Rank>;
+
+	struct handler
+	{
+		int invocations;
+
+		template<typename KernelName, size_t Rank, typename F>
+		void parallel_for(range<Rank> r, F f)
 		{
-			f(r);
+			if constexpr (Rank == 1)
+			{
+				for (auto i = 0; i < count(r); ++i)
+				{
+					f(item<Rank>{i});
+				}
+			}
+			else
+			{
+				throw std::logic_error("not implemented");
+			}
+		}
+
+		template<typename F>
+		void run(F f)
+		{
+			f();
+		}
+	};
+
+	class queue
+	{
+	public:
+		template<typename F>
+		void submit(F f)
+		{
+			f(handler{ ++invocation_count_ });
+		}
+
+	private:
+		int invocation_count_ = 0;
+	};
+
+	enum class access_mode
+	{
+		read,
+		write,
+		read_write
+	};
+
+	inline std::string to_string(const access_mode mode)
+	{
+		switch (mode)
+		{
+		case access_mode::read: return "read";
+		case access_mode::write: return "write";
+		case access_mode::read_write: return "read_write";
+		default: return "unknown";
 		}
 	}
 
-};
-
-class distr_queue
-{
-public:
-	template<typename F>
-	void submit(F f)
+	template<access_mode Mode, typename T, size_t Rank>
+	struct accessor
 	{
-		f(handler{ ++invocation_count_ });
-	}
+		T& operator[](item<Rank> idx)
+		{
+			std::cout << typeid(T).name() << "& ";
+			print_accessor_type();
+			std::cout << "::operator [](";
+			std::copy(begin(idx), idx.end(), std::ostream_iterator<int>{ std::cout, "," });
+			std::cout << ")" << std::endl;
 
-private:
-	int invocation_count_ = 0;
-};
+			static T x{};
+			return x;
+		}
 
-enum class access_mode
-{
-	read,
-	write,
-	read_write
-};
+		T operator[](item<Rank> idx) const
+		{
+			std::cout << typeid(T).name() << "  ";
+			print_accessor_type();
+			std::cout << "::operator [](";
+			std::copy(idx.begin(), idx.end(), std::ostream_iterator<int>{ std::cout, "," });
+			std::cout << ")" << std::endl;
 
-template<access_mode mode, typename T, size_t Rank>
-struct accessor
-{
-	T& operator[](item<Rank>) { static T x{}; return x; }
-	T operator[](item<Rank>) const { return T{}; }
-};
+			return T{};
+		}
 
-template<typename T, size_t Rank>
-struct buffer
-{
-	template<access_mode mode>
-	auto get_access(handler cgh, range<Rank> range) { return accessor<mode, T, Rank>{}; }
+		static void print_accessor_type()
+		{
+			std::cout << "accessor<" << to_string(Mode) << ", " << typeid(T).name() << ", " << Rank << ">";
+		}
+	};
 
-	size_t size() const { return 1; }
-};
+	template<typename T, size_t Rank>
+	class buffer
+	{
+	public:
+		explicit buffer(range<Rank> size)
+			: buf_(count(size))
+		{
+		}
 
+		template<access_mode mode>
+		auto get_access(handler cgh, range< Rank> range) { return accessor<mode, T, Rank>{}; }
+
+		[[nodiscard]]
+		size_t size() const { return buf_.size(); }
+
+	private:
+		std::vector<T> buf_;
+	};
+}
+
+#endif
 #endif

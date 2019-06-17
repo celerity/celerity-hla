@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <cassert>
 
-namespace algorithm
+namespace celerity::algorithm
 {
 	template<typename T, size_t Dims>
 	class iterator;
@@ -14,7 +14,7 @@ namespace algorithm
 	class iterator<T, 1>
 	{
 	public:
-		iterator(int pos, buffer<T, 1> & buffer)
+		iterator(int pos, celerity::buffer<T, 1> & buffer)
 			: pos_(pos),
 			buffer_(buffer)
 		{
@@ -30,12 +30,12 @@ namespace algorithm
 			pos_++; return *this;
 		}
 
-		int operator*() const { return pos_; }
-		buffer<T, 1> & buffer() const { return buffer_; }
+		[[nodiscard]] int operator*() const { return pos_; }
+		[[nodiscard]] celerity::buffer<T, 1> & buffer() const { return buffer_; }
 
 	private:
 		int pos_ = 0;
-		::buffer<T, 1>& buffer_;
+		celerity::buffer<T, 1>& buffer_;
 	};
 
 	enum class iterator_type
@@ -44,46 +44,49 @@ namespace algorithm
 		neighbor,
 	};
 
-	template<typename T, size_t Dims, iterator_type Type, access_mode Mode>
+	template<typename T, size_t Dims, iterator_type Type, celerity::access_mode Mode>
 	struct iterator_wrapper
 	{
 		iterator<T, Dims> iterator;
 	};
 
-	template<template <typename, size_t, iterator_type, access_mode> typename It,
-		typename T, size_t Dims, iterator_type Type, access_mode Mode>
-		auto get_access(handler cgh, It<T, Dims, Type, Mode> beg, It<T, Dims, Type, Mode> end)
-	{
-		assert(&beg.iterator.buffer() == &end.iterator.buffer());
-		assert(*beg.iterator < *end.iterator);
-
-		return beg.iterator.buffer().get_access<Mode>(cgh, range<1>{ *end.iterator - *beg.iterator });
-	}
-
-	template<typename T>
-	iterator<T, 1> begin(buffer<T, 1> & buffer)
-	{
-		return iterator<T, 1>(0, buffer);
-	}
-
-	template<typename T>
-	iterator<T, 1> end(buffer<T, 1> & buffer)
-	{
-		return iterator<T, 1>(buffer.size(), buffer);
-	}
-
-	template<access_mode Mode, typename T>
+	template<celerity::access_mode Mode, typename T>
 	auto one_to_one(const iterator<T, 1>& it)
 	{
 		return iterator_wrapper<T, 1, iterator_type::one_to_one, Mode>{ it };
 	}
 
-	template<access_mode Mode, typename T>
+	template<celerity::access_mode Mode, typename T>
 	auto neighbor(const iterator<T, 1> & it, int, int)
 	{
 		return iterator_wrapper<T, 1, iterator_type::neighbor, Mode>{ it };
 	}
 
+}
+
+namespace celerity
+{
+	template<template <typename, size_t, algorithm::iterator_type, celerity::access_mode> typename It,
+		typename T, size_t Dims, algorithm::iterator_type Type, celerity::access_mode Mode>
+		auto get_access(celerity::handler cgh, It<T, Dims, Type, Mode> beg, It<T, Dims, Type, Mode> end)
+	{
+		assert(&beg.iterator.buffer() == &end.iterator.buffer());
+		assert(*beg.iterator <= *end.iterator);
+
+		return beg.iterator.buffer().get_access<Mode>(cgh, range<1>{ *end.iterator - *beg.iterator });
+	}
+
+	template<typename T>
+	algorithm::iterator<T, 1> begin(celerity::buffer<T, 1> & buffer)
+	{
+		return algorithm::iterator<T, 1>(0, buffer);
+	}
+
+	template<typename T>
+	algorithm::iterator<T, 1> end(celerity::buffer<T, 1> & buffer)
+	{
+		return algorithm::iterator<T, 1>(buffer.size(), buffer);
+	}
 }
 
 #endif
