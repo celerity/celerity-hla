@@ -9,38 +9,52 @@
 
 namespace celerity::algorithm
 {
+
+
 	namespace tasks
 	{
-		template<typename T, size_t Dims, typename F, typename ExecutionPolicy>
-		auto transform(ExecutionPolicy p, iterator<T, Dims> beg, iterator<T, Dims> end, iterator<T, Dims> out, const F& f)
+		namespace detail
 		{
-			using execution_policy = std::decay_t<ExecutionPolicy>;
-			
-			const auto r = *end - *beg;
-			assert(r <= static_cast<int>(out.buffer().size() - *out));
-
-			return [=](celerity::handler cgh)
+			template<iterator_type InputAccessorType, iterator_type OutputAccessorType, typename ExecutionPolicy, typename F, typename T,  size_t Rank>
+			auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F& f)
 			{
-				const auto in_acc = get_access(cgh,
-					iterator_wrapper<T, Dims, iterator_type::one_to_one, celerity::access_mode::read>{ beg },
-					iterator_wrapper<T, Dims, iterator_type::one_to_one, celerity::access_mode::read>{ end });
+				using execution_policy = std::decay_t<ExecutionPolicy>;
 
-				auto out_acc = get_access(cgh,
-					iterator_wrapper<T, Dims, iterator_type::one_to_one, celerity::access_mode::write>{ out },
-					iterator_wrapper<T, Dims, iterator_type::one_to_one, celerity::access_mode::write>{ out });
+				const auto r = *end - *beg;
+				assert(r <= static_cast<int>(out.buffer().size() - *out));
 
-				if constexpr(policy_traits<execution_policy>::is_distributed)
+				return [=](celerity::handler cgh)
 				{
-					cgh.parallel_for<policy_traits<execution_policy>::kernel_name>(celerity::range<1>{r}, [&](auto item)
+					const auto in_acc = get_access(cgh,
+						iterator_wrapper<T, Rank, InputAccessorType, celerity::access_mode::read>{ beg },
+						iterator_wrapper<T, Rank, InputAccessorType, celerity::access_mode::read>{ end });
+
+					auto out_acc = get_access(cgh,
+						iterator_wrapper<T, Rank, OutputAccessorType, celerity::access_mode::write>{ out },
+						iterator_wrapper<T, Rank, OutputAccessorType, celerity::access_mode::write>{ out });
+
+					if constexpr (policy_traits<execution_policy>::is_distributed)
 					{
-						out_acc[item] = f(in_acc[item]);
-					});
-				}
-				else
-				{
-					cgh.run(in_acc[item<1>{0}]);
-				}
-			};
+						cgh.parallel_for<policy_traits<execution_policy>::kernel_name>(celerity::range<Rank>{r}, [&](auto item)
+							{
+								out_acc[item] = f(in_acc[item]);
+							});
+					}
+					else
+					{
+						cgh.run(in_acc[item<1>{0}]);
+					}
+				};
+			}
+		}
+
+		template<typename T, size_t Rank, typename F, typename ExecutionPolicy>
+		auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F& f)
+		{
+			constexpr auto input_accessor_type = get_accessor_type<Rank, F, 0>();
+			constexpr auto output_accessor_type = algorithm::iterator_type::one_to_one;
+
+			return detail::transform<input_accessor_type, output_accessor_type>(p, beg, end, out, f);
 		}
 	}
 

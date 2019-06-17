@@ -143,7 +143,7 @@ void sequence_examples()
 		using namespace algorithm;
 		using namespace tasks;
 
-		auto add_one = tasks::transform(algorithm::dist<class add_one>(q), begin(b), end(b), begin(b_out), [](float x) { return x + 1; });
+		auto add_one = tasks::transform(algorithm::dist<class add_one>(q), begin(b), end(b), begin(b_out), [](slice<1> x) { return 1.0f; });
 
 		zero | fuse(step | step | step) | step | add_one | submit_to(q);
 	}

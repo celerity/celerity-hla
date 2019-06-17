@@ -42,6 +42,7 @@ namespace celerity::algorithm
 	{
 		one_to_one,
 		neighbor,
+		slice,
 	};
 
 	template<typename T, size_t Dims, iterator_type Type, celerity::access_mode Mode>
@@ -66,16 +67,6 @@ namespace celerity::algorithm
 
 namespace celerity
 {
-	template<template <typename, size_t, algorithm::iterator_type, celerity::access_mode> typename It,
-		typename T, size_t Dims, algorithm::iterator_type Type, celerity::access_mode Mode>
-		auto get_access(celerity::handler cgh, It<T, Dims, Type, Mode> beg, It<T, Dims, Type, Mode> end)
-	{
-		assert(&beg.iterator.buffer() == &end.iterator.buffer());
-		assert(*beg.iterator <= *end.iterator);
-
-		return beg.iterator.buffer().get_access<Mode>(cgh, range<1>{ *end.iterator - *beg.iterator });
-	}
-
 	template<typename T>
 	algorithm::iterator<T, 1> begin(celerity::buffer<T, 1> & buffer)
 	{
