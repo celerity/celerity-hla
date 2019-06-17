@@ -15,7 +15,7 @@ namespace celerity::algorithm
 	{
 		namespace detail
 		{
-			template<iterator_type InputAccessorType, iterator_type OutputAccessorType, typename ExecutionPolicy, typename F, typename T,  size_t Rank>
+			template<access_type InputAccessorType, access_type OutputAccessorType, typename ExecutionPolicy, typename F, typename T,  size_t Rank>
 			auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F& f)
 			{
 				using execution_policy = std::decay_t<ExecutionPolicy>;
@@ -25,13 +25,8 @@ namespace celerity::algorithm
 
 				return [=](celerity::handler cgh)
 				{
-					const auto in_acc = get_access(cgh,
-						iterator_wrapper<T, Rank, InputAccessorType, celerity::access_mode::read>{ beg },
-						iterator_wrapper<T, Rank, InputAccessorType, celerity::access_mode::read>{ end });
-
-					auto out_acc = get_access(cgh,
-						iterator_wrapper<T, Rank, OutputAccessorType, celerity::access_mode::write>{ out },
-						iterator_wrapper<T, Rank, OutputAccessorType, celerity::access_mode::write>{ out });
+					const auto in_acc = get_access< celerity::access_mode::read, InputAccessorType>(cgh, beg, end);
+					auto out_acc = get_access<celerity::access_mode::write, OutputAccessorType>(cgh, beg, end);
 
 					if constexpr (policy_traits<execution_policy>::is_distributed)
 					{
@@ -51,8 +46,8 @@ namespace celerity::algorithm
 		template<typename T, size_t Rank, typename F, typename ExecutionPolicy>
 		auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F& f)
 		{
-			constexpr auto input_accessor_type = get_accessor_type<Rank, F, 0>();
-			constexpr auto output_accessor_type = algorithm::iterator_type::one_to_one;
+			constexpr auto input_accessor_type = algorithm::detail::get_accessor_type<Rank, F, 0>();
+			constexpr auto output_accessor_type = access_type::one_to_one;
 
 			return detail::transform<input_accessor_type, output_accessor_type>(p, beg, end, out, f);
 		}

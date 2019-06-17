@@ -37,32 +37,6 @@ namespace celerity::algorithm
 		int pos_ = 0;
 		celerity::buffer<T, 1>& buffer_;
 	};
-
-	enum class iterator_type
-	{
-		one_to_one,
-		neighbor,
-		slice,
-	};
-
-	template<typename T, size_t Dims, iterator_type Type, celerity::access_mode Mode>
-	struct iterator_wrapper
-	{
-		iterator<T, Dims> iterator;
-	};
-
-	template<celerity::access_mode Mode, typename T>
-	auto one_to_one(const iterator<T, 1>& it)
-	{
-		return iterator_wrapper<T, 1, iterator_type::one_to_one, Mode>{ it };
-	}
-
-	template<celerity::access_mode Mode, typename T>
-	auto neighbor(const iterator<T, 1> & it, int, int)
-	{
-		return iterator_wrapper<T, 1, iterator_type::neighbor, Mode>{ it };
-	}
-
 }
 
 namespace celerity

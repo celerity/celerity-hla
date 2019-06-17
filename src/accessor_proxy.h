@@ -3,7 +3,7 @@
 
 #include "celerity.h"
 
-namespace celerity
+namespace celerity::algorithm
 {
 	enum class access_type
 	{
@@ -34,37 +34,22 @@ namespace celerity
 		};
 	
 		template<size_t Rank, typename F, int I>
-		auto get_accessor_type()
+		constexpr auto get_accessor_type()
 		{
-			if constexpr (std::is_same_v<slice<Rank>, function_traits<F>::arg<I>::type>)
+			using arg_type = typename detail::function_traits<F>::arg<I>::type;
+
+			if constexpr (std::is_same_v<slice<Rank>, arg_type>)
 			{
-				return celerity::slice
+				return access_type::slice;
 			}
-		}
-			
-		template<typename F, int...Is>
-		auto dispatch_accessor_types(std::index_sequence<Is...>)
-		{
-			return tuple<
-		}
-	}
-
-	template<size_t Rank, typename F, int I>
-	constexpr auto get_accessor_type()
-	{
-		using arg_type = typename detail::function_traits<F>::arg<I>::type;
-
-		if constexpr (std::is_same_v<slice<Rank>, arg_type>)
-		{
-			return celerity::algorithm::iterator_type::slice;
-		}
-		else if constexpr (std::is_same_v<chunk<Rank>, arg_type>)
-		{
-			return celerity::algorithm::iterator_type::neighbor;
-		}
-		else
-		{
-			return celerity::algorithm::iterator_type::one_to_one;
+			else if constexpr (std::is_same_v<chunk<Rank>, arg_type>)
+			{
+				return access_type::chunk;
+			}
+			else
+			{
+				return access_type::one_to_one;
+			}
 		}
 	}
 
@@ -74,11 +59,11 @@ namespace celerity
 	template<size_t Rank>
 	struct chunk{};
 
-	template<typename T, size_t Rank, typename AccessorType, algorithm::iterator_type Type>
+	template<typename T, size_t Rank, typename AccessorType, access_type Type>
 	class accessor_proxy;
 
 	template<typename T, size_t Rank, typename AccessorType>
-	class accessor_proxy<T, Rank, AccessorType, algorithm::iterator_type::one_to_one>
+	class accessor_proxy<T, Rank, AccessorType, access_type::one_to_one>
 	{
 	public:
 		explicit accessor_proxy(AccessorType acc) : accessor_(acc) {}
@@ -91,7 +76,7 @@ namespace celerity
 	};
 
 	template<typename T, size_t Rank, typename AccessorType>
-	class accessor_proxy<T, Rank, AccessorType, algorithm::iterator_type::slice>
+	class accessor_proxy<T, Rank, AccessorType, access_type::slice>
 	{
 	public:
 		explicit accessor_proxy(AccessorType acc) : accessor_(acc) {}
@@ -102,14 +87,25 @@ namespace celerity
 		AccessorType accessor_;
 	};
 
-	template<template <typename, size_t, algorithm::iterator_type, celerity::access_mode> typename It,
-		typename T, size_t Rank, algorithm::iterator_type Type, celerity::access_mode Mode>
-		auto get_access(celerity::handler cgh, It<T, Rank, Type, Mode> beg, It<T, Rank, Type, Mode> end)
+	template<typename T, size_t Rank, typename AccessorType>
+	class accessor_proxy<T, Rank, AccessorType, access_type::chunk>
 	{
-		assert(&beg.iterator.buffer() == &end.iterator.buffer());
-		assert(*beg.iterator <= *end.iterator);
+	public:
+		explicit accessor_proxy(AccessorType acc) : accessor_(acc) {}
 
-		auto acc = beg.iterator.buffer().get_access<Mode>(cgh, range<1>{ *end.iterator - *beg.iterator });
+		chunk<Rank> operator[](const item<Rank>) const { return {}; }
+
+	private:
+		AccessorType accessor_;
+	};
+
+	template<celerity::access_mode Mode, access_type Type, typename T, size_t Rank>
+		auto get_access(celerity::handler cgh, iterator<T, Rank> beg, iterator<T, Rank> end)
+	{
+		assert(&beg.buffer() == &end.buffer());
+		assert(*beg <= *end);
+
+		auto acc = beg.buffer().get_access<Mode>(cgh, range<1>{ *end - *beg });
 
 		return accessor_proxy<T, Rank, decltype(acc), Type>{ acc };
 	}
