@@ -17,7 +17,7 @@ template<typename T, typename U>
 void sequence_static_assertions(T zero, U hello_world)
 {
 	using namespace celerity;
-	using namespace sequencing;
+	using namespace algorithm;
 
 	using zero_t = T;
 	using hello_world_t = U;
@@ -83,7 +83,7 @@ void sequence_examples()
 	// example 1: generic action sequence
 
 	using namespace celerity;
-	using namespace sequencing;
+	using namespace algorithm;
 	using namespace actions;
 
 	int i = 0;
@@ -141,15 +141,14 @@ void sequence_examples()
 
 	{
 		using namespace algorithm;
-		using namespace tasks;
 
-		auto add_one = tasks::transform(algorithm::dist<class add_one>(q), begin(b), end(b), begin(b_out), [](slice<1> x) { return 1.0f; });
+		auto add_one = algorithm::actions::transform(algorithm::distr<class add_one>(q), begin(b), end(b), begin(b_out), [](slice<1> x) { return 1.0f; });
 
 		zero | fuse(step | step | step) | step | add_one | submit_to(q);
 	}
 
 
-	algorithm::transform(algorithm::dist<class add_five>(q), begin(b), end(b), begin(b_out), [](float x) { return x + 5; });
+	algorithm::transform(algorithm::distr<class add_five>(q), begin(b), end(b), begin(b_out), [](float x) { return x + 5; });
 	
 	// ASSERTIONS
 
@@ -197,8 +196,6 @@ void iterator_static_assertions()
 
 	using namespace celerity;
 	using namespace algorithm;
-	using namespace sequencing;
-	using namespace tasks;
 
 	const auto src_view = fixed::make_view<1>(celerity::buffer<float, 1>{ {1}});
 	const auto dst_view = fixed::make_view<2>(celerity::buffer<float, 1>{ {1}});

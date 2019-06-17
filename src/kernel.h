@@ -4,7 +4,7 @@
 #include "celerity.h"
 #include "static_iterator.h"
 
-namespace celerity::sequencing
+namespace celerity::algorithm
 {
 	
 template<typename F, typename OutputView, typename InputView>

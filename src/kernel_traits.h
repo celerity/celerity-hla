@@ -3,7 +3,7 @@
 
 #include <type_traits>
 
-namespace celerity::traits
+namespace celerity::algorithm
 {
 	template<typename A, typename B>
 	struct is_combinable

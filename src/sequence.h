@@ -10,7 +10,7 @@
 
 #include "sequence_traits.h"
 
-namespace celerity::sequencing
+namespace celerity::algorithm
 {
 	template<typename... Actions>
 	class sequence
@@ -67,27 +67,20 @@ namespace celerity::sequencing
 			((invoke(std::get<Is>(actions_), std::forward<Args>(args)...)), ...);
 		}
 	};
-}
 
-namespace celerity::traits
-{
 	template<typename...Actions>
-	struct sequence_traits<sequencing::sequence<Actions...>>
+	struct sequence_traits<algorithm::sequence<Actions...>>
 	{
 		using is_sequence_type = std::integral_constant<bool, true>;
 	};
-}
 
-namespace celerity::sequencing
-{
 	template<template <typename...> typename T, template <typename...> typename U,
 		typename...Ts, typename...Us,
-		typename = std::enable_if_t<traits::is_sequence_v<T<Ts...>> && traits::is_sequence_v<U<Us...>>>>
+		typename = std::enable_if_t<is_sequence_v<T<Ts...>> && is_sequence_v<U<Us...>>>>
 		auto operator | (T<Ts...> && lhs, T<Us...> && rhs)
 	{
 		return sequence<Ts..., Us...>{ lhs, rhs };
 	}
-
 }
 
 #endif 

@@ -3,7 +3,7 @@
 
 #include "celerity.h"
 
-namespace celerity
+namespace celerity::algorithm
 {
 	
 template<class KernelName>
@@ -33,6 +33,11 @@ struct policy_traits<distributed_execution_policy<KernelName>>
 	static constexpr bool is_distributed = true;
 	using kernel_name = KernelName;
 };
+
+template<typename KernelName>
+auto distr(celerity::queue q) { return distributed_execution_policy<KernelName>{ q }; }
+
+inline auto master(celerity::queue q) { return master_execution_policy{ q }; }
 
 }
 

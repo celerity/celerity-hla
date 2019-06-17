@@ -3,7 +3,7 @@
 
 #include "celerity.h"
 
-namespace celerity::traits
+namespace celerity::algorithm
 {
 	
 template<typename T>

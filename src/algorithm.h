@@ -9,9 +9,7 @@
 
 namespace celerity::algorithm
 {
-
-
-	namespace tasks
+	namespace actions
 	{
 		namespace detail
 		{
@@ -43,7 +41,7 @@ namespace celerity::algorithm
 			}
 		}
 
-		template<typename T, size_t Rank, typename F, typename ExecutionPolicy>
+		template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
 		auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F& f)
 		{
 			constexpr auto input_accessor_type = algorithm::detail::get_accessor_type<Rank, F, 0>();
@@ -53,22 +51,10 @@ namespace celerity::algorithm
 		}
 	}
 
-	template<typename KernelName>
-	auto dist(celerity::queue q) { return distributed_execution_policy<KernelName>{ q }; }
-
-	inline auto master(celerity::queue q) { return celerity::master_execution_policy{ q }; }
-
-	template<typename T, size_t Dims, typename F, typename KernelName>
-	void transform(distributed_execution_policy<KernelName> p, iterator<T, Dims> beg, iterator<T, Dims> end, iterator<T, Dims> out, const F& f)
+	template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
+	void transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F& f)
 	{
-		sequencing::task(tasks::transform(p, beg, end, out, f)) | sequencing::submit_to(p.q);
-	}
-
-	template<typename T, size_t Dims, typename F>
-	void transform(master_execution_policy p, iterator<T, Dims> beg, iterator<T, Dims> end, iterator<T, Dims> out, const F& f)
-	{
-		// with master access
-		sequencing::task(tasks::transform(p, beg, end, out, f)) | sequencing::submit_to(p.q);
+		task(actions::transform(p, beg, end, out, f)) | submit_to(p.q);
 	}
 }
 

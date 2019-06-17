@@ -6,7 +6,7 @@
 
 #include <mpi.h>
 
-namespace celerity::actions
+namespace celerity::algorithm::actions
 {
 	inline void global_barrier()
 	{
@@ -43,8 +43,7 @@ namespace celerity::actions
 	template<template <typename...> typename Sequence, typename...Actions>
 	decltype(auto) operator | (Sequence<Actions...>&& sequence, const dispatcher&)
 	{
-		//TODO return std::invoke(sequence);
-		return sequence();
+		return std::invoke(sequence);
 	}
 }
 

@@ -4,7 +4,7 @@
 #include "celerity.h"
 #include "sequence.h"
 
-namespace celerity::sequencing
+namespace celerity::algorithm
 {
 	template<typename...Actions>
 	class kernel_sequence
@@ -23,7 +23,7 @@ namespace celerity::sequencing
 		auto sequence() { return sequence_; }
 
 	private:
-		celerity::sequencing::sequence<Actions...> sequence_;
+		celerity::algorithm::sequence<Actions...> sequence_;
 	};
 
 	template<typename...Ts, typename...Us>
@@ -32,12 +32,9 @@ namespace celerity::sequencing
 		auto seq = lhs.sequence() | rhs.sequence();
 		return kernel_sequence<Ts..., Us...>{ seq };
 	}
-}
 
-namespace celerity::traits
-{
 	template<typename...Actions>
-	struct sequence_traits<sequencing::kernel_sequence<Actions...>>
+	struct sequence_traits<algorithm::kernel_sequence<Actions...>>
 	{
 		using is_sequence_type = std::integral_constant<bool, true>;
 	};

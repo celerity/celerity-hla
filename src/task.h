@@ -4,7 +4,7 @@
 #include "celerity.h"
 #include "kernel_sequence.h"
 
-namespace celerity::sequencing
+namespace celerity::algorithm
 {
 
 template<typename...Actions>
@@ -44,7 +44,7 @@ auto fuse(kernel_sequence<Actions...>&& seq)
 	return task_t<Actions...> { std::move(seq) };
 }
 
-template<typename T, typename = std::enable_if_t<traits::is_kernel_v<T>>>
+template<typename T, typename = std::enable_if_t<is_kernel_v<T>>>
 auto task(const T& invocable)
 {
 	return task_t<T>{ invocable };
