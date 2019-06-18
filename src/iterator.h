@@ -50,7 +50,7 @@ namespace celerity
 	template<typename T>
 	algorithm::iterator<T, 1> end(celerity::buffer<T, 1> & buffer)
 	{
-		return algorithm::iterator<T, 1>(buffer.size(), buffer);
+		return algorithm::iterator<T, 1>(static_cast<int>(buffer.size()), buffer);
 	}
 }
 

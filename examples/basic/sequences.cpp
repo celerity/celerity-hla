@@ -136,19 +136,27 @@ void sequence_examples()
 
 	// 
 
-	buffer<float, 1> b{ {5} };
-	buffer<float, 1> b_out{ {5 } };
+	buffer<float, 1> b{ { 5 } };
+	buffer<float, 1> b_out{ { 5 } };
 
 	{
 		using namespace algorithm;
 
-		auto add_one = algorithm::actions::transform(algorithm::distr<class add_one>(q), begin(b), end(b), begin(b_out), [](slice<1> x) { return 1.0f; });
+		auto add_one = algorithm::actions::transform(algorithm::distr<class add_one>(q), begin(b), end(b), begin(b_out), [](float x) { return x + 1.0f; });
 
 		zero | fuse(step | step | step) | step | add_one | submit_to(q);
 	}
 
+	algorithm::transform(algorithm::distr<class add_five>(q), begin(b), end(b), begin(b_out),
+		[](slice<float, 1> x)
+		{
+			float sum = *x;
 
-	algorithm::transform(algorithm::distr<class add_five>(q), begin(b), end(b), begin(b_out), [](float x) { return x + 5; });
+			for (int i = 0; i < 5; ++i)
+				sum += x[{i}];
+
+			return sum;
+		}, 0);
 	
 	// ASSERTIONS
 

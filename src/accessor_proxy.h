@@ -14,6 +14,53 @@ namespace celerity::algorithm
 
 	namespace detail
 	{
+		template<typename T, size_t Rank>
+		using getter_t = std::function<T(celerity::item<Rank>)>;
+	}
+
+	template<typename T>
+	struct is_slice : public std::false_type {};
+
+	template<typename T>
+	inline constexpr auto is_slice_v = is_slice<T>::value;
+
+	template<typename T, size_t Rank>
+	class slice
+	{
+	public:
+		slice(celerity::item<Rank> item, const detail::getter_t<T, Rank>& f)
+			: item_(item), getter_(f)
+		{}
+
+		const celerity::item<Rank>& item() const { return item_; }
+		T operator*() const
+		{
+			return getter_(item_);
+		}
+		T operator[](celerity::item<Rank> pos) const { return getter_(pos); }
+
+	private:
+		celerity::item<Rank> item_;
+		const detail::getter_t<T, Rank>& getter_;
+	};
+	
+	template<typename T, size_t Rank>
+	struct is_slice<slice<T, Rank>> : public std::true_type {};
+	
+	template<typename T>
+	struct is_chunk : public std::false_type {};
+
+	template<typename T>
+	inline constexpr auto is_chunk_v = is_slice<T>::value;
+
+	template<typename T, size_t Rank>
+	struct chunk {};
+
+	template<typename T, size_t Rank>
+	struct is_chunk<chunk<T, Rank>> : public std::true_type {};
+
+	namespace detail
+	{
 		template <typename T>
 		struct function_traits
 			: public function_traits<decltype(&T::operator())>
@@ -33,16 +80,16 @@ namespace celerity::algorithm
 			};
 		};
 	
-		template<size_t Rank, typename F, int I>
-		constexpr auto get_accessor_type()
+		template<typename F, int I>
+		constexpr access_type get_accessor_type()
 		{
 			using arg_type = typename detail::function_traits<F>::arg<I>::type;
 
-			if constexpr (std::is_same_v<slice<Rank>, arg_type>)
+			if constexpr (is_slice_v<arg_type>)
 			{
 				return access_type::slice;
 			}
-			else if constexpr (std::is_same_v<chunk<Rank>, arg_type>)
+			else if constexpr (is_chunk_v<arg_type>)
 			{
 				return access_type::chunk;
 			}
@@ -52,12 +99,6 @@ namespace celerity::algorithm
 			}
 		}
 	}
-
-	template<size_t Rank>
-	struct slice{};
-
-	template<size_t Rank>
-	struct chunk{};
 
 	template<typename T, size_t Rank, typename AccessorType, access_type Type>
 	class accessor_proxy;
@@ -79,11 +120,16 @@ namespace celerity::algorithm
 	class accessor_proxy<T, Rank, AccessorType, access_type::slice>
 	{
 	public:
-		explicit accessor_proxy(AccessorType acc) : accessor_(acc) {}
+		explicit accessor_proxy(AccessorType acc) 
+			: accessor_(acc), getter_([this](item<Rank> i) { return accessor_[i]; }) {}
 
-		slice<Rank> operator[](const item<Rank>) const { return {}; }
+		slice<T, Rank> operator[](const item<Rank> it) const
+		{
+			return slice<T, Rank>{ it, getter_ };
+		}
 
 	private:
+		detail::getter_t<T, Rank> getter_;
 		AccessorType accessor_;
 	};
 
@@ -93,14 +139,14 @@ namespace celerity::algorithm
 	public:
 		explicit accessor_proxy(AccessorType acc) : accessor_(acc) {}
 
-		chunk<Rank> operator[](const item<Rank>) const { return {}; }
+		chunk<T, Rank> operator[](const item<Rank>) const { return {}; }
 
 	private:
 		AccessorType accessor_;
 	};
 
 	template<celerity::access_mode Mode, access_type Type, typename T, size_t Rank>
-		auto get_access(celerity::handler cgh, iterator<T, Rank> beg, iterator<T, Rank> end)
+	auto get_access(celerity::handler cgh, iterator<T, Rank> beg, iterator<T, Rank> end)
 	{
 		assert(&beg.buffer() == &end.buffer());
 		assert(*beg <= *end);
