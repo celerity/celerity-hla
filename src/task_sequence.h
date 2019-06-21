@@ -6,27 +6,27 @@
 
 namespace celerity::algorithm
 {
-	auto submit_to(celerity::queue q)
+	auto submit_to(celerity::distr_queue q)
 	{
 		return q;
 	}
 
 	template<template <typename...> typename Sequence, typename...Actions>
-	auto operator | (Sequence<Actions...>&& lhs, celerity::queue& queue)
+	auto operator | (Sequence<Actions...>&& lhs, celerity::distr_queue& queue)
 	{
 		lhs(queue);
 		return lhs;
 	}
 
 	template<template <typename...> typename Sequence, typename...Actions>
-	auto operator | (Sequence<Actions...>&& lhs, celerity::queue&& queue)
+	auto operator | (Sequence<Actions...>&& lhs, celerity::distr_queue&& queue)
 	{
 		std::invoke(lhs, queue);
 		return lhs;
 	}
 
 	template<typename T, typename...Actions>
-	auto operator | (task_t<T>&& lhs, celerity::queue&& queue)
+	auto operator | (task_t<T>&& lhs, celerity::distr_queue&& queue)
 	{
 		std::invoke(lhs, queue);
 		return lhs;

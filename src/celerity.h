@@ -7,6 +7,8 @@
 
 #include <iostream>
 #include <iterator>
+#include <vector>
+#include <array>
 
 namespace cl::sycl
 {
@@ -61,7 +63,7 @@ namespace celerity
 		}
 	};
 
-	class queue
+	class distr_queue
 	{
 	public:
 		template<typename F>

@@ -128,7 +128,7 @@ void sequence_examples()
 		cout << cgh.invocations << ": step" << endl;
 	};
 
-	queue q{};
+	distr_queue q{};
 
 	hello_world() | zero | fuse(step | step | step) | step | submit_to(q);
 
@@ -218,7 +218,7 @@ void iterator_static_assertions()
 
 	static_assert(is_invocable_v<decltype(kernel), handler>, "kernel invocable with handler");
 	static_assert(is_same_v<decltype(task(kernel)), task_t<decltype(kernel)>>, "is task");
-	static_assert(is_invocable_v<decltype(task(kernel)), queue&>, "task(kernel) invocable with queue");
+	static_assert(is_invocable_v<decltype(task(kernel)), distr_queue&>, "task(kernel) invocable with queue");
 
 	/*
 	{

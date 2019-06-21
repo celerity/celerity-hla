@@ -14,7 +14,7 @@ public:
 	explicit task_t(kernel_sequence<Actions...>&& s)
 		: sequence_(std::move(s)) { }
 
-	void operator()(queue& q) const
+	void operator()(distr_queue& q) const
 	{
 		std::invoke(sequence_, q);
 	}
@@ -29,7 +29,7 @@ class task_t<F>
 public:
 	task_t(F f) : sequence_(std::move(f)) { }
 
-	void operator()(celerity::queue& q) const
+	void operator()(celerity::distr_queue& q) const
 	{
 		std::invoke(sequence_, q);
 	}

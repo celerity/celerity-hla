@@ -35,7 +35,7 @@ namespace celerity::algorithm::actions
 
 	auto incr(int& i) { return [&i]() { ++i; }; }
 
-	auto with_queue() { return [](celerity::queue queue) { std::cout << "with queue" << std::endl; }; }
+	auto with_queue() { return [](celerity::distr_queue distr_queue) { std::cout << "with queue" << std::endl; }; }
 
 	struct dispatcher { };
 	dispatcher dispatch() { return {}; }
