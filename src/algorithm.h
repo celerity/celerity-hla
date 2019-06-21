@@ -18,6 +18,8 @@ namespace celerity::algorithm
 			{
 				using execution_policy = std::decay_t<ExecutionPolicy>;
 
+				static_assert(Rank == 1, "Only 1-dimenionsal buffers for now");
+
 				const auto r = *end - *beg;
 				assert(r <= static_cast<int>(out.buffer().size() - *out));
 
@@ -35,7 +37,15 @@ namespace celerity::algorithm
 					}
 					else
 					{
-						cgh.run(in_acc[item<1>{0}]);
+						cgh.run([&]()
+							{
+								std::for_each(beg, end,
+									[&](auto i)
+									{
+										const item<Rank> item{i};
+										out_acc[item] = f(in_acc[item]);
+									});
+							});
 					}
 				};
 			}

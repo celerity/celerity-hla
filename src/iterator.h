@@ -25,6 +25,11 @@ namespace celerity::algorithm
 			return pos_ == rhs.pos_;
 		}
 
+		bool operator !=(const iterator& rhs)
+		{
+			return pos_ != rhs.pos_;
+		}
+
 		iterator& operator++()
 		{
 			pos_++; return *this;
