@@ -43,7 +43,7 @@ struct static_view
 
 	auto& buffer() { return buffer_; }
 
-	[[nodiscard]] range<rank> range() const
+	[[nodiscard]] cl::sycl::range<rank> range() const
 	{
 		return dispatch_range(std::make_index_sequence<rank>{});
 	}
@@ -52,7 +52,7 @@ private:
 	celerity::buffer<value_type, rank> buffer_;
 
 	template<size_t...Is>
-	celerity::range<rank> dispatch_range(std::index_sequence<Is...>) const
+	cl::sycl::range<rank> dispatch_range(std::index_sequence<Is...>) const
 	{
 		using begin_index_type = typename begin_iterator_type::index_type;
 		using end_index_type = typename end_iterator_type::index_type;

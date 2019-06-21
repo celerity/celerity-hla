@@ -15,7 +15,7 @@ namespace celerity::algorithm
 	namespace detail
 	{
 		template<typename T, size_t Rank>
-		using getter_t = std::function<T(celerity::item<Rank>)>;
+		using getter_t = std::function<T(cl::sycl::item<Rank>)>;
 	}
 
 	template<typename T>
@@ -28,19 +28,19 @@ namespace celerity::algorithm
 	class slice
 	{
 	public:
-		slice(celerity::item<Rank> item, const detail::getter_t<T, Rank>& f)
+		slice(cl::sycl::item<Rank> item, const detail::getter_t<T, Rank>& f)
 			: item_(item), getter_(f)
 		{}
 
-		const celerity::item<Rank>& item() const { return item_; }
+		const cl::sycl::item<Rank>& item() const { return item_; }
 		T operator*() const
 		{
 			return getter_(item_);
 		}
-		T operator[](celerity::item<Rank> pos) const { return getter_(pos); }
+		T operator[](cl::sycl::item<Rank> pos) const { return getter_(pos); }
 
 	private:
-		celerity::item<Rank> item_;
+		cl::sycl::item<Rank> item_;
 		const detail::getter_t<T, Rank>& getter_;
 	};
 	
@@ -109,8 +109,8 @@ namespace celerity::algorithm
 	public:
 		explicit accessor_proxy(AccessorType acc) : accessor_(acc) {}
 
-		T operator[](const item<Rank> item) const { return accessor_[item]; }
-		T& operator[](const item<Rank> item) { return accessor_[item]; }
+		T operator[](const cl::sycl::item<Rank> item) const { return accessor_[item]; }
+		T& operator[](const cl::sycl::item<Rank> item) { return accessor_[item]; }
 
 	private:
 		AccessorType accessor_;
@@ -121,9 +121,9 @@ namespace celerity::algorithm
 	{
 	public:
 		explicit accessor_proxy(AccessorType acc) 
-			: accessor_(acc), getter_([this](item<Rank> i) { return accessor_[i]; }) {}
+			: accessor_(acc), getter_([this](cl::sycl::item<Rank> i) { return accessor_[i]; }) {}
 
-		slice<T, Rank> operator[](const item<Rank> it) const
+		slice<T, Rank> operator[](const cl::sycl::item<Rank> it) const
 		{
 			return slice<T, Rank>{ it, getter_ };
 		}
@@ -139,7 +139,7 @@ namespace celerity::algorithm
 	public:
 		explicit accessor_proxy(AccessorType acc) : accessor_(acc) {}
 
-		chunk<T, Rank> operator[](const item<Rank>) const { return {}; }
+		chunk<T, Rank> operator[](const cl::sycl::item<Rank>) const { return {}; }
 
 	private:
 		AccessorType accessor_;
@@ -151,7 +151,7 @@ namespace celerity::algorithm
 		assert(&beg.buffer() == &end.buffer());
 		assert(*beg <= *end);
 
-		auto acc = beg.buffer().get_access<Mode>(cgh, range<1>{ *end - *beg });
+		auto acc = beg.buffer().get_access<Mode>(cgh, cl::sycl::range<1>{ *end - *beg });
 
 		return accessor_proxy<T, Rank, decltype(acc), Type>{ acc };
 	}

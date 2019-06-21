@@ -30,7 +30,7 @@ namespace celerity::algorithm
 
 					if constexpr (policy_traits<execution_policy>::is_distributed)
 					{
-						cgh.parallel_for<policy_traits<execution_policy>::kernel_name>(celerity::range<Rank>{r}, [&](auto item)
+						cgh.parallel_for<policy_traits<execution_policy>::kernel_name>(cl::sycl::range<Rank>{r}, [&](auto item)
 							{
 								out_acc[item] = f(in_acc[item]);
 							});
@@ -42,7 +42,7 @@ namespace celerity::algorithm
 								std::for_each(beg, end,
 									[&](auto i)
 									{
-										const item<Rank> item{i};
+										const cl::sycl::item<Rank> item{i};
 										out_acc[item] = f(in_acc[item]);
 									});
 							});
@@ -67,7 +67,7 @@ namespace celerity::algorithm
 
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
 			std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::chunk, int> = 0>
-			auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F & f, range<Rank> chunk_size)
+			auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F & f, cl::sycl::range<Rank> chunk_size)
 		{
 			return detail::transform<access_type::chunk, access_type::one_to_one>(p, beg, end, out, f);
 		}

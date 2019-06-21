@@ -157,6 +157,12 @@ void sequence_examples()
 
 			return sum;
 		}, 0);
+
+	algorithm::transform(algorithm::master(q), begin(b), end(b), begin(b_out),
+		[](float x)
+		{
+			return 2 * x;
+		});
 	
 	// ASSERTIONS
 
@@ -205,8 +211,8 @@ void iterator_static_assertions()
 	using namespace celerity;
 	using namespace algorithm;
 
-	const auto src_view = fixed::make_view<1>(celerity::buffer<float, 1>{ {1}});
-	const auto dst_view = fixed::make_view<2>(celerity::buffer<float, 1>{ {1}});
+	const auto src_view = fixed::make_view<1>(celerity::buffer<float, 1>{{1}});
+	const auto dst_view = fixed::make_view<2>(celerity::buffer<float, 1>{{1}});
 
 	auto kernel = transform(src_view, dst_view, [](float x) { return 2 * x; });
 

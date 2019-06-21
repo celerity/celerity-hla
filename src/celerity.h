@@ -8,38 +8,44 @@
 #include <iostream>
 #include <iterator>
 
-namespace celerity
+namespace cl::sycl
 {
 	template<size_t Rank>
 	using range = std::array<int, Rank>;
 
-	template<size_t Rank, size_t...Is>
-	int dispatch_count(range<Rank> r, std::index_sequence<Is...>)
-	{
-		return (std::get<Is>(r) * ... * 1);
-	}
-
-	template<size_t Rank>
-	int count(range<Rank> r)
-	{
-		return dispatch_count(r, std::make_index_sequence<Rank>{});
-	}
-
 	template<size_t Rank>
 	using item = std::array<int, Rank>;
+}
+
+namespace celerity
+{
+	namespace detail
+	{
+		template<size_t Rank, size_t...Is>
+		int dispatch_count(cl::sycl::range<Rank> r, std::index_sequence<Is...>)
+		{
+			return (std::get<Is>(r) * ... * 1);
+		}
+	}
+
+	template<size_t Rank>
+	int count(cl::sycl::range<Rank> r)
+	{
+		return detail::dispatch_count(r, std::make_index_sequence<Rank>{});
+	}
 
 	struct handler
 	{
 		int invocations;
 
 		template<typename KernelName, size_t Rank, typename F>
-		void parallel_for(range<Rank> r, F f)
+		void parallel_for(cl::sycl::range<Rank> r, F f)
 		{
 			if constexpr (Rank == 1)
 			{
 				for (auto i = 0; i < count(r); ++i)
 				{
-					f(item<Rank>{i});
+					f(cl::sycl::item<Rank>{i});
 				}
 			}
 			else
@@ -89,7 +95,7 @@ namespace celerity
 	template<access_mode Mode, typename T, size_t Rank>
 	struct accessor
 	{
-		T& operator[](item<Rank> idx)
+		T& operator[](cl::sycl::item<Rank> idx)
 		{
 			std::cout << typeid(T).name() << "& ";
 			print_accessor_type();
@@ -101,7 +107,7 @@ namespace celerity
 			return x;
 		}
 
-		T operator[](item<Rank> idx) const
+		T operator[](cl::sycl::item<Rank> idx) const
 		{
 			std::cout << typeid(T).name() << "  ";
 			print_accessor_type();
@@ -122,13 +128,13 @@ namespace celerity
 	class buffer
 	{
 	public:
-		explicit buffer(range<Rank> size)
+		explicit buffer(cl::sycl::range<Rank> size)
 			: buf_(count(size))
 		{
 		}
 
 		template<access_mode mode>
-		auto get_access(handler cgh, range< Rank> range) { return accessor<mode, T, Rank>{}; }
+		auto get_access(handler cgh, cl::sycl::range<Rank> range) { return accessor<mode, T, Rank>{}; }
 
 		[[nodiscard]]
 		size_t size() const { return buf_.size(); }
