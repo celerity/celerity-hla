@@ -10,4 +10,5 @@ find_package(ComputeCpp REQUIRED)
 find_package(Celerity REQUIRED)
 
 add_subdirectory(examples/basic)
+add_subdirectory(examples/simple)
 #add_subdirectory(examples/wave_sim)
