@@ -50,6 +50,46 @@ namespace celerity::algorithm
 				};
 			}
 
+			template<access_type FirstInputAccessorType, access_type SecondInputAccessorType, access_type OutputAccessorType, typename ExecutionPolicy, typename F, typename T, size_t Rank>
+			auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> beg2, iterator<T, Rank> out, const F& f)
+			{
+				using execution_policy = std::decay_t<ExecutionPolicy>;
+
+				static_assert(Rank == 1, "Only 1-dimenionsal buffers for now");
+
+				const auto r = *end - *beg;
+				assert(r <= static_cast<int>(beg2.buffer().size() - *beg2));
+				assert(r <= static_cast<int>(out.buffer().size() - *out));
+
+				return [=](celerity::handler cgh)
+				{
+					const auto first_in_acc = get_access< celerity::access_mode::read, FirstInputAccessorType>(cgh, beg, end);
+					const auto second_in_acc = get_access< celerity::access_mode::read, SecondInputAccessorType>(cgh, beg, end);
+
+					auto out_acc = get_access<celerity::access_mode::write, OutputAccessorType>(cgh, beg, end);
+
+					if constexpr (policy_traits<execution_policy>::is_distributed)
+					{
+						cgh.parallel_for<policy_traits<execution_policy>::kernel_name>(cl::sycl::range<Rank>{r}, [&](auto item)
+							{
+								out_acc[item] = f(first_in_acc[item], second_in_acc[item]);
+							});
+					}
+					else
+					{
+						cgh.run([&]()
+							{
+								std::for_each(beg, end,
+									[&](auto i)
+									{
+										const cl::sycl::item<Rank> item{ i };
+										out_acc[item] = f(first_in_acc[item], second_in_acc[item]);
+									});
+							});
+					}
+				};
+			}
+
 			template<typename ExecutionPolicy, typename F, typename T, size_t Rank>
 			auto fill(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, const F& f)
 			{
@@ -88,7 +128,7 @@ namespace celerity::algorithm
 
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F, 
 			std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::slice, int> = 0>
-		auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F& f, size_t slice_dim)
+		auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F & f, size_t slice_dim)
 		{
 			return detail::transform<access_type::slice, access_type::one_to_one>(p, beg, end, out, f);
 		}
@@ -102,10 +142,20 @@ namespace celerity::algorithm
 
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
 			std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::chunk, int> = 0>
-		auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F & f, cl::sycl::range<Rank> chunk_size)
+			auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F & f, cl::sycl::range<Rank> chunk_size)
 		{
 			return detail::transform<access_type::chunk, access_type::one_to_one>(p, beg, end, out, f);
 		}
+
+		template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
+			std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::one_to_one &&
+							 algorithm::detail::get_accessor_type<F, 1>() == access_type::one_to_one, int> = 0>
+		auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> beg2, iterator<T, Rank> out, const F& f)
+		{
+			return detail::transform<access_type::one_to_one, access_type::one_to_one, access_type::one_to_one>(p, beg, end, beg2, out, f);
+		}
+
+
 	
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
 		auto fill(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, const F & f)
@@ -119,6 +169,12 @@ namespace celerity::algorithm
 	{
 		task(actions::transform(p, beg, end, out, f, args...)) | submit_to(p.q);
 	}
+
+	/*template<typename ExecutionPolicy, typename T, size_t Rank, typename F, typename...Args>
+	void transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> beg2, iterator<T, Rank> out, const F& f, Args...args)
+	{
+		task(actions::transform(p, beg, end, beg2, out, f, args...)) | submit_to(p.q);
+	}*/
 
 	template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
 	void fill(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, const F& f)

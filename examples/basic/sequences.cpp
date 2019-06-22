@@ -137,6 +137,7 @@ void sequence_examples()
 	// 
 
 	buffer<float, 1> b{ { 5 } };
+	buffer<float, 1> c{ { 5 } };
 	buffer<float, 1> b_out{ { 5 } };
 
 	{
@@ -147,7 +148,7 @@ void sequence_examples()
 		zero | fuse(step | step | step) | step | add_one | submit_to(q);
 	}
 
-	algorithm::transform(algorithm::distr<class add_five>(q), begin(b), end(b), begin(b_out),
+	algorithm::transform(algorithm::distr<class sum>(q), begin(b), end(b), begin(b_out),
 		[](slice<float, 1> x)
 		{
 			float sum = *x;
@@ -163,7 +164,25 @@ void sequence_examples()
 		{
 			return 2 * x;
 		});
-	
+
+	algorithm::actions::transform(algorithm::distr<class product>(q), begin(b), end(b), begin(c), begin(b_out),
+		[](float x, float y)
+		{
+			return x * y;
+		});
+
+	static_assert(!algorithm::detail::has_call_operator_v<int>, "no call operator");
+	static_assert(algorithm::detail::has_call_operator_v<decltype(zero)> , "no call operator");
+	static_assert(algorithm::detail::has_call_operator_v<decltype(hello_world())>, "no call operator");
+
+
+	/*algorithm::transform(algorithm::master(q), begin(b), end(b), begin(c), begin(b_out),
+		[](float x, float y)
+		{
+			return x * y;
+		});*/
+
+
 	// ASSERTIONS
 
 	sequence_static_assertions(zero, hello_world());

@@ -10,6 +10,7 @@ namespace celerity::algorithm
 		one_to_one,
 		slice,
 		chunk,
+		invalid,
 	};
 
 	namespace detail
@@ -61,6 +62,15 @@ namespace celerity::algorithm
 
 	namespace detail
 	{
+		template<typename T, typename = std::void_t<>>
+		struct has_call_operator : std::false_type {};
+
+		template<typename T>
+		struct has_call_operator<T, std::void_t<decltype(&T::operator())>> : std::true_type {};
+
+		template<class T>
+		constexpr inline bool has_call_operator_v = has_call_operator<T>::value;
+
 		template <typename T>
 		struct function_traits
 			: public function_traits<decltype(&T::operator())>
@@ -81,7 +91,7 @@ namespace celerity::algorithm
 		};
 	
 		template<typename F, int I>
-		constexpr access_type get_accessor_type()
+		constexpr std::enable_if_t<has_call_operator_v<F>, access_type>  get_accessor_type()
 		{
 			using arg_type = typename detail::function_traits<F>::arg<I>::type;
 
@@ -97,6 +107,12 @@ namespace celerity::algorithm
 			{
 				return access_type::one_to_one;
 			}
+		}
+
+		template<typename F, int>
+		constexpr std::enable_if_t<!has_call_operator_v<F>, access_type> get_accessor_type()
+		{
+			return access_type::invalid;
 		}
 	}
 
