@@ -26,7 +26,7 @@ namespace celerity::algorithm
 				return [=](celerity::handler cgh)
 				{
 					const auto in_acc = get_access< celerity::access_mode::read, InputAccessorType>(cgh, beg, end);
-					auto out_acc = get_access<celerity::access_mode::write, OutputAccessorType>(cgh, beg, end);
+					auto out_acc = get_access<celerity::access_mode::write, OutputAccessorType>(cgh, out, out);
 
 					if constexpr (policy_traits<execution_policy>::is_distributed)
 					{
@@ -64,9 +64,9 @@ namespace celerity::algorithm
 				return [=](celerity::handler cgh)
 				{
 					const auto first_in_acc = get_access< celerity::access_mode::read, FirstInputAccessorType>(cgh, beg, end);
-					const auto second_in_acc = get_access< celerity::access_mode::read, SecondInputAccessorType>(cgh, beg, end);
+					const auto second_in_acc = get_access< celerity::access_mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
 
-					auto out_acc = get_access<celerity::access_mode::write, OutputAccessorType>(cgh, beg, end);
+					auto out_acc = get_access<celerity::access_mode::write, OutputAccessorType>(cgh, out, out);
 
 					if constexpr (policy_traits<execution_policy>::is_distributed)
 					{
@@ -141,7 +141,6 @@ namespace celerity::algorithm
 
 					cgh.run([&]()
 					{
-						
 						std::for_each(beg, end,
 							[&](auto i)
 							{

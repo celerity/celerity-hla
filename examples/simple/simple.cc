@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
 
 	using namespace celerity;
 
-	//try {
+	try {
 		distr_queue queue;
 		buffer<float, 1> buf_a(cl::sycl::range<1>{DEMO_DATA_SIZE});
 		buffer<float, 1> buf_b(cl::sycl::range<1>{DEMO_DATA_SIZE});
@@ -53,8 +53,6 @@ int main(int argc, char* argv[]) {
 
 		transform(algorithm::distr<class compute_b>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; });
 
-		
-
 #define COMPUTE_C_ON_MASTER 1
 #if COMPUTE_C_ON_MASTER
 		/*
@@ -71,7 +69,6 @@ int main(int argc, char* argv[]) {
 		*/
 
 		transform(algorithm::master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
-
 		
 #else
 		/*
@@ -131,8 +128,6 @@ int main(int argc, char* argv[]) {
 			}
 		});
 
-		/*
-
 	} catch(std::exception& e) {
 		std::cerr << "Exception: " << e.what() << std::endl;
 		return EXIT_FAILURE;
@@ -141,7 +136,5 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	return verification_passed ? EXIT_SUCCESS : EXIT_FAILURE;*/
-
-		return 0;
+	return verification_passed ? EXIT_SUCCESS : EXIT_FAILURE;
 }

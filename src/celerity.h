@@ -17,6 +17,8 @@ namespace cl::sycl
 
 	template<size_t Rank>
 	using item = std::array<int, Rank>;
+
+	struct exception { const char* what() { return nullptr; } };
 }
 
 namespace celerity
@@ -100,10 +102,17 @@ namespace celerity
 		}
 	}
 
+	template<typename T, size_t Rank>
+	class buffer;
+
 	template<access_mode Mode, typename T, size_t Rank>
-	struct accessor
+	class accessor
 	{
-		T& operator[](cl::sycl::item<Rank> idx)
+	public:
+		explicit accessor(buffer<T, Rank>& buffer)
+			: buffer_(buffer) {}
+
+		decltype(auto) operator[](cl::sycl::item<Rank> idx)
 		{
 			std::cout << typeid(T).name() << "& ";
 			print_accessor_type();
@@ -111,8 +120,9 @@ namespace celerity
 			std::copy(begin(idx), idx.end(), std::ostream_iterator<int>{ std::cout, "," });
 			std::cout << ")" << std::endl;
 
-			static T x{};
-			return x;
+			static_assert(Rank == 1);
+
+			return buffer_.data()[idx[0]];
 		}
 
 		T operator[](cl::sycl::item<Rank> idx) const
@@ -123,13 +133,18 @@ namespace celerity
 			std::copy(idx.begin(), idx.end(), std::ostream_iterator<int>{ std::cout, "," });
 			std::cout << ")" << std::endl;
 
-			return T{};
+			static_assert(Rank == 1);
+
+			return buffer_.data()[idx[0]];
 		}
 
 		static void print_accessor_type()
 		{
 			std::cout << "accessor<" << to_string(Mode) << ", " << typeid(T).name() << ", " << Rank << ">";
 		}
+
+	private:
+		buffer<T, Rank>& buffer_;
 	};
 
 	template<typename T, size_t Rank>
@@ -142,10 +157,12 @@ namespace celerity
 		}
 
 		template<access_mode mode>
-		auto get_access(handler cgh, cl::sycl::range<Rank> range) { return accessor<mode, T, Rank>{}; }
+		auto get_access(handler cgh, cl::sycl::range<Rank> range) { return accessor<mode, T, Rank>{*this}; }
 
 		[[nodiscard]]
 		size_t size() const { return buf_.size(); }
+
+		auto& data() { return buf_; }
 
 	private:
 		std::vector<T> buf_;
