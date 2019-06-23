@@ -1,8 +1,9 @@
 #define MOCK_CELERITY
 #include "../../src/algorithm.h"
+#include "../../src/actions.h"
 
-// Use define instead of constexpr as MSVC seems to have some trouble getting it into nested closures
-#define DEMO_DATA_SIZE (1024)
+// Use define instead of constexpr as MSVC seems to have some trouble getting it into nested closure
+constexpr auto DEMO_DATA_SIZE = 1024;
 
 int main(int argc, char* argv[]) {
 	// std::this_thread::sleep_for(std::chrono::seconds(5));
@@ -32,7 +33,7 @@ int main(int argc, char* argv[]) {
 			cgh.parallel_for<class produce_a>(cl::sycl::range<1>(DEMO_DATA_SIZE), [=](cl::sycl::item<1> item) { dw_a[DEMO_DATA_SIZE - 1 - item[0]] = 1.f; });
 		});*/
 
-		algorithm::fill(algorithm::distr<class produce_a>(queue), begin(buf_a), end(buf_a), []() { return 1.f; });
+		fill(algorithm::distr<class produce_a>(queue), begin(buf_a), end(buf_a), []() { return 1.f; });
 		
 		/*queue.submit([=](celerity::handler& cgh) {
 			auto r_a = buf_a.get_access<cl::sycl::access::mode::read>(cgh, [](celerity::chunk<1> chnk) -> celerity::subrange<1> {
@@ -50,7 +51,7 @@ int main(int argc, char* argv[]) {
 
 		*/
 
-		algorithm::transform(algorithm::distr<class compute_b>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; });
+		transform(algorithm::distr<class compute_b>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; });
 
 		
 
@@ -69,7 +70,7 @@ int main(int argc, char* argv[]) {
 		});
 		*/
 
-		algorithm::transform(algorithm::master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
+		transform(algorithm::master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
 
 		
 #else
@@ -90,6 +91,12 @@ int main(int argc, char* argv[]) {
 			auto dw_d = buf_d.get_access<cl::sycl::access::mode::discard_write>(cgh, celerity::access::one_to_one<1>());
 			cgh.parallel_for<class compute_d>(cl::sycl::range<1>(DEMO_DATA_SIZE), [=](cl::sycl::item<1> item) { dw_d[item] = r_b[item] + r_c[item]; });
 		});
+
+		*/
+
+		transform(algorithm::distr<class compute_d>(queue), begin(buf_b), end(buf_b), begin(buf_c), [](float x, float y) { return x + y; });
+		
+		/*
 
 		queue.with_master_access([=, &verification_passed](celerity::handler& cgh) {
 			auto r_d = buf_d.get_access<cl::sycl::access::mode::read>(cgh, cl::sycl::range<1>(DEMO_DATA_SIZE));

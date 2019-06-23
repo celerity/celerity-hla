@@ -170,11 +170,16 @@ void sequence_examples()
 		{
 			return x * y;
 		});
+	
 
 	static_assert(!algorithm::detail::has_call_operator_v<int>, "no call operator");
 	static_assert(algorithm::detail::has_call_operator_v<decltype(zero)> , "no call operator");
 	static_assert(algorithm::detail::has_call_operator_v<decltype(hello_world())>, "no call operator");
+	static_assert(algorithm::detail::get_accessor_type<decltype(zero), 0>() == access_type::one_to_one, "get_accessor_type");
+	static_assert(algorithm::detail::get_accessor_type<algorithm::iterator<float, 1>, 0>() == access_type::invalid, "get_accessor_type");
 
+	constexpr auto get_accessor_type_check = [](auto x) { static_assert(algorithm::detail::get_accessor_type<decltype(x), 0>() == access_type::invalid); };
+	get_accessor_type_check(1);
 
 	/*algorithm::transform(algorithm::master(q), begin(b), end(b), begin(c), begin(b_out),
 		[](float x, float y)

@@ -124,38 +124,37 @@ namespace celerity::algorithm
 					}
 				};
 			}
+
 		}
 
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F, 
-			std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::slice, int> = 0>
+			typename = std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::slice>>
 		auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F & f, size_t slice_dim)
 		{
 			return detail::transform<access_type::slice, access_type::one_to_one>(p, beg, end, out, f);
 		}
 
-		template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
-			std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::one_to_one, int> = 0>
+		template<typename ExecutionPolicy, typename T, size_t Rank, typename F, 
+			typename = std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::one_to_one>>
 		auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F & f)
 		{
 			return detail::transform<access_type::one_to_one, access_type::one_to_one>(p, beg, end, out, f);
 		}
 
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
-			std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::chunk, int> = 0>
+			typename = std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::chunk>>
 			auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F & f, cl::sycl::range<Rank> chunk_size)
 		{
 			return detail::transform<access_type::chunk, access_type::one_to_one>(p, beg, end, out, f);
 		}
 
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
-			std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::one_to_one &&
-							 algorithm::detail::get_accessor_type<F, 1>() == access_type::one_to_one, int> = 0>
+			typename = std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::one_to_one &&
+										algorithm::detail::get_accessor_type<F, 1>() == access_type::one_to_one>>
 		auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> beg2, iterator<T, Rank> out, const F& f)
 		{
 			return detail::transform<access_type::one_to_one, access_type::one_to_one, access_type::one_to_one>(p, beg, end, beg2, out, f);
 		}
-
-
 	
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
 		auto fill(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, const F & f)
@@ -170,17 +169,19 @@ namespace celerity::algorithm
 		task(actions::transform(p, beg, end, out, f, args...)) | submit_to(p.q);
 	}
 
-	/*template<typename ExecutionPolicy, typename T, size_t Rank, typename F, typename...Args>
+	template<typename ExecutionPolicy, typename T, size_t Rank, typename F, typename...Args>
 	void transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> beg2, iterator<T, Rank> out, const F& f, Args...args)
 	{
 		task(actions::transform(p, beg, end, beg2, out, f, args...)) | submit_to(p.q);
-	}*/
+	}
 
 	template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
 	void fill(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, const F& f)
 	{
 		task(actions::fill(p, beg, end, f)) | submit_to(p.q);
 	}
+
+
 }
 
 #endif
