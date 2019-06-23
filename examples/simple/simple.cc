@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
 
 		*/
 
-		transform(algorithm::distr<class compute_d>(queue), begin(buf_b), end(buf_b), begin(buf_c), [](float x, float y) { return x + y; });
+		transform(algorithm::distr<class compute_d>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), [](float x, float y) { return x + y; });
 		
 		/*
 
