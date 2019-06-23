@@ -13,11 +13,9 @@ namespace celerity::algorithm
 		kernel_sequence(sequence<Actions...>&& s)
 			: sequence_(std::move(s)) { }
 
-		void operator()(celerity::distr_queue& q) const
+		decltype(auto) operator()(handler& cgh) const
 		{
-			std::cout << "queue.submit([](handler cgh){" << std::endl;
-			q.submit([&](auto cgh) { std::invoke(sequence_, cgh); });
-			std::cout << "});" << std::endl << std::endl;
+			return std::invoke(sequence_, cgh);
 		}
 
 		auto sequence() { return sequence_; }

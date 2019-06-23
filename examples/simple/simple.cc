@@ -3,7 +3,7 @@
 #include "../../src/actions.h"
 
 // Use define instead of constexpr as MSVC seems to have some trouble getting it into nested closure
-constexpr auto DEMO_DATA_SIZE = 1024;
+constexpr auto DEMO_DATA_SIZE = 10;
 
 int main(int argc, char* argv[]) {
 	// std::this_thread::sleep_for(std::chrono::seconds(5));
@@ -115,7 +115,23 @@ int main(int argc, char* argv[]) {
 					verification_passed = false;
 				}
 			});
+		});}*/
+
+		const auto sum = accumulate(algorithm::master(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
+
+		algorithm::actions::master_only([&]()
+		{
+			std::cout << "## RESULT: ";
+			if (sum == 3 * DEMO_DATA_SIZE) {
+				std::cout << "Success! Correct value was computed." << std::endl;
+			}
+			else {
+				std::cout << "Fail! Value is " << sum << std::endl;
+				verification_passed = false;
+			}
 		});
+
+		/*
 
 	} catch(std::exception& e) {
 		std::cerr << "Exception: " << e.what() << std::endl;

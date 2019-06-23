@@ -7,6 +7,7 @@
 #include <type_traits>
 #include <optional>
 #include <variant>
+#include <assert.h>
 
 #include "sequence_traits.h"
 
@@ -17,6 +18,7 @@ namespace celerity::algorithm
 	{
 	public:
 		using actions_t = std::tuple<Actions...>;
+		static constexpr auto num_actions = sizeof...(Actions);
 
 		sequence(Actions... actions)
 			: actions_(actions...)
@@ -32,9 +34,14 @@ namespace celerity::algorithm
 		}
 
 		template<typename...Args>
-		void operator()(Args&& ...args) const
+		decltype(auto) operator()(Args&& ...args) const
 		{
-			dispatch(std::index_sequence_for<Actions...>{}, std::forward<Args>(args)...);
+			if constexpr (num_actions > 1)
+			{
+				dispatch(std::make_index_sequence<num_actions - 1>{}, std::forward<Args>(args)...);
+			}
+
+			return invoke(std::get<num_actions - 1>(actions_), std::forward<Args>(args)...);
 		}
 
 		constexpr actions_t& actions() { return actions_; }
@@ -49,15 +56,33 @@ namespace celerity::algorithm
 		}
 
 		template<typename Invocable, typename...Args>
-		void invoke(const Invocable& invocable, Args&& ...args) const
+		decltype(auto) invoke(const Invocable& invocable, Args&& ...args) const
 		{
 			if constexpr (std::is_invocable_v<Invocable, Args...>)
 			{
-				std::invoke(invocable, std::forward<Args>(args)...);
+				if constexpr (std::is_void_v<std::invoke_result_t<Invocable, Args...>>)
+				{
+					std::invoke(invocable, std::forward<Args>(args)...);
+				}
+				else
+				{
+					return std::invoke(invocable, std::forward<Args>(args)...);
+				}
+			}
+			else if constexpr (std::is_invocable_v<Invocable>)
+			{
+				if constexpr (std::is_void_v<std::invoke_result_t<Invocable>>)
+				{
+					std::invoke(invocable);
+				}
+				else
+				{
+					return std::invoke(invocable);
+				}
 			}
 			else
 			{
-				std::invoke(invocable);
+				assert((std::is_invocable_v<Invocable> || std::is_invocable_v<Invocable, Args...>) && "invalid arguments");
 			}
 		}
 

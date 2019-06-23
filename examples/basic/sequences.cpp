@@ -49,32 +49,32 @@ void sequence_static_assertions(T zero, U hello_world)
 
 	static_assert(std::is_same<
 		decltype(task(zero)),
-		task_t<zero_t>>::value,
+		task_t<true, zero_t>>::value,
 		"action not promoted to task_t");
 
 	static_assert(std::is_same<
 		decltype(fuse(zero | zero)),
-		task_t<zero_t, zero_t>>::value,
+		task_t<true, zero_t, zero_t>>::value,
 		"actions to fused");
 
 	static_assert(std::is_same<
 		decltype(fuse(zero | zero | zero)),
-		task_t<zero_t, zero_t, zero_t>>::value,
+		task_t<true, zero_t, zero_t, zero_t>>::value,
 		"actions to fused");
 
 	static_assert(std::is_same<
 		decltype(zero | zero | task(zero)),
-		sequence<task_t<zero_t>, task_t<zero_t>, task_t<zero_t>>>::value,
+		sequence<task_t<true, zero_t>, task_t<true, zero_t>, task_t<true, zero_t>>>::value,
 		"action sequence not promoted to task_t sequence");
 
   	static_assert(std::is_same<
 		decltype(zero | task(zero) | zero),
-		sequence<task_t<zero_t>, task_t<zero_t>, task_t<zero_t>>>::value,
+		sequence<task_t<true, zero_t>, task_t<true, zero_t>, task_t<true, zero_t>>>::value,
 		"action not promoted to task_t");
 
   	static_assert(std::is_same<
 		decltype(hello_world | zero | task(zero) | zero),
-		sequence<hello_world_t, task_t<zero_t>, task_t<zero_t>, task_t<zero_t>>>::value,
+		sequence<hello_world_t, task_t<true, zero_t>, task_t<true, zero_t>, task_t<true, zero_t>>>::value,
 		"action not promoted to task_t");
 }
 
@@ -130,7 +130,7 @@ void sequence_examples()
 
 	distr_queue q{};
 
-	hello_world() | zero | fuse(step | step | step) | step | submit_to(q);
+    zero | fuse(step | step | step) | step | submit_to(q);
 
 	std::cout << endl;
 
@@ -178,19 +178,16 @@ void sequence_examples()
 	static_assert(algorithm::detail::get_accessor_type<decltype(zero), 0>() == access_type::one_to_one, "get_accessor_type");
 	static_assert(algorithm::detail::get_accessor_type<algorithm::iterator<float, 1>, 0>() == access_type::invalid, "get_accessor_type");
 
-	constexpr auto get_accessor_type_check = [](auto x) { static_assert(algorithm::detail::get_accessor_type<decltype(x), 0>() == access_type::invalid); };
-	get_accessor_type_check(1);
-
-	/*algorithm::transform(algorithm::master(q), begin(b), end(b), begin(c), begin(b_out),
+	algorithm::transform(algorithm::master(q), begin(b), end(b), begin(c), begin(b_out),
 		[](float x, float y)
 		{
 			return x * y;
-		});*/
+		});
 
 
 	// ASSERTIONS
 
-	sequence_static_assertions(zero, hello_world());
+	//sequence_static_assertions(zero, hello_world());
 }
 
 void iterator_static_assertions()
@@ -241,7 +238,7 @@ void iterator_static_assertions()
 	auto kernel = transform(src_view, dst_view, [](float x) { return 2 * x; });
 
 	static_assert(is_invocable_v<decltype(kernel), handler>, "kernel invocable with handler");
-	static_assert(is_same_v<decltype(task(kernel)), task_t<decltype(kernel)>>, "is task");
+	static_assert(is_same_v<decltype(task(kernel)), task_t<true, decltype(kernel)>>, "is task");
 	static_assert(is_invocable_v<decltype(task(kernel)), distr_queue&>, "task(kernel) invocable with queue");
 
 	/*

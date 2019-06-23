@@ -6,34 +6,31 @@
 
 namespace celerity::algorithm
 {
-	auto submit_to(celerity::distr_queue q)
+	inline auto submit_to(celerity::distr_queue q)
 	{
 		return q;
 	}
 
 	template<template <typename...> typename Sequence, typename...Actions>
-	auto operator | (Sequence<Actions...>&& lhs, celerity::distr_queue& queue)
+	decltype(auto) operator | (Sequence<Actions...>&& lhs, celerity::distr_queue& queue)
 	{
-		lhs(queue);
-		return lhs;
+		return std::invoke(lhs, queue);
 	}
 
 	template<template <typename...> typename Sequence, typename...Actions>
-	auto operator | (Sequence<Actions...>&& lhs, celerity::distr_queue&& queue)
+	decltype(auto) operator | (Sequence<Actions...>&& lhs, celerity::distr_queue&& queue)
 	{
-		std::invoke(lhs, queue);
-		return lhs;
+		return std::invoke(lhs, queue);
 	}
 
-	template<typename T, typename...Actions>
-	auto operator | (task_t<T>&& lhs, celerity::distr_queue&& queue)
+	template<bool Distributed, typename T, typename...Actions>
+	decltype(auto) operator | (task_t<Distributed, T>&& lhs, celerity::distr_queue&& queue)
 	{
-		std::invoke(lhs, queue);
-		return lhs;
+		return std::invoke(lhs, queue);
 	}
 
-	template<typename...Ts, typename...Us>
-	auto operator | (task_t<Ts...> lhs, task_t<Us...> rhs)
+	template<bool Distributed, typename...Ts, typename...Us>
+	auto operator | (task_t<Distributed, Ts...> lhs, task_t<Distributed, Us...> rhs)
 	{
 		return sequence<task_t<Ts...>, task_t<Us...>>{lhs, rhs};
 	}
@@ -56,7 +53,7 @@ namespace celerity::algorithm
 		std::enable_if_t<is_kernel_v<T> && !is_sequence_v<T> && !is_kernel_v<U>, int> = 0>
 		auto operator | (T lhs, U rhs)
 	{
-		return sequence<task_t<T>, U>{ { lhs }, rhs };
+		return sequence<task_t<true, T>, U>{ { lhs }, rhs };
 	}
 
 	template<typename...T, typename U,
@@ -66,59 +63,59 @@ namespace celerity::algorithm
 		return kernel_sequence<T..., U>{ { lhs.sequence(), rhs } };
 	}
 
-	template<typename T, typename U,
+	template<bool Distributed, typename T, typename U,
 		std::enable_if_t<!is_kernel_v<T> && !is_sequence_v<T>&& is_kernel_v<U>, int> = 0>
 		auto operator | (T lhs, U rhs)
 	{
-		return sequence<T, task_t<U>>{ lhs, { rhs }};
+		return sequence<T, task_t<Distributed, U>>{ lhs, { rhs }};
 	}
 
-	template<typename...Ts, typename U, size_t...Ids>
-	auto unpack_kernel_sequence(kernel_sequence<Ts...> lhs, task_t<U> rhs, std::index_sequence<Ids...>)
+	template< bool Distributed, typename...Ts,typename U, size_t...Ids>
+	auto unpack_kernel_sequence(kernel_sequence<Ts...> lhs, task_t<Distributed, U> rhs, std::index_sequence<Ids...>)
 	{
-		sequence<task_t<Ts>...> seq{ task(std::get<Ids>(lhs.sequence().actions()))... };
-		return sequence<task_t<Ts>..., task_t<U>>{ std::move(seq), rhs };
+		sequence<task_t<Distributed, Ts>...> seq{ task(std::get<Ids>(lhs.sequence().actions()))... };
+		return sequence<task_t<Distributed, Ts>..., task_t<Distributed, U>>{ std::move(seq), rhs };
 	}
 
-	template<typename...Ts, typename U,
+	template<bool Distributed, typename...Ts, typename U,
 		std::enable_if_t<is_kernel_v<U>, int> = 0>
-		auto operator | (kernel_sequence<Ts...> lhs, task_t<U> rhs)
+		auto operator | (kernel_sequence<Ts...> lhs, task_t<Distributed, U> rhs)
 	{
 		return unpack_kernel_sequence(lhs, rhs, std::index_sequence_for<Ts...>{});
 	}
 
-	template<typename T, typename U>
-	auto operator | (task_t<T> lhs, U rhs)
+	template<bool Distributed, typename T, typename U>
+	auto operator | (task_t<Distributed, T> lhs, U rhs)
 	{
-		return sequence<task_t<T>, U>{lhs, rhs};
+		return sequence<task_t<Distributed, T>, U>{lhs, rhs};
 	}
 
-	template<typename T, typename U,
+	template<bool Distributed, typename T, typename U,
 		std::enable_if_t<is_kernel_v<U>, int> = 0>
-		auto operator | (task_t<T> lhs, U rhs)
+		auto operator | (task_t<Distributed, T> lhs, U rhs)
 	{
-		return sequence<task_t<T>, task_t<U>>{lhs, { rhs }};
+		return sequence<task_t<Distributed, T>, task_t<Distributed, U>>{lhs, { rhs }};
 	}
 
-	template<typename T, typename U,
+	template<bool Distributed, typename T, typename U,
 		std::enable_if_t<!is_kernel_v<U>, int> = 0>
-		auto operator | (task_t<T> lhs, U rhs)
+		auto operator | (task_t<Distributed, T> lhs, U rhs)
 	{
-		return sequence<task_t<T>, U>{lhs, { rhs }};
+		return sequence<task_t<Distributed, T>, U>{lhs, { rhs }};
 	}
 
-	template<typename T, typename U,
+	template<bool Distributed, typename T, typename U,
 		std::enable_if_t<is_kernel_v<T> && !is_sequence_v<T>, int> = 0>
-		auto operator | (T lhs, task_t<U> rhs)
+		auto operator | (T lhs, task_t<Distributed, U> rhs)
 	{
-		return sequence<task_t<T>, task_t<U>>{ { lhs }, rhs};
+		return sequence<task_t<Distributed, T>, task_t<Distributed, U>>{ { lhs }, rhs};
 	}
 
-	template<typename T, typename U,
+	template<bool Distributed, typename T, typename U,
 		std::enable_if_t<!is_kernel_v<T> && !is_sequence_v<T>, int> = 0>
-		auto operator | (T lhs, task_t<U> rhs)
+		auto operator | (T lhs, task_t<Distributed, U> rhs)
 	{
-		return sequence<T, task_t<U>>{ { lhs }, rhs};
+		return sequence<T, task_t<Distributed, U>>{ { lhs }, rhs};
 	}
 
 	template<template <typename...> typename Sequence, typename...Actions, typename Action,
@@ -132,7 +129,7 @@ namespace celerity::algorithm
 		std::enable_if_t<is_sequence_v<Sequence<Actions...>>&& is_kernel_v<Action>, int> = 0>
 		auto operator | (Sequence<Actions...> && seq, Action action)
 	{
-		return sequence<Actions..., task_t<Action>>{ std::move(seq), task(action) };
+		return sequence<Actions..., task_t<true, Action>>{ std::move(seq), task(action) };
 	}
 }
 

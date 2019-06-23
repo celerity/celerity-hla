@@ -72,6 +72,12 @@ namespace celerity
 			f(handler{ ++invocation_count_ });
 		}
 
+		template<typename F>
+		void with_master_access(F f)
+		{
+			f(handler{ ++invocation_count_ });
+		}
+
 	private:
 		int invocation_count_ = 0;
 	};

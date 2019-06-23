@@ -16,6 +16,10 @@ namespace celerity::algorithm::actions
 	template<typename F, typename...Args>
 	auto master_only(const F& f, Args&& ...args)
 	{
+#ifdef MOCK_CELERITY
+		std::invoke(f, std::forward<Args>(args)...);
+#else
+
 		static thread_local const bool is_master = []()
 		{
 			if (int world_rank; MPI_Comm_rank(MPI_COMM_WORLD, &world_rank) == MPI_SUCCESS)
@@ -29,6 +33,7 @@ namespace celerity::algorithm::actions
 		if (!is_master) return;
 
 		std::invoke(f, std::forward<Args>(args)...);
+#endif
 	}
 
 	auto hello_world() { return []() { std::cout << "hello world" << std::endl; }; }
