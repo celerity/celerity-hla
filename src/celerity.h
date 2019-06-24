@@ -80,6 +80,8 @@ namespace celerity
 			f(handler{ ++invocation_count_ });
 		}
 
+		void wait();
+
 	private:
 		int invocation_count_ = 0;
 	};

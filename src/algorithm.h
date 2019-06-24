@@ -126,10 +126,11 @@ namespace celerity::algorithm
 				};
 			}
 		
-			template<typename BinaryOp, typename T, size_t Rank,
-				typename = std::enable_if_t<algorithm::detail::get_accessor_type<BinaryOp, 1>() == access_type::one_to_one>>
-			auto accumulate(master_execution_policy p, iterator<T, Rank> beg, iterator<T, Rank> end, T init, const BinaryOp& op)
+			template<typename ExecutionPolicy, typename BinaryOp, typename T, size_t Rank,
+				typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<BinaryOp, 1>() == access_type::one_to_one>>
+			auto accumulate(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, T init, const BinaryOp& op)
 			{
+				static_assert(!policy_traits<ExecutionPolicy>::is_distributed, "can not be distributed");
 				static_assert(Rank == 1, "Only 1-dimenionsal buffers for now");
 
 				const auto r = *end - *beg;
@@ -190,8 +191,8 @@ namespace celerity::algorithm
 			return detail::fill(p, beg, end, f);
 		}
 	
-		template<typename BinaryOp, typename T, size_t Rank>
-		auto accumulate(master_execution_policy p, iterator<T, Rank> beg, iterator<T, Rank> end, T init, const BinaryOp & op)
+		template<typename ExecutionPolicy, typename BinaryOp, typename T, size_t Rank>
+		auto accumulate(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, T init, const BinaryOp & op)
 		{
 			return detail::accumulate(p, beg, end, init, op);
 		}
@@ -218,10 +219,10 @@ namespace celerity::algorithm
 		task(actions::fill(p, beg, end, f)) | submit_to(p.q);
 	}
 
-	template<typename BinaryOp, typename T, size_t Rank>
-	auto accumulate(master_execution_policy p, iterator<T, Rank> beg, iterator<T, Rank> end, T init, const BinaryOp& op)
+	template<typename ExecutionPolicy, typename BinaryOp, typename T, size_t Rank>
+	auto accumulate(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, T init, const BinaryOp& op)
 	{
-		return task<master_execution_policy>(actions::accumulate(p, beg, end, init, op)) | submit_to(p.q);
+		return task<ExecutionPolicy>(actions::accumulate(p, beg, end, init, op)) | submit_to(p.q);
 	}
 }
 

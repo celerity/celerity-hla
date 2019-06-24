@@ -238,7 +238,7 @@ void iterator_static_assertions()
 	auto kernel = transform(src_view, dst_view, [](float x) { return 2 * x; });
 
 	static_assert(is_invocable_v<decltype(kernel), handler>, "kernel invocable with handler");
-	static_assert(is_same_v<decltype(task(kernel)), task_t<true, decltype(kernel)>>, "is task");
+	static_assert(is_same_v<decltype(task(kernel)), task_t<distributed_execution_policy, decltype(kernel)>>, "is task");
 	static_assert(is_invocable_v<decltype(task(kernel)), distr_queue&>, "task(kernel) invocable with queue");
 
 	/*
