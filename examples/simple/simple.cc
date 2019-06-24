@@ -114,10 +114,12 @@ int main(int argc, char* argv[]) {
 			});
 		});}*/
 
-		const auto sum = accumulate(algorithm::master(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
+		auto sum_future = accumulate(algorithm::master(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
 
 		algorithm::actions::master_only([&]()
 		{
+			const auto sum = sum_future.get();
+
 			std::cout << "## RESULT: ";
 			if (sum == 3 * DEMO_DATA_SIZE) {
 				std::cout << "Success! Correct value was computed." << std::endl;

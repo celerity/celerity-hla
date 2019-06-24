@@ -6,6 +6,7 @@
 #include "task_sequence.h"
 #include "accessor_proxy.h"
 #include "policy.h"
+#include <future>
 
 namespace celerity::algorithm
 {
@@ -137,7 +138,7 @@ namespace celerity::algorithm
 				{
 					const auto in_acc = get_access<access_mode::read, access_type::one_to_one>(cgh, beg, end);
 
-					auto init_value = init;
+					auto sum = init;
 
 					cgh.run([&]()
 					{
@@ -145,11 +146,11 @@ namespace celerity::algorithm
 							[&](auto i)
 							{
 								const cl::sycl::item<Rank> item{ i };
-								init_value = op(std::move(init_value), in_acc[item]);
+								sum = op(std::move(sum), in_acc[item]);
 							});
 					});
 
-					return init_value;
+					return sum;
 				};
 			}
 		}

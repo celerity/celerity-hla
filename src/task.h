@@ -5,6 +5,8 @@
 #include "kernel_sequence.h"
 #include "policy.h"
 
+#include <future>
+
 namespace celerity::algorithm
 {
 
@@ -69,16 +71,17 @@ public:
 		}
 		else
 		{
-			ret_type ret_value{};
+			std::promise<ret_type> ret_value{};
+			auto future = ret_value.get_future();
 
-			q.with_master_access([&](auto cgh)
+			q.with_master_access([&, promise = std::move(ret_value)](auto cgh) mutable
 				{
-					ret_value = std::invoke(sequence_, cgh);
+					promise.set_value(std::invoke(sequence_, cgh));
 				});
 
 			std::cout << "});" << std::endl << std::endl;
 
-			return ret_value;
+			return future;
 		}
 	}
 
