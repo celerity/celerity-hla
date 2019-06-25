@@ -8,13 +8,14 @@
 
 namespace celerity::algorithm::actions
 {
+	// unused
 	inline void global_barrier()
 	{
 		MPI_Barrier(MPI_COMM_WORLD);
 	}
 
 	template<typename F, typename...Args>
-	auto master_only(const F& f, Args&& ...args)
+	auto on_master(F&& f, Args&& ...args)
 	{
 #ifdef MOCK_CELERITY
 		std::invoke(f, std::forward<Args>(args)...);
@@ -40,16 +41,6 @@ namespace celerity::algorithm::actions
 
 	auto incr(int& i) { return [&i]() { ++i; }; }
 
-	auto with_queue() { return [](celerity::distr_queue distr_queue) { std::cout << "with queue" << std::endl; }; }
-
-	struct dispatcher { };
-	dispatcher dispatch() { return {}; }
-
-	template<template <typename...> typename Sequence, typename...Actions>
-	decltype(auto) operator | (Sequence<Actions...>&& sequence, const dispatcher&)
-	{
-		return std::invoke(sequence);
-	}
 }
 
 #endif

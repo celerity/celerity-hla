@@ -160,21 +160,21 @@ namespace celerity::algorithm
 			typename = std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::slice>>
 		auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F & f, size_t slice_dim)
 		{
-			return detail::transform<access_type::slice, access_type::one_to_one>(p, beg, end, out, f);
+			return task<ExecutionPolicy>(detail::transform<access_type::slice, access_type::one_to_one>(p, beg, end, out, f));
 		}
 
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F, 
 			typename = std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::one_to_one>>
 		auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F & f)
 		{
-			return detail::transform<access_type::one_to_one, access_type::one_to_one>(p, beg, end, out, f);
+			return task<ExecutionPolicy>(detail::transform<access_type::one_to_one, access_type::one_to_one>(p, beg, end, out, f));
 		}
 
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
 			typename = std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::chunk>>
 		auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F & f, cl::sycl::range<Rank> chunk_size)
 		{
-			return detail::transform<access_type::chunk, access_type::one_to_one>(p, beg, end, out, f);
+			return task<ExecutionPolicy>(detail::transform<access_type::chunk, access_type::one_to_one>(p, beg, end, out, f));
 		}
 
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
@@ -182,19 +182,19 @@ namespace celerity::algorithm
 										algorithm::detail::get_accessor_type<F, 1>() == access_type::one_to_one>>
 		auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> beg2, iterator<T, Rank> out, const F& f)
 		{
-			return detail::transform<access_type::one_to_one, access_type::one_to_one, access_type::one_to_one>(p, beg, end, beg2, out, f);
+			return task<ExecutionPolicy>(detail::transform<access_type::one_to_one, access_type::one_to_one, access_type::one_to_one>(p, beg, end, beg2, out, f));
 		}
 	
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
 		auto fill(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, const F & f)
 		{
-			return detail::fill(p, beg, end, f);
+			return task<ExecutionPolicy>(detail::fill(p, beg, end, f));
 		}
 	
 		template<typename ExecutionPolicy, typename BinaryOp, typename T, size_t Rank>
 		auto accumulate(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, T init, const BinaryOp & op)
 		{
-			return detail::accumulate(p, beg, end, init, op);
+			return task<ExecutionPolicy>(detail::accumulate(p, beg, end, init, op));
 		}
 	}
 
@@ -202,7 +202,7 @@ namespace celerity::algorithm
 		typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
 	void transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F& f, Args...args)
 	{
-		task(actions::transform(p, beg, end, out, f, args...)) | submit_to(p.q);
+		actions::transform(p, beg, end, out, f, args...) | submit_to(p.q);
 	}
 
 	template<typename ExecutionPolicy, typename T, size_t Rank, typename F, typename...Args,
@@ -210,19 +210,19 @@ namespace celerity::algorithm
 									detail::get_accessor_type<F, 1>() != access_type::invalid>>
 	void transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> beg2, iterator<T, Rank> out, const F& f, Args...args)
 	{
-		task(actions::transform(p, beg, end, beg2, out, f, args...)) | submit_to(p.q);
+		actions::transform(p, beg, end, beg2, out, f, args...) | submit_to(p.q);
 	}
 
 	template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
 	void fill(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, const F& f)
 	{
-		task(actions::fill(p, beg, end, f)) | submit_to(p.q);
+		actions::fill(p, beg, end, f) | submit_to(p.q);
 	}
 
 	template<typename ExecutionPolicy, typename BinaryOp, typename T, size_t Rank>
 	auto accumulate(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, T init, const BinaryOp& op)
 	{
-		return task<ExecutionPolicy>(actions::accumulate(p, beg, end, init, op)) | submit_to(p.q);
+		return actions::accumulate(p, beg, end, init, op) | submit_to(p.q);
 	}
 }
 

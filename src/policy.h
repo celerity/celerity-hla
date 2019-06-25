@@ -11,7 +11,7 @@ struct distributed_execution_policy
 	
 };
 	
-template<class KernelName>
+template<typename KernelName>
 struct named_distributed_execution_policy : distributed_execution_policy
 {
 	explicit named_distributed_execution_policy(distr_queue& queue) : q(queue) {}
@@ -29,7 +29,7 @@ struct blocking_master_execution_policy
 	::celerity::distr_queue q;
 };
 
-template<class Policy>
+template<typename Policy>
 struct policy_traits;
 
 template<>
@@ -53,12 +53,27 @@ struct policy_traits<distributed_execution_policy>
 	static constexpr bool is_blocking = false;
 };
 
-template<class KernelName>
+template<typename KernelName>
 struct policy_traits<named_distributed_execution_policy<KernelName>>
 {
 	static constexpr bool is_distributed = true;
 	using kernel_name = KernelName;
 };
+
+template<typename T>
+struct decay_policy
+{
+	using type = std::decay_t<T>;
+};
+
+template<typename KernelName>
+struct decay_policy<named_distributed_execution_policy<KernelName>>
+{
+	using type = distributed_execution_policy;
+};
+
+template<typename T>
+using decay_policy_t = typename decay_policy<T>::type;
 
 template<typename KernelName>
 auto distr(::celerity::distr_queue q) { return named_distributed_execution_policy<KernelName>{q}; }

@@ -114,13 +114,13 @@ int main(int argc, char* argv[]) {
 			});
 		});}*/
 
-		std::future<float> sum_future = accumulate(algorithm::master(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
+		auto sum_future = accumulate(algorithm::master(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
 		
 		// OR         
 		// float sum = accumulate(algorithm::master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
 		//                                   ^^^^^^^^^^^^^^^^^^^^^^
 
-		algorithm::actions::master_only([&]()
+		algorithm::actions::on_master([&]()
 		{
 			const auto sum = sum_future.get();
 

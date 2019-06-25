@@ -29,12 +29,13 @@ namespace celerity::algorithm
 		return std::invoke(lhs, queue);
 	}
 
-	template<typename  ExecutionPolicy, typename...Ts, typename...Us>
+	template<typename ExecutionPolicy, typename...Ts, typename...Us>
 	auto operator | (task_t<ExecutionPolicy, Ts...> lhs, task_t<ExecutionPolicy, Us...> rhs)
 	{
-		return sequence<task_t<Ts...>, task_t<Us...>>{lhs, rhs};
+		return sequence<task_t<ExecutionPolicy, Ts...>, task_t<ExecutionPolicy, Us...>>{lhs, rhs};
 	}
 
+	
 	template<typename T, typename U,
 		std::enable_if_t<is_argless_invokable_v<T>&& is_argless_invokable_v<U>, int> = 0>
 		auto operator | (T lhs, U rhs)
@@ -84,7 +85,8 @@ namespace celerity::algorithm
 		return unpack_kernel_sequence(lhs, rhs, std::index_sequence_for<Ts...>{});
 	}
 
-	template<typename ExecutionPolicy, typename T, typename U>
+	template<typename ExecutionPolicy, typename T, typename U, 
+		std::enable_if_t<!is_task_v<U>, int> = 0>
 	auto operator | (task_t<ExecutionPolicy, T> lhs, U rhs)
 	{
 		return sequence<task_t<ExecutionPolicy, T>, U>{lhs, rhs};
@@ -98,7 +100,7 @@ namespace celerity::algorithm
 	}
 
 	template<typename ExecutionPolicy, typename T, typename U,
-		std::enable_if_t<!is_kernel_v<U>, int> = 0>
+		std::enable_if_t<!is_kernel_v<U> && !is_task_v<U>, int> = 0>
 		auto operator | (task_t<ExecutionPolicy, T> lhs, U rhs)
 	{
 		return sequence<task_t<ExecutionPolicy, T>, U>{lhs, { rhs }};
@@ -112,7 +114,7 @@ namespace celerity::algorithm
 	}
 
 	template<typename ExecutionPolicy, typename T, typename U,
-		std::enable_if_t<!is_kernel_v<T> && !is_sequence_v<T>, int> = 0>
+		std::enable_if_t<!is_kernel_v<T> && !is_sequence_v<T> && !is_task_v<T>, int> = 0>
 		auto operator | (T lhs, task_t<ExecutionPolicy, U> rhs)
 	{
 		return sequence<T, task_t<ExecutionPolicy, U>>{ { lhs }, rhs};

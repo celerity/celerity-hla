@@ -133,6 +133,12 @@ private:
 	kernel_sequence<F> sequence_;
 };
 
+template<typename KernelName, typename F>
+class task_t<named_distributed_execution_policy<KernelName>, F> : public task_t<distributed_execution_policy, F> {
+	using base_type = task_t<distributed_execution_policy, F>;
+	using base_type::base_type;
+};
+
 template<typename...Actions>
 auto fuse(kernel_sequence<Actions...>&& seq)
 {
@@ -154,8 +160,17 @@ auto task(const task_t<ExecutionPolicy, T>& t)
 template<typename ExecutionPolicy, typename T, typename = std::enable_if_t<is_kernel_v<T>>>
 auto task(const T& invocable)
 {
-	return task_t<ExecutionPolicy, T>{invocable};
+	return task_t<decay_policy_t<ExecutionPolicy>, T>{invocable};
 }
+
+template<typename F>
+struct is_task : std::bool_constant<false> {};
+
+template<typename ExecutionPolicy, typename...Actions>
+struct is_task<task_t<ExecutionPolicy, Actions...>> : std::bool_constant<true> {};
+
+template<typename F>
+inline constexpr bool is_task_v = is_task<F>::value;
 
 }
 
