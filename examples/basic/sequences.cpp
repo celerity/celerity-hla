@@ -1,4 +1,5 @@
 #define MOCK_CELERITY
+#define _ITERATOR_DEBUG_LEVEL 0
 
 #include "../../src/sequence.h"
 #include "../../src/actions.h"
@@ -240,12 +241,39 @@ void iterator_static_assertions()
 	static_assert(is_invocable_v<decltype(task(kernel)), distr_queue&>, "task(kernel) invocable with queue");
 }
 
+void sycl_helper_assertions()
+{
+	using namespace celerity;
+
+	static_assert(count(cl::sycl::range<1> { 2 }) == 2, "count");
+	static_assert(count(cl::sycl::range<1> { 3 }) == 3, "count");
+	static_assert(count(cl::sycl::range<2> { 1, 2 }) == 2, "count");
+	static_assert(count(cl::sycl::range<2> { 2, 2 }) == 4, "count");
+	static_assert(count(cl::sycl::range<3> { 2, 2, 2 }) == 8, "count");
+	static_assert(count(cl::sycl::range<3> { 2, 3, 2 }) == 12, "count");
+
+	static_assert(equals(next(cl::sycl::id<1> { 0 }, cl::sycl::range<1> { 2 }), cl::sycl::id<1> { 1 }), "next");
+	static_assert(equals(next(cl::sycl::id<1> { 1 }, cl::sycl::range<1> { 2 }), cl::sycl::id<1> { 1 }), "next");
+	static_assert(equals(next(cl::sycl::id<2> { 0, 0 }, cl::sycl::range<2> { 2, 2 }), cl::sycl::id<2> { 0, 1 }), "next");
+	static_assert(equals(next(cl::sycl::id<2> { 0, 0 }, cl::sycl::range<2> { 2, 1 }), cl::sycl::id<2> { 1, 0 }), "next");
+	static_assert(equals(next(cl::sycl::id<2> { 0, 1 }, cl::sycl::range<2> { 2, 2 }), cl::sycl::id<2> { 1, 0 }), "next");
+	static_assert(equals(next(cl::sycl::id<3> { 0, 0, 1 }, cl::sycl::range<3> { 2, 2, 2 }), cl::sycl::id<3> { 0, 1, 0 }), "next");
+	static_assert(equals(next(cl::sycl::id<3> { 0, 1, 1 }, cl::sycl::range<3> { 2, 2, 2 }), cl::sycl::id<3> { 1, 0, 0 }), "next");
+	static_assert(equals(next(cl::sycl::id<3> { 0, 0, 0 }, cl::sycl::range<3> { 2, 2, 2 }, 2), cl::sycl::id<3> { 0, 1, 0 }), "next");
+	static_assert(equals(next(cl::sycl::id<3> { 0, 0, 0 }, cl::sycl::range<3> { 2, 2, 2 }, 3), cl::sycl::id<3> { 0, 1, 1 }), "next");
+	static_assert(equals(next(cl::sycl::id<3> { 0, 0, 0 }, cl::sycl::range<3> { 2, 2, 2 }, 4), cl::sycl::id<3> { 1, 0, 0 }), "next");
+	static_assert(equals(next(cl::sycl::id<3> { 0, 0, 0 }, cl::sycl::range<3> { 2, 2, 2 }, 7), cl::sycl::id<3> { 1, 1, 1 }), "next");
+	static_assert(equals(next(cl::sycl::id<3> { 0, 0, 0 }, cl::sycl::range<3> { 3, 3, 3 }, 7), cl::sycl::id<3> { 0, 2, 1 }), "next");
+}
+
 int main(int, char*[]) {
 
 	sequence_static_assertions();
 	iterator_static_assertions();
 
 	sequence_examples();
+
+	sycl_helper_assertions();
 
 	cout << endl;
 	cin.get();

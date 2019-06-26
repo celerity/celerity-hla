@@ -18,26 +18,16 @@ namespace cl::sycl
 	template<size_t Rank>
 	using item = std::array<int, Rank>;
 
+	template<size_t Rank>
+	using id = std::array<int, Rank>;
+
 	struct exception { const char* what() { return nullptr; } };
 }
 
+#include "sycl_helper.h"
+
 namespace celerity
 {
-	namespace detail
-	{
-		template<size_t Rank, size_t...Is>
-		int dispatch_count(cl::sycl::range<Rank> r, std::index_sequence<Is...>)
-		{
-			return (std::get<Is>(r) * ... * 1);
-		}
-	}
-
-	template<size_t Rank>
-	int count(cl::sycl::range<Rank> r)
-	{
-		return detail::dispatch_count(r, std::make_index_sequence<Rank>{});
-	}
-
 	struct handler
 	{
 		int invocations;
