@@ -87,7 +87,8 @@ void sequence_examples()
 	using namespace actions;
 
 	int i = 0;
-	hello_world() | incr(i) | incr(i) | incr(i) | dispatch();
+	auto seq = hello_world() | incr(i) | incr(i) | incr(i);
+	std::invoke(seq);
 	cout << i << endl << endl;
 
 	// example 2: celerity task sequence
