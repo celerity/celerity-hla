@@ -13,18 +13,21 @@
 
 using namespace std;
 
-template<typename T, typename U>
-void sequence_static_assertions(T zero, U hello_world)
+void sequence_static_assertions()
 {
 	using namespace celerity;
 	using namespace algorithm;
 
-	using zero_t = T;
-	using hello_world_t = U;
+	auto hello_world = []() { std::cout << "hello world" << endl; };
+	auto zero = [](handler) {};
+
+	using hello_world_t = decltype(hello_world);
+	using zero_t = decltype(zero);
+
 
 	static_assert(std::is_same<
 		decltype(zero | task(zero)),
-		sequence<task_t<zero_t>, task_t<zero_t>>>::value,
+		sequence<task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>>>::value,
 		"action not promoted to task_t");
 
 	static_assert(std::is_same<
@@ -37,45 +40,51 @@ void sequence_static_assertions(T zero, U hello_world)
 		kernel_sequence<zero_t, zero_t, zero_t>>::value,
 		"action not appended to kernel_sequence");
 
-	static_assert(std::is_same<
+	/*static_assert(std::is_same<
 		decltype(hello_world | zero),
-		sequence<hello_world_t, task_t<zero_t>>>::value,
-		"action not promoted to task_t");
+		sequence<hello_world_t, task_t<distributed_execution_policy, zero_t>>>::value,
+		"action not promoted to task_t");*/
 
 	static_assert(std::is_same<
 		decltype(zero | hello_world),
-		sequence<task_t<zero_t>, hello_world_t>>::value,
+		sequence<task_t<distributed_execution_policy, zero_t>, hello_world_t>>::value,
 		"action not promoted to task_t");
 
 	static_assert(std::is_same<
 		decltype(task(zero)),
-		task_t<true, zero_t>>::value,
+		task_t<distributed_execution_policy, zero_t>>::value,
 		"action not promoted to task_t");
 
 	static_assert(std::is_same<
 		decltype(fuse(zero | zero)),
-		task_t<true, zero_t, zero_t>>::value,
+		task_t<distributed_execution_policy, zero_t, zero_t>>::value,
 		"actions to fused");
 
 	static_assert(std::is_same<
 		decltype(fuse(zero | zero | zero)),
-		task_t<true, zero_t, zero_t, zero_t>>::value,
+		task_t<distributed_execution_policy, zero_t, zero_t, zero_t>>::value,
 		"actions to fused");
 
 	static_assert(std::is_same<
 		decltype(zero | zero | task(zero)),
-		sequence<task_t<true, zero_t>, task_t<true, zero_t>, task_t<true, zero_t>>>::value,
+		sequence<task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>>>::value,
 		"action sequence not promoted to task_t sequence");
 
   	static_assert(std::is_same<
 		decltype(zero | task(zero) | zero),
-		sequence<task_t<true, zero_t>, task_t<true, zero_t>, task_t<true, zero_t>>>::value,
+		sequence<task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>>>::value,
 		"action not promoted to task_t");
 
-  	static_assert(std::is_same<
+  	/*static_assert(std::is_same<
 		decltype(hello_world | zero | task(zero) | zero),
-		sequence<hello_world_t, task_t<true, zero_t>, task_t<true, zero_t>, task_t<true, zero_t>>>::value,
-		"action not promoted to task_t");
+		sequence<hello_world_t, task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>>>::value,
+		"action not promoted to task_t");*/
+
+	static_assert(!algorithm::detail::has_call_operator_v<int>, "no call operator");
+	static_assert(algorithm::detail::has_call_operator_v<decltype(zero)>, "no call operator");
+	static_assert(algorithm::detail::has_call_operator_v<decltype(hello_world)>, "no call operator");
+	static_assert(algorithm::detail::get_accessor_type<decltype(zero), 0>() == access_type::one_to_one, "get_accessor_type");
+	static_assert(algorithm::detail::get_accessor_type<algorithm::iterator<float, 1>, 0>() == access_type::invalid, "get_accessor_type");
 }
 
 void sequence_examples()
@@ -86,7 +95,7 @@ void sequence_examples()
 	using namespace algorithm;
 	using namespace actions;
 
-	int i = 0;
+	auto i = 0;
 	auto seq = hello_world() | incr(i) | incr(i) | incr(i);
 	std::invoke(seq);
 	cout << i << endl << endl;
@@ -135,24 +144,18 @@ void sequence_examples()
 
 	std::cout << endl;
 
-	// 
+	// algorithms
+
+	using namespace algorithm;
 
 	buffer<float, 1> b{ { 5 } };
 	buffer<float, 1> c{ { 5 } };
 	buffer<float, 1> b_out{ { 5 } };
 
-	{
-		using namespace algorithm;
-
-		auto add_one = algorithm::actions::transform(algorithm::distr<class add_one>(q), begin(b), end(b), begin(b_out), [](float x) { return x + 1.0f; });
-
-		zero | fuse(step | step | step) | step | add_one | submit_to(q);
-	}
-
-	algorithm::transform(algorithm::distr<class sum>(q), begin(b), end(b), begin(b_out),
+	transform(algorithm::distr<class sum>(q), begin(b), end(b), begin(b_out),
 		[](slice<float, 1> x)
 		{
-			float sum = *x;
+			auto sum = *x;
 
 			for (int i = 0; i < 5; ++i)
 				sum += x[{i}];
@@ -160,35 +163,29 @@ void sequence_examples()
 			return sum;
 		}, 0);
 
-	algorithm::transform(algorithm::master(q), begin(b), end(b), begin(b_out),
+	transform(master(q), begin(b), end(b), begin(b_out),
 		[](float x)
 		{
 			return 2 * x;
 		});
 
-	algorithm::actions::transform(algorithm::distr<class product>(q), begin(b), end(b), begin(c), begin(b_out),
+	transform(algorithm::distr<class product>(q), begin(b), end(b), begin(c), begin(b_out),
 		[](float x, float y)
 		{
 			return x * y;
 		});
 	
-
-	static_assert(!algorithm::detail::has_call_operator_v<int>, "no call operator");
-	static_assert(algorithm::detail::has_call_operator_v<decltype(zero)> , "no call operator");
-	static_assert(algorithm::detail::has_call_operator_v<decltype(hello_world())>, "no call operator");
-	static_assert(algorithm::detail::get_accessor_type<decltype(zero), 0>() == access_type::one_to_one, "get_accessor_type");
-	static_assert(algorithm::detail::get_accessor_type<algorithm::iterator<float, 1>, 0>() == access_type::invalid, "get_accessor_type");
-
 	algorithm::transform(algorithm::master(q), begin(b), end(b), begin(c), begin(b_out),
 		[](float x, float y)
 		{
 			return x * y;
 		});
 
+	// algorithm action
 
-	// ASSERTIONS
+	auto add_one = actions::transform(distr<class add_one>(q), begin(b), end(b), begin(b_out), [](float x) { return x + 1.0f; });
 
-	//sequence_static_assertions(zero, hello_world());
+	zero | fuse(step | step | step) | step | add_one | submit_to(q);
 }
 
 void iterator_static_assertions()
@@ -241,30 +238,13 @@ void iterator_static_assertions()
 	static_assert(is_invocable_v<decltype(kernel), handler>, "kernel invocable with handler");
 	static_assert(is_same_v<decltype(task(kernel)), task_t<distributed_execution_policy, decltype(kernel)>>, "is task");
 	static_assert(is_invocable_v<decltype(task(kernel)), distr_queue&>, "task(kernel) invocable with queue");
-
-	/*
-	{
-	  const auto view = make_view<1>(buffer<float, 1>{});
-	  const auto first_kernel = make_kernel(view, [](handler){});
-	  const auto second_kernel = make_kernel(view, [](handler){});
-
-	  static_assert(is_combinable_v<decltype(first_kernel), decltype(second_kernel)>, "is_combinable_v");
-	}
-
-	{
-	  const auto first_view = make_view<1>(buffer<float, 1>{});
-	  const auto first_kernel = make_kernel(first_view, [](handler){});
-
-	  const auto second_view = make_view<2>(buffer<float, 2>{});
-	  const auto second_kernel = make_kernel(second_view, [](handler){});
-
-	  static_assert(!is_combinable_v<decltype(first_kernel), decltype(second_kernel)>, "!is_combinable_v");
-	}*/
 }
 
-int main() {
+int main(int, char*[]) {
 
+	sequence_static_assertions();
 	iterator_static_assertions();
+
 	sequence_examples();
 
 	cout << endl;
