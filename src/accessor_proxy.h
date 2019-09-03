@@ -167,7 +167,7 @@ namespace celerity::algorithm
 		assert(&beg.buffer() == &end.buffer());
 		assert(*beg <= *end);
 
-		auto acc = beg.buffer().get_access<Mode>(cgh, cl::sycl::range<1>{ *end - *beg });
+		auto acc = beg.buffer().get_access<Mode>(cgh, distance(beg, end));
 
 		return accessor_proxy<T, Rank, decltype(acc), Type>{ acc };
 	}

@@ -21,8 +21,9 @@ namespace celerity::algorithm
 
 				static_assert(Rank == 1, "Only 1-dimenionsal buffers for now");
 
-				const auto r = *end - *beg;
-				assert(r <= static_cast<int>(out.buffer().size() - *out));
+				const auto r = distance(beg, end);
+
+				//assert(r <= static_cast<int>(out.buffer().size() - *out));
 
 				return [=](celerity::handler cgh)
 				{
@@ -31,7 +32,7 @@ namespace celerity::algorithm
 
 					if constexpr (policy_traits<execution_policy>::is_distributed)
 					{
-						cgh.parallel_for<policy_traits<execution_policy>::kernel_name>(cl::sycl::range<Rank>{r}, [&](auto item)
+						cgh.parallel_for<policy_traits<execution_policy>::kernel_name>(r, [&](auto item)
 							{
 								out_acc[item] = f(in_acc[item]);
 							});
@@ -56,11 +57,10 @@ namespace celerity::algorithm
 			{
 				using execution_policy = std::decay_t<ExecutionPolicy>;
 
-				static_assert(Rank == 1, "Only 1-dimenionsal buffers for now");
+				const auto r = distance(beg, end);
 
-				const auto r = *end - *beg;
-				assert(r <= static_cast<int>(beg2.buffer().size() - *beg2));
-				assert(r <= static_cast<int>(out.buffer().size() - *out));
+				//assert(r <= static_cast<int>(beg2.buffer().size() - *beg2));
+				//assert(r <= static_cast<int>(out.buffer().size() - *out));
 
 				return [=](celerity::handler cgh)
 				{
@@ -71,7 +71,7 @@ namespace celerity::algorithm
 
 					if constexpr (policy_traits<execution_policy>::is_distributed)
 					{
-						cgh.parallel_for<policy_traits<execution_policy>::kernel_name>(cl::sycl::range<Rank>{r}, [&](auto item)
+						cgh.parallel_for<policy_traits<execution_policy>::kernel_name>(r, [&](auto item)
 							{
 								out_acc[item] = f(first_in_acc[item], second_in_acc[item]);
 							});
@@ -98,7 +98,7 @@ namespace celerity::algorithm
 
 				static_assert(Rank == 1, "Only 1-dimenionsal buffers for now");
 
-				const auto r = *end - *beg;
+				const auto r = distance(beg, end);
 
 				return [=](celerity::handler cgh)
 				{
@@ -106,7 +106,7 @@ namespace celerity::algorithm
 	
 					if constexpr (policy_traits<execution_policy>::is_distributed)
 					{
-						cgh.parallel_for<policy_traits<execution_policy>::kernel_name>(cl::sycl::range<Rank>{r}, [&](auto item)
+						cgh.parallel_for<policy_traits<execution_policy>::kernel_name>(r, [&](auto item)
 							{
 								out_acc[item] = f();
 							});
@@ -133,7 +133,7 @@ namespace celerity::algorithm
 				static_assert(!policy_traits<ExecutionPolicy>::is_distributed, "can not be distributed");
 				static_assert(Rank == 1, "Only 1-dimenionsal buffers for now");
 
-				const auto r = *end - *beg;
+				const auto r = distance(beg, end);
 
 				return [=](celerity::handler cgh)
 				{

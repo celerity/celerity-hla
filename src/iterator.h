@@ -2,19 +2,17 @@
 #define ITERATOR_H
 
 #include "celerity.h"
+#include "sycl_helper.h"
 #include <stdexcept>
 #include <cassert>
 
 namespace celerity::algorithm
 {
-	template<typename T, size_t Dims>
-	class iterator;
-
-	template<typename T>
-	class iterator<T, 1>
+	template<typename T, size_t Rank>
+	class iterator
 	{
 	public:
-		iterator(int pos, celerity::buffer<T, 1> & buffer)
+		iterator(cl::sycl::id<Rank> pos, celerity::buffer<T, 1> & buffer)
 			: pos_(pos),
 			buffer_(buffer)
 		{
@@ -22,40 +20,46 @@ namespace celerity::algorithm
 
 		bool operator ==(const iterator& rhs)
 		{
-			return pos_ == rhs.pos_;
+			return equals(pos_, rhs.pos_);
 		}
 
 		bool operator !=(const iterator& rhs)
 		{
-			return pos_ != rhs.pos_;
+			return !equals(pos_, rhs.pos_);
 		}
 
 		iterator& operator++()
 		{
-			pos_++; return *this;
+			pos_ = next(pos_, buffer_.size()); return *this;
 		}
 
-		[[nodiscard]] int operator*() const { return pos_; }
-		[[nodiscard]] celerity::buffer<T, 1> & buffer() const { return buffer_; }
+		[[nodiscard]] cl::sycl::id<Rank> operator*() const { return pos_; }
+		[[nodiscard]] celerity::buffer<T, Rank> & buffer() const { return buffer_; }
 
 	private:
-		int pos_ = 0;
-		celerity::buffer<T, 1>& buffer_;
+		cl::sycl::id<Rank> pos_ = 0;
+		celerity::buffer<T, 1> & buffer_;
 	};
+
+	template<typename T, size_t Rank>
+	cl::sycl::id<Rank> distance(iterator<T, Rank> from, iterator<T, Rank> to)
+	{
+		return celerity::distance(*from, *to);
+	}
 }
 
 namespace celerity
 {
-	template<typename T>
-	algorithm::iterator<T, 1> begin(celerity::buffer<T, 1> & buffer)
+	template<typename T, size_t Rank>
+	algorithm::iterator<T, Rank> begin(celerity::buffer<T, Rank> & buffer)
 	{
-		return algorithm::iterator<T, 1>(0, buffer);
+		return algorithm::iterator<T, Rank>(cl::sycl::id<1>{0}, buffer);
 	}
 
-	template<typename T>
-	algorithm::iterator<T, 1> end(celerity::buffer<T, 1> & buffer)
+	template<typename T, size_t Rank>
+	algorithm::iterator<T, Rank> end(celerity::buffer<T, Rank> & buffer)
 	{
-		return algorithm::iterator<T, 1>(static_cast<int>(buffer.size()), buffer);
+		return algorithm::iterator<T, Rank>(next(max_id(buffer.size()), buffer.size()), buffer);
 	}
 }
 

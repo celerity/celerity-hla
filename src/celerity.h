@@ -10,20 +10,6 @@
 #include <vector>
 #include <array>
 
-namespace cl::sycl
-{
-	template<size_t Rank>
-	using range = std::array<int, Rank>;
-
-	template<size_t Rank>
-	using item = std::array<int, Rank>;
-
-	template<size_t Rank>
-	using id = std::array<int, Rank>;
-
-	struct exception { const char* what() { return nullptr; } };
-}
-
 #include "sycl_helper.h"
 
 namespace celerity
@@ -35,16 +21,9 @@ namespace celerity
 		template<typename KernelName, size_t Rank, typename F>
 		void parallel_for(cl::sycl::range<Rank> r, F f)
 		{
-			if constexpr (Rank == 1)
+			for (cl::sycl::id<Rank> i{}; !celerity::equals(i, r); i = next(i, r))
 			{
-				for (auto i = 0; i < count(r); ++i)
-				{
-					f(cl::sycl::item<Rank>{i});
-				}
-			}
-			else
-			{
-				throw std::logic_error("not implemented");
+				f(i);
 			}
 		}
 
@@ -140,24 +119,39 @@ namespace celerity
 	};
 
 	template<typename T, size_t Rank>
+	struct buffer_type
+	{
+		using value_type = T;
+		static constexpr auto rank = Rank;
+	};
+
+	template<typename T, size_t Rank>
 	class buffer
 	{
 	public:
+		using value_type = T;
+		static constexpr auto rank = Rank;
+
 		explicit buffer(cl::sycl::range<Rank> size)
-			: buf_(count(size))
+			: buf_(count(size)), size_(size)
 		{
 		}
 
 		template<access_mode mode>
 		auto get_access(handler cgh, cl::sycl::range<Rank> range) { return accessor<mode, T, Rank>{*this}; }
 
+		constexpr buffer_type<T, Rank> type() const {
+			return buffer_type<T, Rank>();
+		}
+
 		[[nodiscard]]
-		size_t size() const { return buf_.size(); }
+		cl::sycl::range<Rank> size() const { return size_; }
 
 		auto& data() { return buf_; }
 
 	private:
 		std::vector<T> buf_;
+		cl::sycl::range<Rank> size_;
 	};
 }
 

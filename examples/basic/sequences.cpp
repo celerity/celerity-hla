@@ -88,6 +88,15 @@ void sequence_static_assertions()
 	static_assert(algorithm::detail::get_accessor_type<algorithm::iterator<float, 1>, 0>() == access_type::invalid, "get_accessor_type");
 }
 
+
+
+template<typename BufferType>
+struct slice_of : celerity::algorithm::slice<typename BufferType::value_type, BufferType::rank>
+{
+};
+
+#define slice(b) slice_of<decltype(b)>
+
 void sequence_examples()
 {
 	// example 1: generic action sequence
@@ -153,8 +162,10 @@ void sequence_examples()
 	buffer<float, 1> c{ { 5 } };
 	buffer<float, 1> b_out{ { 5 } };
 
+	static_assert(std::is_base_of_v<slice<float, 1>, slice_of<decltype(b)>>);
+
 	transform(algorithm::distr<class sum>(q), begin(b), end(b), begin(b_out),
-		[](slice<float, 1> x)
+		[&](slice<float, 1> x)
 		{
 			auto sum = *x;
 
@@ -244,6 +255,7 @@ void iterator_static_assertions()
 void sycl_helper_assertions()
 {
 	using namespace celerity;
+	using namespace cl::sycl;
 
 	static_assert(count(cl::sycl::range<1> { 2 }) == 2, "count");
 	static_assert(count(cl::sycl::range<1> { 3 }) == 3, "count");
@@ -253,7 +265,8 @@ void sycl_helper_assertions()
 	static_assert(count(cl::sycl::range<3> { 2, 3, 2 }) == 12, "count");
 
 	static_assert(equals(next(cl::sycl::id<1> { 0 }, cl::sycl::range<1> { 2 }), cl::sycl::id<1> { 1 }), "next");
-	static_assert(equals(next(cl::sycl::id<1> { 1 }, cl::sycl::range<1> { 2 }), cl::sycl::id<1> { 1 }), "next");
+	static_assert(equals(next(cl::sycl::id<1> { 1 }, cl::sycl::range<1> { 2 }), cl::sycl::id<1> { 2 }), "next");
+	static_assert(equals(next(cl::sycl::id<1> { 2 }, cl::sycl::range<1> { 2 }), cl::sycl::id<1> { 3 }), "next");
 	static_assert(equals(next(cl::sycl::id<2> { 0, 0 }, cl::sycl::range<2> { 2, 2 }), cl::sycl::id<2> { 0, 1 }), "next");
 	static_assert(equals(next(cl::sycl::id<2> { 0, 0 }, cl::sycl::range<2> { 2, 1 }), cl::sycl::id<2> { 1, 0 }), "next");
 	static_assert(equals(next(cl::sycl::id<2> { 0, 1 }, cl::sycl::range<2> { 2, 2 }), cl::sycl::id<2> { 1, 0 }), "next");
@@ -264,6 +277,15 @@ void sycl_helper_assertions()
 	static_assert(equals(next(cl::sycl::id<3> { 0, 0, 0 }, cl::sycl::range<3> { 2, 2, 2 }, 4), cl::sycl::id<3> { 1, 0, 0 }), "next");
 	static_assert(equals(next(cl::sycl::id<3> { 0, 0, 0 }, cl::sycl::range<3> { 2, 2, 2 }, 7), cl::sycl::id<3> { 1, 1, 1 }), "next");
 	static_assert(equals(next(cl::sycl::id<3> { 0, 0, 0 }, cl::sycl::range<3> { 3, 3, 3 }, 7), cl::sycl::id<3> { 0, 2, 1 }), "next");
+	static_assert(equals(next(cl::sycl::id<3> { 2, 2, 2 }, cl::sycl::range<3> { 3, 3, 3 }, 1), cl::sycl::id<3> { 3, 0, 0 }), "next");
+
+	static_assert(equals(max_id(cl::sycl::range<3> { 2, 2, 2 }), cl::sycl::id<3> { 1, 1, 1 }), "max_id");
+	static_assert(equals(max_id(cl::sycl::range<1> { 3 }), cl::sycl::id<1> { 2 }), "max_id");
+
+	static_assert(equals(distance(id<1>{0}, id<1>{2}), range<1>{ 2 }), "distance");
+	static_assert(equals(distance(id<1>{1}, id<1>{2}), range<1>{ 1 }), "distance");
+	static_assert(equals(distance(id<2>{1, 3}, id<2>{2, 5}), range<2>{ 1, 2 }), "distance");
+	static_assert(equals(distance(id<2>{1, 3}, id<2>{2, 1}), range<2>{ 1, -2 }), "distance");
 }
 
 int main(int, char*[]) {
