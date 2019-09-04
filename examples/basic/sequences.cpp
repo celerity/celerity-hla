@@ -164,8 +164,8 @@ void sequence_examples()
 
 	static_assert(std::is_base_of_v<slice<float, 1>, slice_of<decltype(b)>>);
 
-	transform(algorithm::distr<class sum>(q), begin(b), end(b), begin(b_out),
-		[&](slice<float, 1> x)
+	algorithm::transform(algorithm::distr<class sum>(q), begin(b), end(b), begin(b_out),
+		[&](slice<float, 0> x)
 		{
 			auto sum = *x;
 
@@ -173,15 +173,15 @@ void sequence_examples()
 				sum += x[{i}];
 
 			return sum;
-		}, 0);
+		});
 
-	transform(master(q), begin(b), end(b), begin(b_out),
+	algorithm::transform(master(q), begin(b), end(b), begin(b_out),
 		[](float x)
 		{
 			return 2 * x;
 		});
 
-	transform(algorithm::distr<class product>(q), begin(b), end(b), begin(c), begin(b_out),
+	algorithm::transform(algorithm::distr<class product>(q), begin(b), end(b), begin(c), begin(b_out),
 		[](float x, float y)
 		{
 			return x * y;
