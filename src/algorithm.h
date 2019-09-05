@@ -64,8 +64,8 @@ namespace celerity::algorithm
 
 				return [=](celerity::handler cgh)
 				{
-					const auto first_in_acc = get_access< celerity::access_mode::read, FirstInputAccessorType>(cgh, beg, end);
-					const auto second_in_acc = get_access< celerity::access_mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
+					auto first_in_acc = get_access<celerity::access_mode::read, FirstInputAccessorType>(cgh, beg, end);
+					auto second_in_acc = get_access<celerity::access_mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
 
 					auto out_acc = get_access<celerity::access_mode::write, OutputAccessorType>(cgh, out, out);
 
@@ -162,12 +162,10 @@ namespace celerity::algorithm
 			return task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>, one_to_one>(p, beg, end, out, f));
 		}
 
-		template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
-			typename = std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::one_to_one &&
-										algorithm::detail::get_accessor_type<F, 1>() == access_type::one_to_one>>
+		template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
 		auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> beg2, iterator<T, Rank> out, const F& f)
 		{
-			return task<ExecutionPolicy>(detail::transform<one_to_one, one_to_one, one_to_one>(p, beg, end, beg2, out, f));
+			return task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>, algorithm::detail::accessor_type_t<F, 1, T>, one_to_one>(p, beg, end, beg2, out, f));
 		}
 	
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F>

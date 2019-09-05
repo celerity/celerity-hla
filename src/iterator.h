@@ -12,7 +12,7 @@ namespace celerity::algorithm
 	class iterator
 	{
 	public:
-		iterator(cl::sycl::id<Rank> pos, celerity::buffer<T, 1> & buffer)
+		iterator(cl::sycl::id<Rank> pos, celerity::buffer<T, Rank> & buffer)
 			: pos_(pos),
 			buffer_(buffer)
 		{
@@ -38,7 +38,7 @@ namespace celerity::algorithm
 
 	private:
 		cl::sycl::id<Rank> pos_ = 0;
-		celerity::buffer<T, 1> & buffer_;
+		celerity::buffer<T, Rank> & buffer_;
 	};
 
 	template<typename T, size_t Rank>
@@ -53,7 +53,7 @@ namespace celerity
 	template<typename T, size_t Rank>
 	algorithm::iterator<T, Rank> begin(celerity::buffer<T, Rank> & buffer)
 	{
-		return algorithm::iterator<T, Rank>(cl::sycl::id<1>{0}, buffer);
+		return algorithm::iterator<T, Rank>(cl::sycl::id<Rank>{}, buffer);
 	}
 
 	template<typename T, size_t Rank>

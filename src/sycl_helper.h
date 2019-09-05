@@ -50,6 +50,27 @@ namespace celerity
 			static_assert(Rank > 0, "Rank must be a postive integer greater than zero");
 			(wrap(Rank - 2 - Is, id, r), ...);
 		}
+	
+		constexpr cl::sycl::id<1> linearize(cl::sycl::id<1> idx, cl::sycl::range<1>) 
+		{
+			return idx;
+		}
+
+		constexpr cl::sycl::id<1> linearize(cl::sycl::id<2> idx, cl::sycl::range<2> r)
+		{
+			return { idx[0] * r[0] + idx[1] };
+		}
+
+		constexpr cl::sycl::id<1> linearize(cl::sycl::id<3> idx, cl::sycl::range<3> r)
+		{
+			return { idx[0] * r[1] * r[2] + idx[1] * r[2] + idx[2] };
+		}
+	}
+
+	template<size_t Rank>
+	constexpr cl::sycl::id<1> linearize(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> r)
+	{
+		return detail::linearize(idx, r);
 	}
 
 	template<size_t Rank>
@@ -88,7 +109,6 @@ namespace celerity
 
 		return offset;
 	}
-
 
 	template<size_t Rank>
 	constexpr bool equals(cl::sycl::id<Rank> lhs, cl::sycl::id<Rank> rhs)

@@ -91,9 +91,9 @@ namespace celerity
 			std::copy(begin(idx), idx.end(), std::ostream_iterator<int>{ std::cout, "," });
 			std::cout << ")" << std::endl;
 
-			static_assert(Rank == 1);
+			//static_assert(Rank == 1);
 
-			return buffer_.data()[idx[0]];
+			return buffer_.data()[linearize(idx, buffer_.size())[0]];
 		}
 
 		T operator[](cl::sycl::item<Rank> idx) const
@@ -106,7 +106,7 @@ namespace celerity
 
 			static_assert(Rank == 1);
 
-			return buffer_.data()[idx[0]];
+			return buffer_.data()[linearize(idx, buffer_.size())[0]];
 		}
 
 		static void print_accessor_type()
@@ -135,6 +135,12 @@ namespace celerity
 		explicit buffer(cl::sycl::range<Rank> size)
 			: buf_(count(size)), size_(size)
 		{
+		}
+
+		buffer(const T* data, cl::sycl::range<Rank> size)
+			: buffer(size)
+		{
+			std::memcpy(buf_.data(), data, buf_.size() * sizeof(T));
 		}
 
 		template<access_mode mode>
