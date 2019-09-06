@@ -10,7 +10,7 @@
 #include <vector>
 #include <array>
 
-#include "sycl_helper.h"
+#include "sycl.h"
 
 namespace celerity
 {

@@ -2,7 +2,7 @@
 #define ITERATOR_H
 
 #include "celerity.h"
-#include "sycl_helper.h"
+#include "sycl.h"
 
 namespace celerity::algorithm
 {

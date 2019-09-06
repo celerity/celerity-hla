@@ -1,7 +1,7 @@
 #ifndef ACCESSORS_H
 #define ACCESSORS_H
 
-#include "sycl_helper.h"
+#include "sycl.h"
 
 namespace celerity::algorithm
 {

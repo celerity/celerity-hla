@@ -4,17 +4,23 @@
 #include <utility>
 
 #include "sycl/item.hpp"
+#include "sycl/range.hpp"
+#include "sycl/id.hpp"
+#include "sycl/vec.hpp"
 
 namespace cl::sycl
 {
-	template <int Dimensions, bool with_offset = true>
+	template<int Dimensions, bool with_offset = true>
 	using item = trisycl::item<Dimensions, with_offset>;
 
-	template <int Dimensions>
+	template<int Dimensions>
 	using id = trisycl::id<Dimensions>;
 
-	template <int Dimensions>
+	template<int Dimensions>
 	using range = trisycl::range<Dimensions>;
+
+	template<int Dimensions>
+	using float2 = trisycl::float2;
 
 	struct exception { const char* what() { return nullptr; } };
 }
