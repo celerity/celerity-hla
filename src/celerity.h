@@ -68,7 +68,7 @@ namespace celerity
 	{
 		switch (mode)
 		{
-		case access_mode::read: return "read";
+		case access_mode::read:  return " read";
 		case access_mode::write: return "write";
 		case access_mode::read_write: return "read_write";
 		default: return "unknown";
@@ -85,46 +85,39 @@ namespace celerity
 		explicit accessor(buffer<T, Rank>& buffer)
 			: buffer_(buffer) {}
 
-		decltype(auto) operator[](cl::sycl::item<Rank> idx)
+		decltype(auto) operator[](cl::sycl::item<Rank> item)
 		{
-			std::cout << typeid(T).name() << "& ";
-			print_accessor_type();
-			std::cout << "::operator [](";
-
-			const auto id = idx.get_id();
-
-			std::copy(begin(id), end(id), std::ostream_iterator<int>{ std::cout, "," });
-			std::cout << ")" << std::endl;
-
-			//static_assert(Rank == 1);
-
-			return buffer_.data()[linearize(idx.get_id(), buffer_.size())[0]];
+			decltype(auto) val = buffer_.data()[linearize(item.get_id(), buffer_.size())[0]];
+			print_access(item, val);
+			return val;
 		}
 
-		T operator[](cl::sycl::item<Rank> idx) const
+		T operator[](cl::sycl::item<Rank> item) const
 		{
-			std::cout << typeid(T).name() << "  ";
-			print_accessor_type();
-			std::cout << "::operator [](";
-
-			const auto id = idx.get_id();
-
-			std::copy(begin(id), end(id), std::ostream_iterator<int>{ std::cout, "," });
-
-			std::cout << ")" << std::endl;
-
-			static_assert(Rank == 1);
-
-			return buffer_.data()[linearize(idx.get_id(), buffer_.size())[0]];
-		}
-
-		static void print_accessor_type()
-		{
-			std::cout << "accessor<" << to_string(Mode) << ", " << typeid(T).name() << ", " << Rank << ">";
+			decltype(auto) val = buffer_.data()[linearize(item.get_id(), buffer_.size())[0]];
+			print_access(item, val);
+			return val;
 		}
 
 	private:
 		buffer<T, Rank>& buffer_;
+
+		decltype(auto) get(cl::sycl::item<Rank> item)
+		{
+			return buffer_.data()[linearize(item.get_id(), buffer_.size())[0]];
+		}
+
+		static void print_access(cl::sycl::item<Rank> idx, const T& value)
+		{
+			std::cout << typeid(T).name() << " ";
+			std::cout << "accessor<" << to_string(Mode) << ", " << typeid(T).name() << ", " << Rank << ">";
+			std::cout << "::operator [](";
+
+			const auto id = idx.get_id();
+			std::copy(begin(id), end(id), std::ostream_iterator<size_t>{ std::cout, "," });
+
+			std::cout << ") -> " << value << std::endl;
+		}
 	};
 
 	template<typename T, size_t Rank>

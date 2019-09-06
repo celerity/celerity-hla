@@ -2,7 +2,7 @@
 #include "../../src/algorithm.h"
 #include "../../src/actions.h"
 
-constexpr size_t MAT_SIZE = 3;
+constexpr auto MAT_SIZE = 3;
 
 using namespace celerity;
 using namespace algorithm;
@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
 		{
 			auto sum = 0.f;
 
-			for (size_t k = 0; k < MAT_SIZE; ++k) {
+			for (auto k = 0; k < MAT_SIZE; ++k) {
 				const auto a_ik = a[k];
 				const auto b_kj = b[k];
 				sum += a_ik * b_kj;
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 
 				if (x == correct_value) return;
 	
-				fprintf(stderr, "VERIFICATION FAILED for element %ld,%ld: %f != %f\n", item[0], item[1], x, correct_value);
+				fprintf(stderr, "VERIFICATION FAILED for element %llu,%llu: %f != %f\n", item[0], item[1], x, correct_value);
 				verification_passed = false;
 			});
 

@@ -24,7 +24,7 @@ namespace celerity
 	namespace detail
 	{
 		template<size_t Rank, size_t...Is>
-		constexpr int dispatch_count(cl::sycl::range<Rank> r, std::index_sequence<Is...>)
+		constexpr size_t dispatch_count(cl::sycl::range<Rank> r, std::index_sequence<Is...>)
 		{
 			return (std::get<Is>(r) * ... * 1);
 		}
@@ -111,7 +111,7 @@ namespace celerity
 	}
 
 	template<size_t Rank>
-	constexpr int count(cl::sycl::range<Rank> r)
+	constexpr size_t count(cl::sycl::range<Rank> r)
 	{
 		return detail::dispatch_count(r, std::make_index_sequence<Rank>{});
 	}
