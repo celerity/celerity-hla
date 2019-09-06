@@ -77,6 +77,21 @@ namespace celerity::algorithm
 				};
 			}
 
+			template<typename ExecutionPolicy, typename F, typename T, size_t Rank,
+				typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::item>>
+			auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F& f)
+			{
+				return [=](celerity::handler cgh)
+				{
+					auto out_acc = get_access<celerity::access_mode::write, one_to_one>(cgh, beg, end);
+
+					dispatch(p, cgh, beg, end, [&](auto item)
+						{
+							out_acc[item] = f(item);
+						});
+				};
+			}
+
 			template<typename ExecutionPolicy, typename T, size_t Rank>
 			auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T& value)
 			{
