@@ -159,9 +159,9 @@ namespace celerity::algorithm
 
 		chunk<T, Extents...> operator[](const cl::sycl::item<Rank> item) const
 		{
-			return { item, [](const cl::sycl::id<Rank> id)
+			return { item, [this, item](const cl::sycl::id<Rank> id)
 			{
-				return accessor_[item.get_id() + id];
+				return accessor_[{item.get_range(), item.get_id() + id}];
 			} };
 		}
 

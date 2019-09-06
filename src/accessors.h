@@ -2,6 +2,7 @@
 #define ACCESSORS_H
 
 #include "sycl.h"
+#include <cmath>
 
 namespace celerity::algorithm
 {
@@ -95,7 +96,7 @@ namespace celerity::algorithm
 		T operator[](cl::sycl::id<rank> relative) const
 		{
 			for (auto i = 0; i < rank; ++i)
-				assert(std::abs(relative[i]) <= extents[i]);
+				assert(std::labs(relative[i]) <= extents[i]);
 			
 			return getter_(relative);
 		}
