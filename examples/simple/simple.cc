@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
 			cgh.parallel_for<class produce_a>(cl::sycl::range<1>(DEMO_DATA_SIZE), [=](cl::sycl::item<1> item) { dw_a[DEMO_DATA_SIZE - 1 - item[0]] = 1.f; });
 		});*/
 
-		fill(algorithm::distr<class produce_a>(queue), begin(buf_a), end(buf_a), []() { return 1.f; });
+		fill(algorithm::distr<class produce_a>(queue), begin(buf_a), end(buf_a), 1.f);
 		
 		/*queue.submit([=](celerity::handler& cgh) {
 			auto r_a = buf_a.get_access<cl::sycl::access::mode::read>(cgh, [](celerity::chunk<1> chnk) -> celerity::subrange<1> {

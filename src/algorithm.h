@@ -64,7 +64,7 @@ namespace celerity::algorithm
 			}
 
 			template<typename ExecutionPolicy, typename F, typename T, size_t Rank>
-			auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F& f)
+			auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F& f)
 			{
 				return [=](celerity::handler cgh)
 				{
@@ -74,6 +74,20 @@ namespace celerity::algorithm
 					{ 
 						out_acc[item] = f(); 
 					});
+				};
+			}
+
+			template<typename ExecutionPolicy, typename T, size_t Rank>
+			auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T& value)
+			{
+				return [=](celerity::handler cgh)
+				{
+					auto out_acc = get_access<celerity::access_mode::write, one_to_one>(cgh, beg, end);
+
+					dispatch(p, cgh, beg, end, [&](auto item)
+						{
+							out_acc[item] = value;
+						});
 				};
 			}
 		
@@ -128,9 +142,15 @@ namespace celerity::algorithm
 		}
 	
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
-		auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F & f)
+		auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F & f)
 		{
-			return task<ExecutionPolicy>(detail::fill(p, beg, end, f));
+			return task<ExecutionPolicy>(detail::generate(p, beg, end, f));
+		}
+
+		template<typename ExecutionPolicy, typename T, size_t Rank>
+		auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T& value)
+		{
+			return task<ExecutionPolicy>(detail::fill(p, beg, end, value));
 		}
 	
 		template<typename ExecutionPolicy, typename BinaryOp, typename T, size_t Rank>
@@ -163,9 +183,15 @@ namespace celerity::algorithm
 	}
 
 	template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
-	void fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F& f)
+	void generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F& f)
 	{
-		actions::fill(p, beg, end, f) | submit_to(p.q);
+		actions::generate(p, beg, end, f) | submit_to(p.q);
+	}
+
+	template<typename ExecutionPolicy, typename T, size_t Rank>
+	void fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T& value)
+	{
+		actions::fill(p, beg, end, value) | submit_to(p.q);
 	}
 
 	template<typename ExecutionPolicy, typename BinaryOp, typename T, size_t Rank>
