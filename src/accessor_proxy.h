@@ -11,6 +11,7 @@ namespace celerity::algorithm
 		one_to_one,
 		slice,
 		chunk,
+		item,
 		invalid,
 	};
 
@@ -65,7 +66,6 @@ namespace celerity::algorithm
 		template<typename T, int I>
 		using arg_type_t = typename arg_type<T, I, has_call_operator_v<T>>::type;
 
-
 		template <typename ArgType, typename ElementType>
 		struct accessor_type
 		{
@@ -74,7 +74,6 @@ namespace celerity::algorithm
 
 		template <typename F, int I, typename ElementType>
 		using accessor_type_t = typename accessor_type<arg_type_t<F, I>, ElementType>::type;
-
 
 		template<typename F, int I>
 		constexpr std::enable_if_t<has_call_operator_v<F>, access_type> get_accessor_type()
@@ -100,6 +99,10 @@ namespace celerity::algorithm
 			else if constexpr (is_chunk_v<ArgType>)
 			{
 				return access_type::chunk;
+			}
+			else if constexpr (is_item_v<ArgType>)
+			{
+				return access_type::item;
 			}
 			else
 			{
@@ -138,8 +141,6 @@ namespace celerity::algorithm
 		const getter_t& getter_;
 	};
 	
-
-
 	template<typename T, size_t Dim>
 	struct is_slice<slice<T, Dim>> : public std::true_type {};
 	
@@ -154,6 +155,15 @@ namespace celerity::algorithm
 
 	template<typename T, size_t Rank>
 	struct is_chunk<chunk<T, Rank>> : public std::true_type {};
+
+	template<typename T>
+	struct is_item : public std::false_type {};
+
+	template<typename T>
+	inline constexpr auto is_item_v = is_item<T>::value;
+
+	template<size_t Rank>
+	struct is_item<cl::sycl::item<Rank>> : public std::true_type {};
 
 	template<typename T, size_t Rank, typename AccessorType, typename Type>
 	class accessor_proxy;
@@ -193,7 +203,7 @@ namespace celerity::algorithm
 				return accessor_[id];
 			};
 
-			return slice<T, Dim>{ it[Dim], getter_ };
+			return slice<T, Dim>{ static_cast<int>(it.get_id()[Dim]), getter_ };
 		}
 
 	private:

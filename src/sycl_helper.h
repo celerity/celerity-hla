@@ -3,16 +3,18 @@
 
 #include <utility>
 
+#include "sycl/item.hpp"
+
 namespace cl::sycl
 {
-	template<size_t Rank>
-	using range = std::array<int, Rank>;
+	template <int Dimensions, bool with_offset = true>
+	using item = trisycl::item<Dimensions, with_offset>;
 
-	template<size_t Rank>
-	using item = std::array<int, Rank>;
+	template <int Dimensions>
+	using id = trisycl::id<Dimensions>;
 
-	template<size_t Rank>
-	using id = std::array<int, Rank>;
+	template <int Dimensions>
+	using range = trisycl::range<Dimensions>;
 
 	struct exception { const char* what() { return nullptr; } };
 }
@@ -35,7 +37,7 @@ namespace celerity
 		}
 
 		template<size_t Rank>
-		constexpr void wrap(int idx, cl::sycl::id<Rank>& id, cl::sycl::range<Rank> r)
+		constexpr void incr(int idx, cl::sycl::id<Rank>& id, cl::sycl::range<Rank> r)
 		{
 			while (id[idx + 1] >= r[idx + 1])
 			{
@@ -44,31 +46,66 @@ namespace celerity
 			}
 		}
 
+		template<size_t Rank>
+		constexpr void decr_n(int idx, cl::sycl::id<Rank>& id, cl::sycl::range<Rank> r)
+		{
+			while (id[idx + 1] < 0)
+			{
+				id[idx + 1] += r[idx + 1] + 1;
+				--id[idx];
+			}
+		}
+
+
+		template<size_t Rank>
+		constexpr void decr(int idx, cl::sycl::id<Rank>& id)
+		{
+			if (id[idx + 1] >= 0) return;
+			
+			id[idx + 1] += 1;
+			--id[idx];
+			
+		}
+
 		template<size_t Rank, size_t...Is>
-		constexpr void dispatch_next(cl::sycl::id<Rank>& id, cl::sycl::range<Rank> r, std::index_sequence<Is...>)
+		constexpr void dispatch_next(cl::sycl::id<Rank>& id, cl::sycl::range<Rank> max_id, std::index_sequence<Is...>)
 		{
 			static_assert(Rank > 0, "Rank must be a postive integer greater than zero");
-			(wrap(Rank - 2 - Is, id, r), ...);
+			(incr(Rank - 2 - Is, id, max_id), ...);
+		}
+
+		template<size_t Rank, size_t...Is>
+		constexpr void dispatch_prev_n(cl::sycl::id<Rank>& id, cl::sycl::id<Rank> max_id, std::index_sequence<Is...>)
+		{
+			static_assert(Rank > 0, "Rank must be a postive integer greater than zero");
+			(decr_n(Rank - 2 - Is, id, max_id), ...);
+		}
+
+		template<size_t Rank, size_t...Is>
+		constexpr void dispatch_prev(cl::sycl::id<Rank>& id, std::index_sequence<Is...>)
+		{
+			static_assert(Rank > 0, "Rank must be a postive integer greater than zero");
+			(decr(Rank - 2 - Is, id), ...);
 		}
 	
-		constexpr cl::sycl::id<1> linearize(cl::sycl::id<1> idx, cl::sycl::range<1>) 
+		cl::sycl::id<1> linearize(cl::sycl::id<1> idx, cl::sycl::range<1>) 
 		{
 			return idx;
 		}
 
-		constexpr cl::sycl::id<1> linearize(cl::sycl::id<2> idx, cl::sycl::range<2> r)
+		cl::sycl::id<1> linearize(cl::sycl::id<2> idx, cl::sycl::range<2> r)
 		{
 			return { idx[0] * r[0] + idx[1] };
 		}
 
-		constexpr cl::sycl::id<1> linearize(cl::sycl::id<3> idx, cl::sycl::range<3> r)
+		cl::sycl::id<1> linearize(cl::sycl::id<3> idx, cl::sycl::range<3> r)
 		{
 			return { idx[0] * r[1] * r[2] + idx[1] * r[2] + idx[2] };
 		}
 	}
 
 	template<size_t Rank>
-	constexpr cl::sycl::id<1> linearize(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> r)
+	cl::sycl::id<1> linearize(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> r)
 	{
 		return detail::linearize(idx, r);
 	}
@@ -80,7 +117,7 @@ namespace celerity
 	}
 
 	template<size_t Rank>
-	constexpr cl::sycl::id<Rank> next(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> r, int distance = 1)
+	constexpr cl::sycl::id<Rank> next(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> max_id, int distance = 1)
 	{
 		cl::sycl::id<Rank> out = idx;
 
@@ -88,7 +125,37 @@ namespace celerity
 
 		if constexpr (Rank > 1)
 		{
-			detail::dispatch_next(out, r, std::make_index_sequence<Rank - 1>{});
+			detail::dispatch_next(out, max_id, std::make_index_sequence<Rank - 1>{});
+		}
+
+		return out;
+	}
+
+	template<size_t Rank>
+	constexpr cl::sycl::id<Rank> prev(cl::sycl::id<Rank> idx, cl::sycl::id<Rank> max_id, int distance = 1)
+	{
+		cl::sycl::id<Rank> out = idx;
+
+		out[Rank - 1] -= distance;
+
+		if constexpr (Rank > 1)
+		{
+			detail::dispatch_prev_n(out, max_id, std::make_index_sequence<Rank - 1>{});
+		}
+
+		return out;
+	}
+
+	template<size_t Rank>
+	constexpr cl::sycl::id<Rank> prev(cl::sycl::id<Rank> idx)
+	{
+		cl::sycl::id<Rank> out = idx;
+
+		out[Rank - 1] -= 1;
+
+		if constexpr (Rank > 1)
+		{
+			detail::dispatch_prev(out, std::make_index_sequence<Rank - 1>{});
 		}
 
 		return out;
@@ -105,7 +172,9 @@ namespace celerity
 	constexpr cl::sycl::id<Rank> max_id(cl::sycl::range<Rank> r, cl::sycl::id<Rank> offset = {})
 	{
 		for (int i = 0; i < Rank; ++i)
+		{
 			offset[i] += r[i] - 1;
+		}
 
 		return offset;
 	}
@@ -123,7 +192,9 @@ namespace celerity
 
 		//std::transform(begin(to), end(to), begin(from), begin(dist), std::minus<>{});
 		for (int i = 0; i < Rank; ++i)
+		{
 			dist[i] = to[i] - from[i];
+		}
 		 
 		return dist;
 	}

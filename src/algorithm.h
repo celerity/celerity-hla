@@ -14,14 +14,27 @@ namespace celerity::algorithm
 	{
 		namespace detail
 		{
+			template<typename Iterator, typename ExecutionPolicy, typename F>
+			void dispatch(ExecutionPolicy p, celerity::handler& cgh, Iterator beg, Iterator end, const F& f)
+			{
+				using execution_policy_type = std::decay_t<ExecutionPolicy>;
+
+				const auto r = distance(beg, end);
+
+				if constexpr (policy_traits<execution_policy_type>::is_distributed)
+				{
+					cgh.parallel_for<policy_traits<execution_policy_type>::kernel_name>(r, f);
+				}
+				else
+				{
+					cgh.run([&]() { for_each_index(beg, end, r, f); });
+				}
+			}
+
 			template<typename InputAccessorType, typename OutputAccessorType, typename ExecutionPolicy, typename F, typename T,  size_t Rank>
 			auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> out, const F& f)
 			{
 				using execution_policy = std::decay_t<ExecutionPolicy>;
-
-				static_assert(Rank == 1, "Only 1-dimenionsal buffers for now");
-
-				const auto r = distance(beg, end);
 
 				//assert(r <= static_cast<int>(out.buffer().size() - *out));
 
@@ -30,25 +43,10 @@ namespace celerity::algorithm
 					auto in_acc = get_access<celerity::access_mode::read, InputAccessorType>(cgh, beg, end);
 					auto out_acc = get_access<celerity::access_mode::write, OutputAccessorType>(cgh, out, out);
 
-					if constexpr (policy_traits<execution_policy>::is_distributed)
+					dispatch(p, cgh, beg, end, [&](auto item)
 					{
-						cgh.parallel_for<policy_traits<execution_policy>::kernel_name>(r, [&](auto item)
-							{
-								out_acc[item] = f(in_acc[item]);
-							});
-					}
-					else
-					{
-						cgh.run([&]()
-							{
-								std::for_each(beg, end,
-									[&](auto i)
-									{
-										const cl::sycl::item<Rank> item{i};
-										out_acc[item] = f(in_acc[item]);
-									});
-							});
-					}
+						out_acc[item] = f(in_acc[item]);
+					});
 				};
 			}
 
@@ -56,8 +54,6 @@ namespace celerity::algorithm
 			auto transform(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, iterator<T, Rank> beg2, iterator<T, Rank> out, const F& f)
 			{
 				using execution_policy = std::decay_t<ExecutionPolicy>;
-
-				const auto r = distance(beg, end);
 
 				//assert(r <= static_cast<int>(beg2.buffer().size() - *beg2));
 				//assert(r <= static_cast<int>(out.buffer().size() - *out));
@@ -69,25 +65,10 @@ namespace celerity::algorithm
 
 					auto out_acc = get_access<celerity::access_mode::write, OutputAccessorType>(cgh, out, out);
 
-					if constexpr (policy_traits<execution_policy>::is_distributed)
+					dispatch(p, cgh, beg, end, [&](auto item)
 					{
-						cgh.parallel_for<policy_traits<execution_policy>::kernel_name>(r, [&](auto item)
-							{
-								out_acc[item] = f(first_in_acc[item], second_in_acc[item]);
-							});
-					}
-					else
-					{
-						cgh.run([&]()
-							{
-								std::for_each(beg, end,
-									[&](auto i)
-									{
-										const cl::sycl::item<Rank> item{ i };
-										out_acc[item] = f(first_in_acc[item], second_in_acc[item]);
-									});
-							});
-					}
+						out_acc[item] = f(first_in_acc[item], second_in_acc[item]);
+					});
 				};
 			}
 
@@ -96,33 +77,14 @@ namespace celerity::algorithm
 			{
 				using execution_policy = std::decay_t<ExecutionPolicy>;
 
-				static_assert(Rank == 1, "Only 1-dimenionsal buffers for now");
-
-				const auto r = distance(beg, end);
-
 				return [=](celerity::handler cgh)
 				{
 					auto out_acc = get_access<celerity::access_mode::write, one_to_one>(cgh, beg, end);
 	
-					if constexpr (policy_traits<execution_policy>::is_distributed)
-					{
-						cgh.parallel_for<policy_traits<execution_policy>::kernel_name>(r, [&](auto item)
-							{
-								out_acc[item] = f();
-							});
-					}
-					else
-					{
-						cgh.run([&]()
-							{
-								std::for_each(beg, end,
-									[&](auto i)
-									{
-										const cl::sycl::item<Rank> item{ i };
-										out_acc[item] = f();
-									});
-							});
-					}
+					dispatch(p, cgh, beg, end, [&](auto item) 
+					{ 
+						out_acc[item] = f(); 
+					});
 				};
 			}
 		
@@ -133,27 +95,40 @@ namespace celerity::algorithm
 				static_assert(!policy_traits<ExecutionPolicy>::is_distributed, "can not be distributed");
 				static_assert(Rank == 1, "Only 1-dimenionsal buffers for now");
 
-				const auto r = distance(beg, end);
-
 				return [=](celerity::handler cgh)
 				{
 					const auto in_acc = get_access<access_mode::read, one_to_one>(cgh, beg, end);
 
 					auto sum = init;
 
-					cgh.run([&]()
-					{
-						std::for_each(beg, end,
-							[&](auto i)
-							{
-								const cl::sycl::item<Rank> item{ i };
-								sum = op(std::move(sum), in_acc[item]);
-							});
+					dispatch(p, cgh, beg, end, [&](auto item) 
+					{ 
+						sum = op(std::move(sum), in_acc[item]); 
 					});
 
 					return sum;
 				};
 			}
+		
+			template<typename InputAccessorType, typename ExecutionPolicy, typename F, typename T, size_t Rank,
+				typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<F, 1>() == access_type::item>>
+			auto for_each(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, const F& f)
+			{
+				using execution_policy = std::decay_t<ExecutionPolicy>;
+
+				//assert(r <= static_cast<int>(out.buffer().size() - *out));
+
+				return [=](celerity::handler cgh)
+				{
+					auto in_acc = get_access<celerity::access_mode::read, InputAccessorType>(cgh, beg, end);
+
+					dispatch(p, cgh, beg, end, [&](auto item)
+					{
+						f(in_acc[item], item);
+					});
+				};
+			}
+
 		}
 
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
@@ -179,6 +154,13 @@ namespace celerity::algorithm
 		{
 			return task<ExecutionPolicy>(detail::accumulate(p, beg, end, init, op));
 		}
+	
+		template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
+		auto for_each(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, const F& f)
+		{
+			return task<ExecutionPolicy>(detail::for_each<algorithm::detail::accessor_type_t<F, 0, T>>(p, beg, end, f));
+		}
+
 	}
 
 	template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
@@ -206,6 +188,13 @@ namespace celerity::algorithm
 	auto accumulate(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, T init, const BinaryOp& op)
 	{
 		return actions::accumulate(p, beg, end, init, op) | submit_to(p.q);
+	}
+
+	template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
+		typename = std::enable_if_t<detail::get_accessor_type<F, 1>() == access_type::item>>
+		void for_each(ExecutionPolicy p, iterator<T, Rank> beg, iterator<T, Rank> end, const F & f)
+	{
+		actions::for_each(p, beg, end, f) | submit_to(p.q);
 	}
 }
 

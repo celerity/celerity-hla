@@ -21,10 +21,12 @@ namespace celerity
 		template<typename KernelName, size_t Rank, typename F>
 		void parallel_for(cl::sycl::range<Rank> r, F f)
 		{
-			for (cl::sycl::id<Rank> i{}; !celerity::equals(i, r); i = next(i, r))
-			{
-				f(i);
-			}
+			cl::sycl::id<Rank> end;
+			
+			for (int i = 0; i < Rank; ++i)
+				end[i] = r[i];
+
+			for_each_index(algorithm::iterator_wod<Rank>{ { }, r }, { end, r }, r, f);
 		}
 
 		template<typename F>
@@ -88,12 +90,15 @@ namespace celerity
 			std::cout << typeid(T).name() << "& ";
 			print_accessor_type();
 			std::cout << "::operator [](";
-			std::copy(begin(idx), idx.end(), std::ostream_iterator<int>{ std::cout, "," });
+
+			const auto id = idx.get_id();
+
+			std::copy(begin(id), end(id), std::ostream_iterator<int>{ std::cout, "," });
 			std::cout << ")" << std::endl;
 
 			//static_assert(Rank == 1);
 
-			return buffer_.data()[linearize(idx, buffer_.size())[0]];
+			return buffer_.data()[linearize(idx.get_id(), buffer_.size())[0]];
 		}
 
 		T operator[](cl::sycl::item<Rank> idx) const
@@ -101,12 +106,16 @@ namespace celerity
 			std::cout << typeid(T).name() << "  ";
 			print_accessor_type();
 			std::cout << "::operator [](";
-			std::copy(idx.begin(), idx.end(), std::ostream_iterator<int>{ std::cout, "," });
+
+			const auto id = idx.get_id();
+
+			std::copy(begin(id), end(id), std::ostream_iterator<int>{ std::cout, "," });
+
 			std::cout << ")" << std::endl;
 
 			static_assert(Rank == 1);
 
-			return buffer_.data()[linearize(idx, buffer_.size())[0]];
+			return buffer_.data()[linearize(idx.get_id(), buffer_.size())[0]];
 		}
 
 		static void print_accessor_type()
