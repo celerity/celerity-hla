@@ -7,11 +7,6 @@ constexpr size_t MAT_SIZE = 3;
 using namespace celerity;
 using namespace algorithm;
 
-template <typename T>
-void multiply(celerity::distr_queue queue, celerity::buffer<T, 2>& mat_a, celerity::buffer<T, 2>& mat_b, celerity::buffer<T, 2>& mat_c) {
-	transform(algorithm::master(queue), begin(mat_a), end(mat_a), begin(mat_b), begin(mat_c),
-);
-}
 
 int main(int argc, char* argv[]) {
 	// std::this_thread::sleep_for(std::chrono::seconds(5));

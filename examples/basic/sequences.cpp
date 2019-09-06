@@ -85,7 +85,7 @@ void sequence_static_assertions()
 	static_assert(algorithm::detail::has_call_operator_v<decltype(zero)>, "no call operator");
 	static_assert(algorithm::detail::has_call_operator_v<decltype(hello_world)>, "no call operator");
 	static_assert(algorithm::detail::get_accessor_type<decltype(zero), 0>() == access_type::one_to_one, "get_accessor_type");
-	static_assert(algorithm::detail::get_accessor_type<algorithm::iterator<float, 1>, 0>() == access_type::invalid, "get_accessor_type");
+	static_assert(algorithm::detail::get_accessor_type<algorithm::buffer_iterator<float, 1>, 0>() == access_type::invalid, "get_accessor_type");
 }
 
 

@@ -45,5 +45,3 @@ namespace celerity::algorithm::actions
 
 #endif
 
-
-

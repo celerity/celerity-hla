@@ -2,6 +2,8 @@
 #define ACCESSOR_PROXY_H
 
 #include "celerity.h"
+#include "accessors.h"
+
 #include <type_traits>
 
 namespace celerity::algorithm
@@ -15,16 +17,8 @@ namespace celerity::algorithm
 		invalid,
 	};
 
-	class one_to_one
-	{
-
-	};
-
 	namespace detail
 	{
-		template<typename T>
-		using slice_element_getter_t = std::function<T(int)>;
-
 		template<typename T, typename = std::void_t<>>
 		struct has_call_operator : std::false_type {};
 
@@ -75,20 +69,6 @@ namespace celerity::algorithm
 		template <typename F, int I, typename ElementType>
 		using accessor_type_t = typename accessor_type<arg_type_t<F, I>, ElementType>::type;
 
-		template<typename F, int I>
-		constexpr std::enable_if_t<has_call_operator_v<F>, access_type> get_accessor_type()
-		{
-			using arg_type = typename function_traits<F>::arg<I>::type;
-
-			return get_accessor_type_<arg_type>();
-		}
-
-		template<typename F, int>
-		constexpr std::enable_if_t<!has_call_operator_v<F>, access_type> get_accessor_type()
-		{
-			return access_type::invalid;
-		}
-
 		template<typename ArgType>
 		constexpr access_type get_accessor_type_()
 		{
@@ -109,61 +89,21 @@ namespace celerity::algorithm
 				return access_type::one_to_one;
 			}
 		}
-	}
-
-	template<typename T>
-	struct is_slice : public std::false_type {};
-
-	template<typename T>
-	inline constexpr auto is_slice_v = is_slice<T>::value;
-
-	template<typename T, size_t Dim>
-	class slice
-	{
-	public:
-		using getter_t = detail::slice_element_getter_t<T>;
-
-		slice(int idx, const getter_t& f)
-			: idx_(idx), getter_(f)
-		{}
-
-		const int index() const { return idx_; }
 		
-		T operator*() const
+		template<typename F, int I>
+		constexpr std::enable_if_t<has_call_operator_v<F>, access_type> get_accessor_type()
 		{
-			return getter_(idx_);
+			using arg_type = typename function_traits<F>::arg<I>::type;
+
+			return get_accessor_type_<arg_type>();
 		}
 
-		T operator[](int pos) const { return getter_(pos); }
-
-	private:
-		int idx_;
-		const getter_t& getter_;
-	};
-	
-	template<typename T, size_t Dim>
-	struct is_slice<slice<T, Dim>> : public std::true_type {};
-	
-	template<typename T>
-	struct is_chunk : public std::false_type {};
-
-	template<typename T>
-	inline constexpr auto is_chunk_v = is_slice<T>::value;
-
-	template<typename T, size_t Rank>
-	struct chunk {};
-
-	template<typename T, size_t Rank>
-	struct is_chunk<chunk<T, Rank>> : public std::true_type {};
-
-	template<typename T>
-	struct is_item : public std::false_type {};
-
-	template<typename T>
-	inline constexpr auto is_item_v = is_item<T>::value;
-
-	template<size_t Rank>
-	struct is_item<cl::sycl::item<Rank>> : public std::true_type {};
+		template<typename F, int>
+		constexpr std::enable_if_t<!has_call_operator_v<F>, access_type> get_accessor_type()
+		{
+			return access_type::invalid;
+		}
+	}
 
 	template<typename T, size_t Rank, typename AccessorType, typename Type>
 	class accessor_proxy;
@@ -224,7 +164,7 @@ namespace celerity::algorithm
 	};
 
 	template<celerity::access_mode Mode, typename AccessorType, typename T, size_t Rank>
-	auto get_access(celerity::handler cgh, iterator<T, Rank> beg, iterator<T, Rank> end)
+	auto get_access(celerity::handler cgh, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end)
 	{
 		//assert(&beg.buffer() == &end.buffer());
 		//assert(*beg <= *end);
@@ -233,7 +173,6 @@ namespace celerity::algorithm
 
 		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{ acc };
 	}
-
 }
 
 #endif // ACCESSOR_PROXY_H

@@ -26,7 +26,7 @@ namespace celerity
 			for (int i = 0; i < Rank; ++i)
 				end[i] = r[i];
 
-			for_each_index(algorithm::iterator_wod<Rank>{ { }, r }, { end, r }, r, f);
+			for_each_index(algorithm::iterator<Rank>{ { }, r }, { end, r }, r, f);
 		}
 
 		template<typename F>
