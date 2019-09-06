@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
 
 		{
 			auto sum_future =
-				actions::fill(distr<class produce_a>(queue), begin(buf_a), end(buf_a), []() { return 1.f; }) |
+				actions::fill(distr<class produce_a>(queue), begin(buf_a), end(buf_a), 1.f) |
 				actions::transform(distr<class compute_b>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; }) |
 				actions::transform(master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](const float x) { return 2.f - x; }) |
 				actions::transform(distr<class compute_d>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), [](const float x, const float y) { return x + y; }) |
@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 		// 
 
 		{
-			auto produce_a = actions::fill(distr<class produce_a>(queue), begin(buf_a), end(buf_a), []() { return 1.f; });
+			auto produce_a = actions::fill(distr<class produce_a>(queue), begin(buf_a), end(buf_a), 1.f);
 			auto compute_b = actions::transform(distr<class compute_b>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](const float x) { return 2.f * x; });
 			auto compute_c = actions::transform(master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](const float x) { return 2.f - x; });
 			auto compute_d = actions::transform(distr<class compute_d>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), [](const float x, const float y) { return x + y; });

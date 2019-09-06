@@ -2,60 +2,95 @@
 #define ITERATOR_H
 
 #include "celerity.h"
-#include <stdexcept>
-#include <cassert>
+#include "sycl.h"
 
 namespace celerity::algorithm
 {
-	template<typename T, size_t Dims>
-	class iterator;
-
-	template<typename T>
-	class iterator<T, 1>
+	template<size_t Rank>
+	class iterator
 	{
 	public:
-		iterator(int pos, celerity::buffer<T, 1> & buffer)
+		iterator(cl::sycl::id<Rank> pos, cl::sycl::range<Rank>& range)
 			: pos_(pos),
-			buffer_(buffer)
+			range_(range)
 		{
 		}
 
 		bool operator ==(const iterator& rhs)
 		{
-			return pos_ == rhs.pos_;
+			return equals(pos_, rhs.pos_);
 		}
 
 		bool operator !=(const iterator& rhs)
 		{
-			return pos_ != rhs.pos_;
+			return !equals(pos_, rhs.pos_);
 		}
 
 		iterator& operator++()
 		{
-			pos_++; return *this;
+			pos_ = celerity::next(pos_, range_);
+
+			if (pos_[0] != range_[0])
+				return *this;
+
+			for (auto i = 0; i < Rank; ++i)
+				pos_[i] = range_[i];
+
+			return *this;
 		}
 
-		[[nodiscard]] int operator*() const { return pos_; }
-		[[nodiscard]] celerity::buffer<T, 1> & buffer() const { return buffer_; }
+		[[nodiscard]] cl::sycl::id<Rank> operator*() const { return pos_; }
 
 	private:
-		int pos_ = 0;
-		celerity::buffer<T, 1>& buffer_;
+		cl::sycl::id<Rank> pos_ = 0;
+		cl::sycl::range<Rank> range_;
 	};
+	
+	template<typename T, size_t Rank>
+	class buffer_iterator : public iterator<Rank>
+	{
+	public:
+		buffer_iterator(cl::sycl::id<Rank> pos, buffer<T, Rank>& buffer)
+			: iterator(pos, buffer.size()), buffer_(buffer)
+		{
+		}
+
+		[[nodiscard]] buffer<T, Rank>& buffer() const { return buffer_; }
+
+	private:
+		celerity::buffer<T, Rank>& buffer_;
+	};
+
+
+	template<typename T, size_t Rank>
+	cl::sycl::range<Rank> distance(buffer_iterator<T, Rank> from, buffer_iterator<T, Rank> to)
+	{
+		return celerity::distance(*from, *to);
+	}
 }
 
 namespace celerity
 {
-	template<typename T>
-	algorithm::iterator<T, 1> begin(celerity::buffer<T, 1> & buffer)
+	template<typename T, size_t Rank>
+	algorithm::buffer_iterator<T, Rank> begin(celerity::buffer<T, Rank> & buffer)
 	{
-		return algorithm::iterator<T, 1>(0, buffer);
+		return algorithm::buffer_iterator<T, Rank>(cl::sycl::id<Rank>{}, buffer);
 	}
 
-	template<typename T>
-	algorithm::iterator<T, 1> end(celerity::buffer<T, 1> & buffer)
+	template<typename T, size_t Rank>
+	algorithm::buffer_iterator<T, Rank> end(celerity::buffer<T, Rank> & buffer)
 	{
-		return algorithm::iterator<T, 1>(static_cast<int>(buffer.size()), buffer);
+		return algorithm::buffer_iterator<T, Rank>(buffer.size(), buffer);
+	}
+
+	template<size_t Rank, typename Iterator, typename F>
+	void for_each_index(Iterator beg, Iterator end, cl::sycl::range<Rank> r, const F& f)
+	{
+		std::for_each(algorithm::iterator<Rank>{ *beg, r }, algorithm::iterator<Rank>{ *end, r },
+			[&](auto i)
+			{
+				f(cl::sycl::item<Rank>{ r, i });
+			});
 	}
 }
 

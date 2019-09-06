@@ -10,34 +10,10 @@
 #include <vector>
 #include <array>
 
-namespace cl::sycl
-{
-	template<size_t Rank>
-	using range = std::array<int, Rank>;
-
-	template<size_t Rank>
-	using item = std::array<int, Rank>;
-
-	struct exception { const char* what() { return nullptr; } };
-}
+#include "sycl.h"
 
 namespace celerity
 {
-	namespace detail
-	{
-		template<size_t Rank, size_t...Is>
-		int dispatch_count(cl::sycl::range<Rank> r, std::index_sequence<Is...>)
-		{
-			return (std::get<Is>(r) * ... * 1);
-		}
-	}
-
-	template<size_t Rank>
-	int count(cl::sycl::range<Rank> r)
-	{
-		return detail::dispatch_count(r, std::make_index_sequence<Rank>{});
-	}
-
 	struct handler
 	{
 		int invocations;
@@ -45,17 +21,12 @@ namespace celerity
 		template<typename KernelName, size_t Rank, typename F>
 		void parallel_for(cl::sycl::range<Rank> r, F f)
 		{
-			if constexpr (Rank == 1)
-			{
-				for (auto i = 0; i < count(r); ++i)
-				{
-					f(cl::sycl::item<Rank>{i});
-				}
-			}
-			else
-			{
-				throw std::logic_error("not implemented");
-			}
+			cl::sycl::id<Rank> end;
+			
+			for (int i = 0; i < Rank; ++i)
+				end[i] = r[i];
+
+			for_each_index(algorithm::iterator<Rank>{ { }, r }, { end, r }, r, f);
 		}
 
 		template<typename F>
@@ -97,7 +68,7 @@ namespace celerity
 	{
 		switch (mode)
 		{
-		case access_mode::read: return "read";
+		case access_mode::read:  return " read";
 		case access_mode::write: return "write";
 		case access_mode::read_write: return "read_write";
 		default: return "unknown";
@@ -114,60 +85,81 @@ namespace celerity
 		explicit accessor(buffer<T, Rank>& buffer)
 			: buffer_(buffer) {}
 
-		decltype(auto) operator[](cl::sycl::item<Rank> idx)
+		decltype(auto) operator[](cl::sycl::item<Rank> item)
 		{
-			std::cout << typeid(T).name() << "& ";
-			print_accessor_type();
-			std::cout << "::operator [](";
-			std::copy(begin(idx), idx.end(), std::ostream_iterator<int>{ std::cout, "," });
-			std::cout << ")" << std::endl;
-
-			static_assert(Rank == 1);
-
-			return buffer_.data()[idx[0]];
+			decltype(auto) val = buffer_.data()[linearize(item.get_id(), buffer_.size())[0]];
+			print_access(item, val);
+			return val;
 		}
 
-		T operator[](cl::sycl::item<Rank> idx) const
+		T operator[](cl::sycl::item<Rank> item) const
 		{
-			std::cout << typeid(T).name() << "  ";
-			print_accessor_type();
-			std::cout << "::operator [](";
-			std::copy(idx.begin(), idx.end(), std::ostream_iterator<int>{ std::cout, "," });
-			std::cout << ")" << std::endl;
-
-			static_assert(Rank == 1);
-
-			return buffer_.data()[idx[0]];
-		}
-
-		static void print_accessor_type()
-		{
-			std::cout << "accessor<" << to_string(Mode) << ", " << typeid(T).name() << ", " << Rank << ">";
+			decltype(auto) val = buffer_.data()[linearize(item.get_id(), buffer_.size())[0]];
+			print_access(item, val);
+			return val;
 		}
 
 	private:
 		buffer<T, Rank>& buffer_;
+
+		decltype(auto) get(cl::sycl::item<Rank> item)
+		{
+			return buffer_.data()[linearize(item.get_id(), buffer_.size())[0]];
+		}
+
+		static void print_access(cl::sycl::item<Rank> idx, const T& value)
+		{
+			std::cout << typeid(T).name() << " ";
+			std::cout << "accessor<" << to_string(Mode) << ", " << typeid(T).name() << ", " << Rank << ">";
+			std::cout << "::operator [](";
+
+			const auto id = idx.get_id();
+			std::copy(begin(id), end(id), std::ostream_iterator<size_t>{ std::cout, "," });
+
+			std::cout << ") -> " << value << std::endl;
+		}
+	};
+
+	template<typename T, size_t Rank>
+	struct buffer_type
+	{
+		using value_type = T;
+		static constexpr auto rank = Rank;
 	};
 
 	template<typename T, size_t Rank>
 	class buffer
 	{
 	public:
+		using value_type = T;
+		static constexpr auto rank = Rank;
+
 		explicit buffer(cl::sycl::range<Rank> size)
-			: buf_(count(size))
+			: buf_(count(size)), size_(size)
 		{
+		}
+
+		buffer(const T* data, cl::sycl::range<Rank> size)
+			: buffer(size)
+		{
+			std::memcpy(buf_.data(), data, buf_.size() * sizeof(T));
 		}
 
 		template<access_mode mode>
 		auto get_access(handler cgh, cl::sycl::range<Rank> range) { return accessor<mode, T, Rank>{*this}; }
 
+		constexpr buffer_type<T, Rank> type() const {
+			return buffer_type<T, Rank>();
+		}
+
 		[[nodiscard]]
-		size_t size() const { return buf_.size(); }
+		cl::sycl::range<Rank> size() const { return size_; }
 
 		auto& data() { return buf_; }
 
 	private:
 		std::vector<T> buf_;
+		cl::sycl::range<Rank> size_;
 	};
 }
 

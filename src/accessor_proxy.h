@@ -2,6 +2,9 @@
 #define ACCESSOR_PROXY_H
 
 #include "celerity.h"
+#include "accessors.h"
+
+#include <type_traits>
 
 namespace celerity::algorithm
 {
@@ -10,55 +13,9 @@ namespace celerity::algorithm
 		one_to_one,
 		slice,
 		chunk,
+		item,
 		invalid,
 	};
-
-	namespace detail
-	{
-		template<typename T, size_t Rank>
-		using getter_t = std::function<T(cl::sycl::item<Rank>)>;
-	}
-
-	template<typename T>
-	struct is_slice : public std::false_type {};
-
-	template<typename T>
-	inline constexpr auto is_slice_v = is_slice<T>::value;
-
-	template<typename T, size_t Rank>
-	class slice
-	{
-	public:
-		slice(cl::sycl::item<Rank> item, const detail::getter_t<T, Rank>& f)
-			: item_(item), getter_(f)
-		{}
-
-		const cl::sycl::item<Rank>& item() const { return item_; }
-		T operator*() const
-		{
-			return getter_(item_);
-		}
-		T operator[](cl::sycl::item<Rank> pos) const { return getter_(pos); }
-
-	private:
-		cl::sycl::item<Rank> item_;
-		const detail::getter_t<T, Rank>& getter_;
-	};
-	
-	template<typename T, size_t Rank>
-	struct is_slice<slice<T, Rank>> : public std::true_type {};
-	
-	template<typename T>
-	struct is_chunk : public std::false_type {};
-
-	template<typename T>
-	inline constexpr auto is_chunk_v = is_slice<T>::value;
-
-	template<typename T, size_t Rank>
-	struct chunk {};
-
-	template<typename T, size_t Rank>
-	struct is_chunk<chunk<T, Rank>> : public std::true_type {};
 
 	namespace detail
 	{
@@ -74,7 +31,8 @@ namespace celerity::algorithm
 		template <typename T>
 		struct function_traits
 			: function_traits<decltype(&T::operator())>
-		{};
+		{
+		};
 
 		template <typename ClassType, typename ReturnType, typename... Args>
 		struct function_traits<ReturnType(ClassType::*)(Args...) const>
@@ -89,24 +47,55 @@ namespace celerity::algorithm
 				using type = typename std::tuple_element<I, std::tuple<Args...>>::type;
 			};
 		};
-	
-		template<typename F, int I>
-		constexpr std::enable_if_t<has_call_operator_v<F>, access_type>  get_accessor_type()
-		{
-			using arg_type = typename detail::function_traits<F>::arg<I>::type;
 
-			if constexpr (is_slice_v<arg_type>)
+		template <typename T, int I, bool has_call_operator>
+		struct arg_type;
+
+		template<typename T, int I>
+		struct arg_type<T, I, true>
+		{
+			using type = typename function_traits<decltype(&T::operator())>::template arg<I>::type;
+		};
+
+		template<typename T, int I>
+		using arg_type_t = typename arg_type<T, I, has_call_operator_v<T>>::type;
+
+		template <typename ArgType, typename ElementType>
+		struct accessor_type
+		{
+			using type = std::conditional_t<std::is_same_v<ArgType, ElementType>, one_to_one, ArgType>;
+		};
+
+		template <typename F, int I, typename ElementType>
+		using accessor_type_t = typename accessor_type<arg_type_t<F, I>, ElementType>::type;
+
+		template<typename ArgType>
+		constexpr access_type get_accessor_type_()
+		{
+			if constexpr (is_slice_v<ArgType>)
 			{
 				return access_type::slice;
 			}
-			else if constexpr (is_chunk_v<arg_type>)
+			else if constexpr (is_chunk_v<ArgType>)
 			{
 				return access_type::chunk;
+			}
+			else if constexpr (is_item_v<ArgType>)
+			{
+				return access_type::item;
 			}
 			else
 			{
 				return access_type::one_to_one;
 			}
+		}
+		
+		template<typename F, int I>
+		constexpr std::enable_if_t<has_call_operator_v<F>, access_type> get_accessor_type()
+		{
+			using arg_type = typename function_traits<F>::arg<I>::type;
+
+			return get_accessor_type_<arg_type>();
 		}
 
 		template<typename F, int>
@@ -116,11 +105,11 @@ namespace celerity::algorithm
 		}
 	}
 
-	template<typename T, size_t Rank, typename AccessorType, access_type Type>
+	template<typename T, size_t Rank, typename AccessorType, typename Type>
 	class accessor_proxy;
 
 	template<typename T, size_t Rank, typename AccessorType>
-	class accessor_proxy<T, Rank, AccessorType, access_type::one_to_one>
+	class accessor_proxy<T, Rank, AccessorType, one_to_one>
 	{
 	public:
 		explicit accessor_proxy(AccessorType acc) : accessor_(acc) {}
@@ -132,25 +121,38 @@ namespace celerity::algorithm
 		AccessorType accessor_;
 	};
 
-	template<typename T, size_t Rank, typename AccessorType>
-	class accessor_proxy<T, Rank, AccessorType, access_type::slice>
+	template<typename T, size_t Rank, typename AccessorType, size_t Dim>
+	class accessor_proxy<T, Rank, AccessorType, slice<T, Dim>>
 	{
 	public:
-		explicit accessor_proxy(AccessorType acc) 
-			: accessor_(acc), getter_([this](cl::sycl::item<Rank> i) { return accessor_[i]; }) {}
+		static_assert(Dim >= 0 && Dim < Rank, "Dim out of bounds");
 
-		slice<T, Rank> operator[](const cl::sycl::item<Rank> it) const
+		using getter_t = detail::slice_element_getter_t<T>;
+
+		explicit accessor_proxy(AccessorType acc) 
+			: accessor_(acc) {}
+
+		slice<T, Dim> operator[](const cl::sycl::item<Rank> it)
 		{
-			return slice<T, Rank>{ it, getter_ };
+			getter_ = [this, it](int i)
+			{ 
+				auto id = it;
+
+				id[Dim] = i;
+
+				return accessor_[id];
+			};
+
+			return slice<T, Dim>{ static_cast<int>(it.get_id()[Dim]), getter_ };
 		}
 
 	private:
-		detail::getter_t<T, Rank> getter_;
+		getter_t getter_;
 		AccessorType accessor_;
 	};
 
 	template<typename T, size_t Rank, typename AccessorType>
-	class accessor_proxy<T, Rank, AccessorType, access_type::chunk>
+	class accessor_proxy<T, Rank, AccessorType, chunk<T, Rank>>
 	{
 	public:
 		explicit accessor_proxy(AccessorType acc) : accessor_(acc) {}
@@ -161,15 +163,15 @@ namespace celerity::algorithm
 		AccessorType accessor_;
 	};
 
-	template<celerity::access_mode Mode, access_type Type, typename T, size_t Rank>
-	auto get_access(celerity::handler cgh, iterator<T, Rank> beg, iterator<T, Rank> end)
+	template<celerity::access_mode Mode, typename AccessorType, typename T, size_t Rank>
+	auto get_access(celerity::handler cgh, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end)
 	{
-		assert(&beg.buffer() == &end.buffer());
-		assert(*beg <= *end);
+		//assert(&beg.buffer() == &end.buffer());
+		//assert(*beg <= *end);
 
-		auto acc = beg.buffer().get_access<Mode>(cgh, cl::sycl::range<1>{ *end - *beg });
+		auto acc = beg.buffer().get_access<Mode>(cgh, distance(beg, end));
 
-		return accessor_proxy<T, Rank, decltype(acc), Type>{ acc };
+		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{ acc };
 	}
 }
 
