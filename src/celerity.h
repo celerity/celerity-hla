@@ -145,8 +145,8 @@ namespace celerity
 			std::memcpy(buf_.data(), data, buf_.size() * sizeof(T));
 		}
 
-		template<access_mode mode>
-		auto get_access(handler cgh, cl::sycl::range<Rank> range) { return accessor<mode, T, Rank>{*this}; }
+		template<access_mode mode, typename Rmt>
+		auto get_access(handler cgh, cl::sycl::range<Rank> range, Rmt rm) { return accessor<mode, T, Rank>{*this}; }
 
 		constexpr buffer_type<T, Rank> type() const {
 			return buffer_type<T, Rank>();

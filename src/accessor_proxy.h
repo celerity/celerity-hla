@@ -151,13 +151,19 @@ namespace celerity::algorithm
 		AccessorType accessor_;
 	};
 
-	template<typename T, size_t Rank, typename AccessorType>
-	class accessor_proxy<T, Rank, AccessorType, chunk<T, Rank>>
+	template<typename T, size_t Rank, typename AccessorType, size_t...Extents>
+	class accessor_proxy<T, Rank, AccessorType, chunk<T, Extents...>>
 	{
 	public:
 		explicit accessor_proxy(AccessorType acc) : accessor_(acc) {}
 
-		chunk<T, Rank> operator[](const cl::sycl::item<Rank>) const { return {}; }
+		chunk<T, Extents...> operator[](const cl::sycl::item<Rank> item) const
+		{
+			return { item, [](const cl::sycl::id<Rank> id)
+			{
+				return accessor_[item.get_id() + id];
+			} };
+		}
 
 	private:
 		AccessorType accessor_;
@@ -169,7 +175,7 @@ namespace celerity::algorithm
 		//assert(&beg.buffer() == &end.buffer());
 		//assert(*beg <= *end);
 
-		auto acc = beg.buffer().get_access<Mode>(cgh, distance(beg, end));
+		auto acc = beg.buffer().template get_access<Mode>(cgh, distance(beg, end), accessor_traits<AccessorType>::range_mapper());
 
 		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{ acc };
 	}
