@@ -45,21 +45,35 @@ namespace celerity::algorithm
 					});
 				};
 			}
-
+		
 			template<typename FirstInputAccessorType, typename SecondInputAccessorType, typename OutputAccessorType, typename ExecutionPolicy, typename F, typename T, size_t Rank>
 			auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<T, Rank> beg2, buffer_iterator<T, Rank> out, const F& f)
 			{
 				return [=](celerity::handler cgh)
 				{
-					auto first_in_acc = get_access<celerity::access_mode::read, FirstInputAccessorType>(cgh, beg, end);
-					auto second_in_acc = get_access<celerity::access_mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
-
-					auto out_acc = get_access<celerity::access_mode::write, OutputAccessorType>(cgh, out, out);
-
-					dispatch(p, cgh, beg, end, [&](auto item)
+					if(&beg.buffer(), &out.buffer())
 					{
-						out_acc[item] = f(first_in_acc[item], second_in_acc[item]);
-					});
+						auto in_out_acc = get_access<celerity::access_mode::read_write, FirstInputAccessorType>(cgh, beg, end);
+						auto second_in_acc = get_access<celerity::access_mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
+
+						dispatch(p, cgh, beg, end, [&](auto item)
+							{
+								in_out_acc[item] = f(in_out_acc[item], second_in_acc[item]);
+							});
+					}
+					else
+					{
+						auto first_in_acc = get_access<celerity::access_mode::read, FirstInputAccessorType>(cgh, beg, end);
+						auto second_in_acc = get_access<celerity::access_mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
+
+						auto out_acc = get_access<celerity::access_mode::write, OutputAccessorType>(cgh, out, out);
+
+						dispatch(p, cgh, beg, end, [&](auto item)
+							{
+								out_acc[item] = f(first_in_acc[item], second_in_acc[item]);
+							});
+					}
+
 				};
 			}
 
