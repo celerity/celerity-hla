@@ -85,27 +85,19 @@ namespace celerity::algorithm
 					auto out_acc = get_access<celerity::access_mode::write, one_to_one>(cgh, beg, end);
 	
 					dispatch(p, cgh, beg, end, [&](auto item) 
-					{ 
-						out_acc[item] = f(); 
+					{
+						if constexpr(algorithm::detail::get_accessor_type<F, 0>() == access_type::item)
+						{
+							out_acc[item] = f(item);
+						}
+						else
+						{
+							out_acc[item] = f();
+						}
 					});
 				};
 			}
-
-			template<typename ExecutionPolicy, typename F, typename T, size_t Rank,
-				typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::item>>
-			auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F& f)
-			{
-				return [=](celerity::handler cgh)
-				{
-					auto out_acc = get_access<celerity::access_mode::write, one_to_one>(cgh, beg, end);
-
-					dispatch(p, cgh, beg, end, [&](auto item)
-						{
-							out_acc[item] = f(item);
-						});
-				};
-			}
-
+			
 			template<typename ExecutionPolicy, typename T, size_t Rank>
 			auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T& value)
 			{
@@ -169,9 +161,10 @@ namespace celerity::algorithm
 		{
 			return task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>, algorithm::detail::accessor_type_t<F, 1, T>, one_to_one>(p, beg, end, beg2, out, f));
 		}
-	
-		template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
-		auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F & f)
+
+		template<typename ExecutionPolicy, typename F, typename T, size_t Rank,
+			typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::item>>
+			auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F & f)
 		{
 			return task<ExecutionPolicy>(detail::generate(p, beg, end, f));
 		}
