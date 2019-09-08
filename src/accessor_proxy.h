@@ -28,7 +28,7 @@ namespace celerity::algorithm
 
 		template<class T>
 		constexpr inline bool has_call_operator_v = has_call_operator<T>::value;
-
+			   		
 		template <typename T>
 		struct function_traits
 			: function_traits<decltype(&T::operator())>
@@ -123,6 +123,8 @@ namespace celerity::algorithm
 		T operator[](const cl::sycl::item<Rank> item) const { return accessor_[item]; }
 		T& operator[](const cl::sycl::item<Rank> item) { return accessor_[item]; }
 
+		AccessorType& get_accessor() { return accessor_; }
+		
 	private:
 		AccessorType accessor_;
 	};

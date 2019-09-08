@@ -47,7 +47,7 @@ namespace celerity::algorithm
 			}
 		
 			template<typename FirstInputAccessorType, typename SecondInputAccessorType, typename OutputAccessorType, typename ExecutionPolicy, typename F, typename T, size_t Rank>
-			auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<T, Rank> beg2, buffer_iterator<T, Rank> out, const F& f)
+			auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<T, Rank> beg2, buffer_iterator<T, Rank> out, const F& f) 
 			{
 				return [=](celerity::handler cgh)
 				{
@@ -148,6 +148,30 @@ namespace celerity::algorithm
 					});
 				};
 			}
+
+			template<typename ExecutionPolicy, typename IteratorType, typename T, size_t Rank>
+			auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
+			{
+				static_assert(!policy_traits<std::decay_t<ExecutionPolicy>>::is_distributed);
+				
+				return [=, &out](celerity::handler cgh)
+				{
+					auto in_acc = get_access<celerity::access_mode::read, one_to_one>(cgh, beg, end);
+					
+					if constexpr(algorithm::is_contiguous_iterator<IteratorType>() && 
+								 std::is_same_v<T, typename std::iterator_traits<IteratorType>::value_type>)
+					{
+						memcpy(out, in_acc.get_accessor().get_pointer(), distance(beg, end).size() * sizeof(T));
+					}
+					else
+					{
+						dispatch(p, cgh, beg, end, [&](auto item)
+							{
+								*out++ = in_acc[item];
+							});
+					}
+				};
+			}
 		}
 
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
@@ -187,6 +211,11 @@ namespace celerity::algorithm
 			return task<ExecutionPolicy>(detail::for_each<algorithm::detail::accessor_type_t<F, 0, T>>(p, beg, end, f));
 		}
 
+		template<typename ExecutionPolicy, typename IteratorType, typename T, size_t Rank>
+		auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
+		{
+			return task<ExecutionPolicy>(detail::copy(p, beg, end, out));
+		}
 	}
 
 	template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
@@ -227,6 +256,12 @@ namespace celerity::algorithm
 		void for_each(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F & f)
 	{
 		actions::for_each(p, beg, end, f) | submit_to(p.q);
+	}
+
+	template<typename ExecutionPolicy, typename IteratorType, typename T, size_t Rank>
+	auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
+	{
+		actions::copy(p, beg, end, out) | submit_to(p.q);
 	}
 }
 

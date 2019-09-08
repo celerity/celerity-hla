@@ -67,6 +67,18 @@ namespace celerity::algorithm
 	{
 		return celerity::distance(*from, *to);
 	}
+	template<typename T>
+	constexpr bool is_contiguous_iterator()
+	{
+		// we can only detect raw pointers for now
+		using value_t = typename std::iterator_traits<T>::value_type;
+		using pointer_t = typename std::iterator_traits<T>::pointer;
+		using iterator_t = std::decay_t<T>;
+
+		return std::is_trivially_copyable_v<value_t> &&
+			std::is_pointer_v<iterator_t> &&
+			std::is_same_v<pointer_t, iterator_t>;
+	}
 }
 
 namespace celerity
