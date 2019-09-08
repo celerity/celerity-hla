@@ -22,9 +22,15 @@ public:
 
 	void operator()(distr_queue& q) const
 	{
+#ifdef DEBUG_
 		std::cout << "queue.submit([](handler cgh){" << std::endl;
+#endif
+		
 		q.submit([&](auto cgh) { std::invoke(sequence_, cgh); });
+		
+#ifdef DEBUG_
 		std::cout << "});" << std::endl << std::endl;
+#endif
 	}
 
 private:
@@ -39,9 +45,15 @@ public:
 
 	decltype(auto) operator()(distr_queue& q) const
 	{
+#ifdef DEBUG_
 		std::cout << "queue.submit([](handler cgh){" << std::endl;
+#endif
+		
 		q.submit([&](auto cgh) { std::invoke(sequence_, cgh); });
+
+#ifdef DEBUG_
 		std::cout << "});" << std::endl << std::endl;
+#endif
 	}
 
 private:
@@ -56,8 +68,10 @@ public:
 
 	decltype(auto) operator()(distr_queue& q) const
 	{
+#ifdef DEBUG_
 		std::cout << "queue.with_master_access([](handler cgh){" << std::endl;
-
+#endif
+		
 		using ret_type = std::invoke_result_t<decltype(sequence_), handler>;
 
 		if constexpr (std::is_void_v<ret_type>)
@@ -67,7 +81,9 @@ public:
 					std::invoke(sequence_, cgh);
 				});
 
+#ifdef DEBUG_
 			std::cout << "});" << std::endl << std::endl;
+#endif
 		}
 		else
 		{
@@ -79,7 +95,9 @@ public:
 					promise.set_value(std::invoke(sequence_, cgh));
 				});
 
+#ifdef DEBUG_
 			std::cout << "});" << std::endl << std::endl;
+#endif
 
 			return future;
 		}
@@ -97,7 +115,9 @@ public:
 
 	decltype(auto) operator()(distr_queue& q) const
 	{
+#ifdef DEBUG_
 		std::cout << "queue.with_master_access([](handler cgh){" << std::endl;
+#endif
 
 		using ret_type = std::invoke_result_t<decltype(sequence_), handler>;
 
@@ -110,7 +130,9 @@ public:
 
 			q.wait();
 
+#ifdef DEBUG_
 			std::cout << "});" << std::endl << std::endl;
+#endif
 		}
 		else
 		{
@@ -123,7 +145,9 @@ public:
 
 			q.wait();
 
+#ifdef DEBUG_
 			std::cout << "});" << std::endl << std::endl;
+#endif
 
 			return ret_value;
 		}
