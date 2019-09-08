@@ -12,7 +12,7 @@ namespace celerity::algorithm
 		using slice_element_getter_t = std::function<T(int)>;
 
 		template<typename T, size_t...Extents>
-		using chunk_element_getter_t = std::function<T(cl::sycl::id<sizeof...(Extents)>)>;
+		using chunk_element_getter_t = std::function<T(cl::sycl::rel_id<sizeof...(Extents)>)>;
 	}
 
 	template<typename AccessorType>
@@ -54,9 +54,16 @@ namespace celerity::algorithm
 
 		T operator[](int pos) const { return getter_(pos); }
 
+		slice<T, Dim>& operator=(const T&)
+		{
+			assert(false && "cannot assign slice");
+			return *this;
+		}
+
+		
 	private:
 		int idx_;
-		const getter_t& getter_;
+		const getter_t getter_;
 	};
 
 	template<typename T, size_t Dim>
@@ -93,7 +100,7 @@ namespace celerity::algorithm
 			return getter_({});
 		}
 
-		T operator[](cl::sycl::id<rank> relative) const
+		T operator[](cl::sycl::rel_id<rank> relative) const
 		{
 			for (auto i = 0; i < rank; ++i)
 				assert(std::labs(relative[i]) <= extents[i]);
@@ -101,9 +108,15 @@ namespace celerity::algorithm
 			return getter_(relative);
 		}
 
+		chunk<T, Extents...>& operator=(const T&)
+		{
+			assert(false && "cannot assign chunk");
+			return *this;
+		}
+		
 	private:
 		cl::sycl::item<rank> item_;
-		const getter_t& getter_;
+		const getter_t getter_;
 	};
 
 	template<typename T, size_t...Extents>

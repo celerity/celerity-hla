@@ -5,7 +5,6 @@
 #include "../../src/actions.h"
 #include "../../src/task_sequence.h"
 #include "../../src/kernel_sequence.h"
-#include "../../src/kernel.h"
 #include "../../src/kernel_traits.h"
 #include "../../src/static_iterator.h"
 #include "../../src/algorithm.h"
@@ -181,6 +180,12 @@ void sequence_examples()
 			return 2 * x;
 		});
 
+	/*algorithm::transform(master(q), begin(b), end(b), begin(b_out),
+		[](chunk<float, 2> x)
+		{
+			return 2 * x[{0}];
+		});*/
+
 	algorithm::transform(algorithm::distr<class product>(q), begin(b), end(b), begin(c), begin(b_out),
 		[](float x, float y)
 		{
@@ -244,12 +249,6 @@ void iterator_static_assertions()
 
 	const auto src_view = fixed::make_view<1>(celerity::buffer<float, 1>{{1}});
 	const auto dst_view = fixed::make_view<2>(celerity::buffer<float, 1>{{1}});
-
-	auto kernel = transform(src_view, dst_view, [](float x) { return 2 * x; });
-
-	static_assert(is_invocable_v<decltype(kernel), handler>, "kernel invocable with handler");
-	static_assert(is_same_v<decltype(task(kernel)), task_t<distributed_execution_policy, decltype(kernel)>>, "is task");
-	static_assert(is_invocable_v<decltype(task(kernel)), distr_queue&>, "task(kernel) invocable with queue");
 }
 
 void sycl_helper_assertions()

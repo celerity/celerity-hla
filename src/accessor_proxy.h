@@ -5,6 +5,7 @@
 #include "accessors.h"
 
 #include <type_traits>
+#include <cmath>
 
 namespace celerity::algorithm
 {
@@ -89,13 +90,18 @@ namespace celerity::algorithm
 				return access_type::one_to_one;
 			}
 		}
+
+		template<typename F, int I>
+		constexpr bool in_bounds()
+		{
+			return function_traits<F>::arity < I;
+		}
 		
 		template<typename F, int I>
 		constexpr std::enable_if_t<has_call_operator_v<F>, access_type> get_accessor_type()
 		{
-			using arg_type = typename function_traits<F>::arg<I>::type;
-
-			return get_accessor_type_<arg_type>();
+			using traits = function_traits<F>;			
+			return get_accessor_type_<arg_type_t<F, I>>();
 		}
 
 		template<typename F, int>
@@ -159,9 +165,15 @@ namespace celerity::algorithm
 
 		chunk<T, Extents...> operator[](const cl::sycl::item<Rank> item) const
 		{
-			return { item, [this, item](const cl::sycl::id<Rank> id)
+			return { item, [this, item](cl::sycl::rel_id<Rank> rel_id)
 			{
-				return accessor_[{item.get_range(), item.get_id() + id}];
+				cl::sycl::id<Rank> id;
+				for (auto i = 0; i < Rank; ++i)
+				{
+					id[i] = std::max(0l, std::min(static_cast<long>(item.get_id()[i]) + rel_id[i], static_cast<long>(item.get_range()[i]) - 1));
+				}
+				
+				return accessor_[{item.get_range(), id}];
 			} };
 		}
 

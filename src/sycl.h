@@ -17,9 +17,11 @@ namespace cl::sycl
 	using id = trisycl::id<Dimensions>;
 
 	template<int Dimensions>
+	using rel_id = std::array<int, Dimensions>;
+	
+	template<int Dimensions>
 	using range = trisycl::range<Dimensions>;
 
-	template<int Dimensions>
 	using float2 = trisycl::float2;
 
 	struct exception { const char* what() { return nullptr; } };
