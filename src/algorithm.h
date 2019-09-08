@@ -154,7 +154,7 @@ namespace celerity::algorithm
 			{
 				static_assert(!policy_traits<std::decay_t<ExecutionPolicy>>::is_distributed);
 				
-				return [=, &out](celerity::handler cgh)
+				return [=](celerity::handler cgh)
 				{
 					auto in_acc = get_access<celerity::access_mode::read, one_to_one>(cgh, beg, end);
 					
