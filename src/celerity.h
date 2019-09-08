@@ -14,6 +14,12 @@
 
 namespace celerity
 {
+	struct runtime
+	{
+		template<typename...Args>
+		static void init(Args...){}
+	};
+	
 	struct handler
 	{
 		int invocations;

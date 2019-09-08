@@ -12,22 +12,22 @@
 
 void setup_wave(celerity::distr_queue& queue, celerity::buffer<float, 2>& u, cl::sycl::float2 center, float amplitude, cl::sycl::float2 sigma) {
 
-	using namespace celerity;
+	using namespace celerity::algorithm;
 	
-	generate(algorithm::distr<class setup>(queue), begin(u), end(u), 
+	generate(distr<class setup>(queue), begin(u), end(u), 
 		[c = center, a = amplitude, s = sigma](cl::sycl::item<2> item)
 		{
-			const float dx = item[1] - c.x();
-			const float dy = item[0] - c.y();
+			const auto dx = item[1] - c.x();
+			const auto dy = item[0] - c.y();
 			return a * std::exp(-(dx * dx / (2.f * s.x() * s.x()) + dy * dy / (2.f * s.y() * s.y())));
 		});
 }
 
 void zero(celerity::distr_queue& queue, celerity::buffer<float, 2>& buf) {
 
-	using namespace celerity;
+	using namespace celerity::algorithm;
 	
-	fill(algorithm::distr<class zero>(queue), begin(buf), end(buf), 0.f);
+	fill(distr<class zero>(queue), begin(buf), end(buf), 0.f);
 }
 
 struct init_config {
@@ -45,8 +45,7 @@ struct update_config {
 template <typename T, typename Config, typename KernelName>
 void step(celerity::distr_queue& queue, celerity::buffer<T, 2>& up, celerity::buffer<T, 2>& u, float dt, cl::sycl::float2 delta) {
 
-	using namespace celerity;
-	using namespace algorithm;
+	using namespace celerity::algorithm;
 	
 	transform(distr<KernelName>(queue), begin(up), end(up), begin(u), begin(up),
 		[=](float v_up, chunk<T, 1, 1> v_u)
@@ -69,18 +68,14 @@ void update(celerity::distr_queue& queue, celerity::buffer<float, 2>& up, celeri
 template <typename T>
 void store(celerity::distr_queue& queue, celerity::buffer<T, 2>& up, std::vector<std::vector<float>>& result_frames) {
 
+	using namespace celerity::algorithm;
+	
 	const auto range = up.size();
+	std::vector<float> v(range.size());
+	
+	copy(master(queue), begin(up), end(up), v.data());
 
-	// TODO
-	queue.with_master_access([=, &up, &result_frames](celerity::handler& cgh) {
-		auto up_r = up.template get_access<celerity::access_mode::read>(cgh, range, [](){});
-		cgh.run([&]() {
-			result_frames.emplace_back();
-			auto& frame = *result_frames.rbegin();
-			frame.resize(range.size());
-			memcpy(frame.data(), up_r.get_pointer(), range[0] * range[1] * sizeof(float));
-			});
-		});
+	result_frames.emplace_back(std::move(v));
 }
 
 void write_csv(size_t N, std::vector<std::vector<float>>& result_frames) {
@@ -135,13 +130,10 @@ bool get_cli_arg(const arg_vector& args, const arg_vector::const_iterator& it, c
 int main(int argc, char* argv[]) {
 	// Explicitly initialize here so we can use MPI functions right away
 
-	//celerity::runtime::init(&argc, &argv);
-	//int world_rank;
-	//MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-	//const bool is_master = world_rank == 0;
+	celerity::runtime::init(&argc, &argv);
 
 	// Parse command line arguments
-	const wave_sim_config cfg = ([&]() {
+	const auto cfg = ([&]() {
 		wave_sim_config result;
 		const arg_vector args(argv + 1, argv + argc);
 		for (auto it = args.cbegin(); it != args.cend(); ++it) {
