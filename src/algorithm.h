@@ -51,7 +51,7 @@ namespace celerity::algorithm
 			{
 				return [=](celerity::handler cgh)
 				{
-					if(&beg.buffer(), &out.buffer())
+					if(&beg.buffer() == &out.buffer())
 					{
 						auto in_out_acc = get_access<celerity::access_mode::read_write, FirstInputAccessorType>(cgh, beg, end);
 						auto second_in_acc = get_access<celerity::access_mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
