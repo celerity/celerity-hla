@@ -99,6 +99,8 @@ namespace celerity
 			return val;
 		}
 
+		const T* get_pointer() const { return buffer_.data().data(); }
+
 	private:
 		buffer<T, Rank>& buffer_;
 
@@ -109,6 +111,7 @@ namespace celerity
 
 		static void print_access(cl::sycl::item<Rank> idx, const T& value)
 		{
+#ifdef DEBUG_
 			std::cout << typeid(T).name() << " ";
 			std::cout << "accessor<" << to_string(Mode) << ", " << typeid(T).name() << ", " << Rank << ">";
 			std::cout << "::operator [](";
@@ -117,6 +120,7 @@ namespace celerity
 			std::copy(begin(id), end(id), std::ostream_iterator<size_t>{ std::cout, "," });
 
 			std::cout << ") -> " << value << std::endl;
+#endif
 		}
 	};
 
@@ -142,6 +146,8 @@ namespace celerity
 		buffer(const T* data, cl::sycl::range<Rank> size)
 			: buffer(size)
 		{
+			if (!data) return;
+			
 			std::memcpy(buf_.data(), data, buf_.size() * sizeof(T));
 		}
 
