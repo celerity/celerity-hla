@@ -23,11 +23,11 @@ namespace celerity::algorithm
 
 				if constexpr (policy_traits<execution_policy_type>::is_distributed)
 				{
-					cgh.parallel_for<policy_traits<execution_policy_type>::kernel_name>(r, f);
+					cgh.parallel_for<policy_traits<execution_policy_type>::kernel_name>(r, *beg, f);
 				}
 				else
 				{
-					cgh.run([&]() { for_each_index(beg, end, r, f); });
+					cgh.run([&]() { for_each_index(beg, end, r, *beg, f); });
 				}
 			}
 

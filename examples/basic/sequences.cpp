@@ -167,6 +167,11 @@ void sequence_examples()
 
 	static_assert(std::is_base_of_v<slice<float, 1>, slice_of<decltype(b)>>);
 
+	algorithm::fill(algorithm::distr<class fill>(q), begin(b), end(b), 1.f);
+	algorithm::transform(algorithm::distr<class mul2>(q), next(begin(b)), end(b), begin(c), [](const float x) { return 2 * x; });
+	
+	assert(c.data()[0] == 1 && c.data()[1] == 2 && c.data()[2] == 2 && c.data()[3] == 2 && c.data()[4] == 2);
+	
 	algorithm::transform(algorithm::distr<class sum>(q), begin(b), end(b), begin(b_out),
 		[&](slice<float, 0> x)
 		{

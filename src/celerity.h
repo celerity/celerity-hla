@@ -25,14 +25,14 @@ namespace celerity
 		int invocations;
 
 		template<typename KernelName, size_t Rank, typename F>
-		void parallel_for(cl::sycl::range<Rank> r, F f)
+		void parallel_for(cl::sycl::range<Rank> r, cl::sycl::id<Rank> offset, F f)
 		{
 			cl::sycl::id<Rank> end;
 			
 			for (int i = 0; i < Rank; ++i)
 				end[i] = r[i];
 
-			for_each_index(algorithm::iterator<Rank>{ { }, r }, { end, r }, r, f);
+			for_each_index(algorithm::iterator<Rank>{ { }, r }, { end, r }, r, offset, f);
 		}
 
 		template<typename F>
