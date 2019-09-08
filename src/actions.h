@@ -9,9 +9,11 @@
 namespace celerity::algorithm::actions
 {
 	// unused
-	inline void global_barrier()
+	inline void sync()
 	{
+#ifndef MOCK_CELERITY
 		MPI_Barrier(MPI_COMM_WORLD);
+#endif
 	}
 
 	template<typename F, typename...Args>

@@ -174,7 +174,9 @@ int main(int argc, char* argv[]) {
 		celerity::buffer<float, 2> up(nullptr, cl::sycl::range<2>(cfg.N, cfg.N)); // next
 		celerity::buffer<float, 2> u(nullptr, cl::sycl::range<2>(cfg.N, cfg.N));  // current
 
+		celerity::algorithm::actions::sync();
 		//MPI_Barrier(MPI_COMM_WORLD);
+		
 		//celerity::experimental::bench::begin("main program");
 
 		setup_wave(queue, u, { cfg.N / 4.f, cfg.N / 4.f }, 1, { cfg.N / 8.f, cfg.N / 8.f });
