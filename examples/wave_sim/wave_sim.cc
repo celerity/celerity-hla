@@ -126,7 +126,7 @@ template <typename ArgFn, typename Result>
 bool get_cli_arg(const arg_vector& args, const arg_vector::const_iterator& it, const std::string& argstr, Result& result, ArgFn fn) {
 	if (argstr == *it) {
 		if (it + 1 == args.cend()) { throw std::runtime_error("Invalid argument"); }
-		result = fn(*(it + 1));
+		result = static_cast<Result>(fn(*(it + 1)));
 		return true;
 	}
 	return false;
@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
 		return result;
 	})(); // IIFE
 
-	const int num_steps = cfg.T / cfg.dt;
+	const auto num_steps = static_cast<int>(cfg.T / cfg.dt);
 	celerity::algorithm::actions::on_master([&]()
 	{
 		if (cfg.output_sample_rate != 0 && num_steps % cfg.output_sample_rate != 0) {
