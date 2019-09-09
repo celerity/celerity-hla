@@ -47,8 +47,6 @@ int main(int argc, char* argv[]) {
 		transform(algorithm::distr<class mul_ab>(queue), begin(mat_a_buf), end(mat_a_buf), begin(mat_b_buf), begin(mat_c_buf), multiply);
 		transform(algorithm::distr<class mul_bc>(queue), begin(mat_b_buf), end(mat_b_buf), begin(mat_c_buf), begin(mat_a_buf), multiply);
 		
-		auto verification_passed = true;
-
 		for_each(algorithm::master(queue), begin(mat_a_buf), end(mat_a_buf),
 			[&verification_passed](float x, cl::sycl::item<2> item)
 			{

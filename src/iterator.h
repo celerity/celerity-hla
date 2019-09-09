@@ -83,10 +83,7 @@ namespace celerity::algorithm
 	}
 
 	template<typename T>
-	constexpr bool is_celerity_iterator(T)
-	{
-		return std::is_same_v<celerity_iterator_tag, typename std::iterator_traits<T>::iterator_category>;
-	}
+	constexpr bool is_celerity_iterator_v = std::is_same_v<celerity_iterator_tag, typename std::iterator_traits<T>::iterator_category>;
 
 	template<typename T>
 	constexpr bool is_contiguous_iterator()

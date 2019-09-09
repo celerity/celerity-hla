@@ -153,6 +153,7 @@ namespace celerity::algorithm
 			auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
 			{
 				static_assert(!policy_traits<std::decay_t<ExecutionPolicy>>::is_distributed);
+				static_assert(!is_celerity_iterator_v<IteratorType>);
 				
 				return [=](celerity::handler cgh)
 				{
