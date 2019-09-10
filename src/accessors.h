@@ -13,6 +13,9 @@ namespace celerity::algorithm
 
 		template<typename T, size_t...Extents>
 		using chunk_element_getter_t = std::function<T(cl::sycl::rel_id<sizeof...(Extents)>)>;
+
+		template<typename T, size_t Rank>
+		using all_element_getter_t = std::function<T(cl::sycl::id<Rank>)>;
 	}
 
 	template<typename AccessorType>
@@ -30,7 +33,7 @@ namespace celerity::algorithm
 	};
 	
 	template<typename T>
-	struct is_slice : public std::false_type {};
+	struct is_slice : std::false_type {};
 
 	template<typename T>
 	inline constexpr auto is_slice_v = is_slice<T>::value;
@@ -73,10 +76,10 @@ namespace celerity::algorithm
 	};
 	
 	template<typename T, size_t Dim>
-	struct is_slice<slice<T, Dim>> : public std::true_type {};
+	struct is_slice<slice<T, Dim>> : std::true_type {};
 
 	template<typename T>
-	struct is_chunk : public std::false_type {};
+	struct is_chunk : std::false_type {};
 
 	template<typename T>
 	inline constexpr auto is_chunk_v = is_slice<T>::value;
@@ -129,13 +132,53 @@ namespace celerity::algorithm
 	struct is_chunk<chunk<T, Extents...>> : public std::true_type {};
 
 	template<typename T>
-	struct is_item : public std::false_type {};
+	struct is_item : std::false_type {};
 
 	template<typename T>
 	inline constexpr auto is_item_v = is_item<T>::value;
 
 	template<size_t Rank>
 	struct is_item<cl::sycl::item<Rank>> : public std::true_type {};
+
+	template<typename T>
+	struct is_all : std::false_type {};
+	
+	template<typename T>
+	inline constexpr auto is_all_v = is_all<T>::value;
+
+	template<typename T, size_t Rank>
+	class all
+	{
+	public:
+		using getter_t = detail::all_element_getter_t<T, Rank>;
+
+		explicit all(const getter_t& f)
+			: getter_(f)
+		{}
+
+		T operator[](cl::sycl::id<Rank> id) const
+		{
+			return getter_(id);
+		}
+
+		all<T, Rank>& operator=(const T&)
+		{
+			assert(false && "cannot assign all");
+			return *this;
+		}
+
+	private:
+		const getter_t getter_;
+	};
+
+	template<typename T, size_t Rank>
+	struct accessor_traits<all<T, Rank>>
+	{
+		static auto range_mapper() { return []() {}; }
+	};
+
+	template<typename T, size_t Rank>
+	struct is_all<all<T, Rank>> : std::true_type {};
 	
 }
 #endif // ACCESSORS_H

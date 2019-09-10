@@ -23,6 +23,7 @@ namespace cl::sycl
 	using range = trisycl::range<Dimensions>;
 
 	using float2 = trisycl::float2;
+	using float3 = trisycl::float3;
 
 	struct exception { const char* what() { return nullptr; } };
 }

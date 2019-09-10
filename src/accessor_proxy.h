@@ -129,6 +129,21 @@ namespace celerity::algorithm
 		AccessorType accessor_;
 	};
 
+	template<typename T, size_t Rank, typename AccessorType>
+	class accessor_proxy<T, Rank, AccessorType, all<T, Rank>>
+	{
+	public:
+		explicit accessor_proxy(AccessorType acc) : accessor_(acc) {}
+
+		all<T, Rank> operator[](const cl::sycl::item<Rank> item) { return { [](const auto id) { return accessor_[{item.get_range(), id}]; } }; }
+
+		AccessorType& get_accessor() { return accessor_; }
+
+	private:
+		AccessorType accessor_;
+	};
+
+
 	template<typename T, size_t Rank, typename AccessorType, size_t Dim>
 	class accessor_proxy<T, Rank, AccessorType, slice<T, Dim>>
 	{

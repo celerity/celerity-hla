@@ -31,21 +31,60 @@ namespace celerity::algorithm
 				}
 			}
 
-			template<typename InputAccessorType, typename OutputAccessorType, typename ExecutionPolicy, typename F, typename T,  size_t Rank>
-			auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<T, Rank> out, const F& f)
+			template<typename InputAccessorType, typename IteratorType, typename ExecutionPolicy, typename F, typename T, size_t Rank,
+				::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1, int> = 0>
+			auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F& f)
 			{
 				return [=](celerity::handler cgh)
 				{
 					auto in_acc = get_access<celerity::access_mode::read, InputAccessorType>(cgh, beg, end);
-					auto out_acc = get_access<celerity::access_mode::write, OutputAccessorType>(cgh, out, out);
 
-					dispatch(p, cgh, beg, end, [&](auto item)
+					if constexpr (is_celerity_iterator_v<IteratorType>)
 					{
-						out_acc[item] = f(in_acc[item]);
-					});
+						auto out_acc = get_access<celerity::access_mode::write, one_to_one>(cgh, out, out);
+
+						dispatch(p, cgh, beg, end, [&](auto item)
+							{
+								out_acc[item] = f(in_acc[item]);
+							});
+					}
+					else
+					{
+						dispatch(p, cgh, beg, end, [&](auto item)
+							{
+								*out++ = f(in_acc[item]);
+							});
+					}
 				};
 			}
-		
+
+			template<typename InputAccessorType, typename IteratorType, typename ExecutionPolicy, typename F, typename T, size_t Rank,
+				::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
+			auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F& f)
+			{
+				return [=](celerity::handler cgh)
+				{
+					auto in_acc = get_access<celerity::access_mode::read, InputAccessorType>(cgh, beg, end);
+
+					if constexpr (is_celerity_iterator_v<IteratorType>)
+					{
+						auto out_acc = get_access<celerity::access_mode::write, one_to_one>(cgh, out, out);
+
+						dispatch(p, cgh, beg, end, [&](auto item)
+							{
+								out_acc[item] = f(item, in_acc[item]);
+							});
+					}
+					else
+					{
+						dispatch(p, cgh, beg, end, [&](auto item)
+							{
+								*out++ = f(item, in_acc[item]);
+							});
+					}
+				};
+			}
+			
 			template<typename FirstInputAccessorType, typename SecondInputAccessorType, typename OutputAccessorType, typename ExecutionPolicy, typename F, typename T, size_t Rank>
 			auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<T, Rank> beg2, buffer_iterator<T, Rank> out, const F& f) 
 			{
@@ -135,7 +174,7 @@ namespace celerity::algorithm
 			}
 		
 			template<typename InputAccessorType, typename ExecutionPolicy, typename F, typename T, size_t Rank,
-				typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<F, 1>() == access_type::item>>
+				typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::item>>
 			auto for_each(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F& f)
 			{
 				return [=](celerity::handler cgh)
@@ -144,7 +183,7 @@ namespace celerity::algorithm
 
 					dispatch(p, cgh, beg, end, [&](auto item)
 					{
-						f(in_acc[item], item);
+						f(item, in_acc[item]);
 					});
 				};
 			}
@@ -175,16 +214,32 @@ namespace celerity::algorithm
 			}
 		}
 
-		template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
-		auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<T, Rank> out, const F& f)
+		template<typename ExecutionPolicy, typename IteratorType, typename T, size_t Rank, typename F,
+			::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1, int>>
+		auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F& f)
 		{
-			return task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>, one_to_one>(p, beg, end, out, f));
+			return task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>>(p, beg, end, out, f));
 		}
 
-		template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
+		template<typename ExecutionPolicy, typename IteratorType, typename T, size_t Rank, typename F,
+			::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int>>
+		auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F& f)
+		{
+			return task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 1, T>>(p, beg, end, out, f));
+		}
+
+		template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
+			::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 		auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<T, Rank> beg2, buffer_iterator<T, Rank> out, const F& f)
 		{
 			return task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>, algorithm::detail::accessor_type_t<F, 1, T>, one_to_one>(p, beg, end, beg2, out, f));
+		}
+
+		template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
+			::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 3, int> = 0>
+			auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<T, Rank> beg2, buffer_iterator<T, Rank> out, const F & f)
+		{
+			return task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 1, T>, algorithm::detail::accessor_type_t<F, 2, T>, one_to_one>(p, beg, end, beg2, out, f));
 		}
 
 		template<typename ExecutionPolicy, typename F, typename T, size_t Rank,
@@ -209,7 +264,7 @@ namespace celerity::algorithm
 		template<typename ExecutionPolicy, typename T, size_t Rank, typename F>
 		auto for_each(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F& f)
 		{
-			return task<ExecutionPolicy>(detail::for_each<algorithm::detail::accessor_type_t<F, 0, T>>(p, beg, end, f));
+			return task<ExecutionPolicy>(detail::for_each<algorithm::detail::accessor_type_t<F, 1, T>>(p, beg, end, f));
 		}
 
 		template<typename ExecutionPolicy, typename IteratorType, typename T, size_t Rank>
@@ -219,9 +274,9 @@ namespace celerity::algorithm
 		}
 	}
 
-	template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
+	template<typename ExecutionPolicy, typename IteratorType, typename T, size_t Rank, typename F,
 		typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
-	void transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<T, Rank> out, const F& f)
+	void transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F& f)
 	{
 		actions::transform(p, beg, end, out, f) | submit_to(p.q);
 	}
@@ -253,7 +308,7 @@ namespace celerity::algorithm
 	}
 
 	template<typename ExecutionPolicy, typename T, size_t Rank, typename F,
-		typename = std::enable_if_t<detail::get_accessor_type<F, 1>() == access_type::item>>
+		typename = std::enable_if_t<detail::get_accessor_type<F, 0>() == access_type::item>>
 		void for_each(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F & f)
 	{
 		actions::for_each(p, beg, end, f) | submit_to(p.q);
