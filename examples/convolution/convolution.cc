@@ -38,10 +38,11 @@ int main(int argc, char* argv[]) {
 				image_input[y * image_width + x] = {image_data[idx + 0] / 255.f, image_data[idx + 1] / 255.f, image_data[idx + 2] / 255.f};
 			}
 		}
+
 		stbi_image_free(image_data);
 	}
 
-	constexpr int FILTER_SIZE = 16;
+	constexpr int FILTER_SIZE = 8;
 	constexpr float sigma = 3.f;
 	constexpr float PI = 3.141592f;
 
@@ -65,8 +66,8 @@ int main(int argc, char* argv[]) {
 
 	buffer<float, 2> gaussian_mat_buf(gaussian_matrix.data(), cl::sycl::range<2>(FILTER_SIZE, FILTER_SIZE));
 	
-	transform(distr<class gaussian_blur>(queue), begin(image_input_buf), end(image_input_buf), begin(image_tmp_buf),
-		[fs = FILTER_SIZE, image_height, image_width](cl::sycl::item<2> item, chunk<float, FILTER_SIZE / 2, FILTER_SIZE / 2> in, all<float, 2> gauss)
+	transform(distr<class gaussian_blur>(queue), begin(image_input_buf), end(image_input_buf), begin(gaussian_mat_buf), begin(image_tmp_buf),
+		[fs = FILTER_SIZE, image_height, image_width](cl::sycl::item<2> item, chunk<cl::sycl::float3, FILTER_SIZE / 2, FILTER_SIZE / 2> in, all<float, 2> gauss)
 		{
 			using cl::sycl::float3;
 			if (is_on_boundary(cl::sycl::range<2>(image_height, image_width), fs, item)) {
@@ -76,7 +77,7 @@ int main(int argc, char* argv[]) {
 			float3 sum = { 0.f, 0.f, 0.f };
 			for (auto y = -(fs / 2); y < fs / 2; ++y) {
 				for (auto x = -(fs / 2); x < fs / 2; ++x) {
-					sum += gauss[{static_cast<size_t>(fs / 2 + y), static_cast<size_t>(fs / 2 + x)}] * in[{y, x}];
+					sum += gauss[{static_cast<size_t>(fs / 2) + y, static_cast<size_t>(fs / 2) + x}] * in[{y, x}];
 				}
 			}
 
@@ -108,8 +109,8 @@ int main(int argc, char* argv[]) {
 
 	buffer<cl::sycl::float3, 2> image_output_buf(cl::sycl::range<2>(image_height, image_width));
 
-	transform(begin(image_tmp_buf), end(image_tmp_buf), begin(image_output_buf),
-		[fs = FILTER_SIZE, image_height, image_width](cl::sycl::item<2> item, chunk<float, 1, 1> in)
+	transform(distr<class sharpening>(queue), begin(image_tmp_buf), end(image_tmp_buf), begin(image_output_buf),
+		[fs = FILTER_SIZE, image_height, image_width](cl::sycl::item<2> item, chunk<cl::sycl::float3, 1, 1> in)
 		{
 			using cl::sycl::float3;
 			if (is_on_boundary(cl::sycl::range<2>(image_height, image_width), fs, item)) {
@@ -124,7 +125,7 @@ int main(int argc, char* argv[]) {
 		
 			return fmin(float3(1.f, 1.f, 1.f), sum);
 		});
-	
+
 	// Now apply a sharpening kernel
 	/*queue.submit([=](handler& cgh) {
 		auto in = image_tmp_buf.get_access<cl::sycl::access::mode::read>(cgh, celerity::access::neighborhood<2>(1, 1));
@@ -145,8 +146,8 @@ int main(int argc, char* argv[]) {
 		});
 	});*/
 
-	std::vector<std::array<uint8_t, 3>> image_output(image_width* image_height * 3);
-	transform(master(queue), begin(image_output_buf), end(image_input_buf), begin(image_output),
+	std::vector<std::array<uint8_t, 3>> image_output(image_width* image_height);
+	transform(master(queue), begin(image_input_buf), end(image_input_buf), begin(image_output),
 		[](cl::sycl::float3 c) -> std::array<uint8_t, 3>
 		{
 			return {
@@ -158,22 +159,8 @@ int main(int argc, char* argv[]) {
 
 	stbi_write_png("./output.png", image_width, image_height, 3, image_output.data(), 0);
 	
-	/*queue.with_master_access([=](handler& cgh) {
-		auto out = image_output_buf.get_access<cl::sycl::access::mode::read>(cgh, cl::sycl::range<2>(image_height, image_width));
 
-		cgh.run([=]() {
-			std::vector<uint8_t> image_output(image_width * image_height * 3);
-			for(size_t y = 0; y < static_cast<size_t>(image_height); ++y) {
-				for(size_t x = 0; x < static_cast<size_t>(image_width); ++x) {
-					const auto idx = y * image_width * 3 + x * 3;
-					image_output[idx + 0] = static_cast<uint8_t>(static_cast<float>(out[{y, x}].x()) * 255.f);
-					image_output[idx + 1] = static_cast<uint8_t>(static_cast<float>(out[{y, x}].y()) * 255.f);
-					image_output[idx + 2] = static_cast<uint8_t>(static_cast<float>(out[{y, x}].z()) * 255.f);
-				}
-			}
-			stbi_write_png("./output.png", image_width, image_height, 3, image_output.data(), 0);
-		});
-	});*/
-
+	
+	
 	return EXIT_SUCCESS;
 }
