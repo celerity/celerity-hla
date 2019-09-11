@@ -93,14 +93,16 @@ namespace celerity
 
 		decltype(auto) operator[](cl::sycl::item<Rank> item)
 		{
-			decltype(auto) val = buffer_.data()[linearize(item.get_id(), buffer_.size())[0]];
+			const auto idx = item.get_linear_id();
+			decltype(auto) val = buffer_.data()[idx];
 			print_access(item, val);
 			return val;
 		}
 
 		T operator[](cl::sycl::item<Rank> item) const
 		{
-			decltype(auto) val = buffer_.data()[linearize(item.get_id(), buffer_.size())[0]];
+			const auto idx = item.get_linear_id();
+			decltype(auto) val = buffer_.data()[idx];
 			print_access(item, val);
 			return val;
 		}
@@ -109,11 +111,6 @@ namespace celerity
 
 	private:
 		buffer<T, Rank>& buffer_;
-
-		decltype(auto) get(cl::sycl::item<Rank> item)
-		{
-			return buffer_.data()[linearize(item.get_id(), buffer_.size())[0]];
-		}
 
 		static void print_access(cl::sycl::item<Rank> idx, const T& value)
 		{
@@ -145,7 +142,7 @@ namespace celerity
 		static constexpr auto rank = Rank;
 
 		explicit buffer(cl::sycl::range<Rank> size)
-			: buf_(count(size)), size_(size)
+			: buf_(size.size()), size_(size)
 		{
 		}
 
