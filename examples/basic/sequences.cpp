@@ -207,6 +207,12 @@ void sequence_examples()
 			return x * y;
 		});
 
+	algorithm::transform(algorithm::master(q), begin(b), end(b), begin(b_out),
+		[](cl::sycl::item<1> item, float x)
+		{
+			return x;
+		});
+	
 	// algorithm action
 
 	auto add_one = actions::transform(distr<class add_one>(q), begin(b), end(b), begin(b_out), [](float x) { return x + 1.0f; });
