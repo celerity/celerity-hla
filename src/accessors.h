@@ -152,7 +152,7 @@ namespace celerity::algorithm
 	public:
 		using getter_t = detail::all_element_getter_t<T, Rank>;
 
-		explicit all(const getter_t& f)
+		all(const getter_t& f)
 			: getter_(f)
 		{}
 

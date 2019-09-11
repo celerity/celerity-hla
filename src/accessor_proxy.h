@@ -118,7 +118,7 @@ namespace celerity::algorithm
 	class accessor_proxy<T, Rank, AccessorType, one_to_one>
 	{
 	public:
-		explicit accessor_proxy(AccessorType acc) : accessor_(acc) {}
+		explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank> range) : accessor_(acc) {}
 
 		T operator[](const cl::sycl::item<Rank> item) const { return accessor_[item]; }
 		T& operator[](const cl::sycl::item<Rank> item) { return accessor_[item]; }
@@ -133,14 +133,19 @@ namespace celerity::algorithm
 	class accessor_proxy<T, Rank, AccessorType, all<T, Rank>>
 	{
 	public:
-		explicit accessor_proxy(AccessorType acc) : accessor_(acc) {}
+		explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank> range)
+			: accessor_(acc), range_(range) {}
 
-		all<T, Rank> operator[](const cl::sycl::item<Rank> item) { return { [](const auto id) { return accessor_[{item.get_range(), id}]; } }; }
+		all<T, Rank> operator[](const cl::sycl::item<Rank>)
+		{
+			return { [=] (const auto id) { return accessor_[{range_, id}]; } };
+		}
 
 		AccessorType& get_accessor() { return accessor_; }
 
 	private:
 		AccessorType accessor_;
+		cl::sycl::range<Rank> range_;
 	};
 
 
@@ -152,7 +157,7 @@ namespace celerity::algorithm
 
 		using getter_t = detail::slice_element_getter_t<T>;
 
-		explicit accessor_proxy(AccessorType acc) 
+		explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank>) 
 			: accessor_(acc) {}
 
 		slice<T, Dim> operator[](const cl::sycl::item<Rank> it)
@@ -178,7 +183,7 @@ namespace celerity::algorithm
 	class accessor_proxy<T, Rank, AccessorType, chunk<T, Extents...>>
 	{
 	public:
-		explicit accessor_proxy(AccessorType acc) : accessor_(acc) {}
+		explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank>) : accessor_(acc) {}
 
 		chunk<T, Extents...> operator[](const cl::sycl::item<Rank> item) const
 		{
@@ -206,7 +211,7 @@ namespace celerity::algorithm
 
 		auto acc = beg.buffer().template get_access<Mode>(cgh, distance(beg, end), accessor_traits<AccessorType>::range_mapper());
 
-		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{ acc };
+		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{ acc, beg.buffer().size() };
 	}
 }
 
