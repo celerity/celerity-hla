@@ -1,27 +1,27 @@
 #ifndef KERNEL_SEQUENCE_H
 #define KERNEL_SEQUENCE_H
 
-#include "celerity.h"
+#include "celerity_helper.h"
 #include "sequence.h"
 
 namespace celerity::algorithm
 {
 template <typename... Actions>
-class kernel_sequence
+struct kernel_sequence
 {
-public:
-	kernel_sequence(sequence<Actions...> &&s)
+	using sequence_type = celerity::algorithm::sequence<Actions...>;
+
+	kernel_sequence(sequence_type &&s)
 		: sequence_(std::move(s)) {}
 
-	decltype(auto) operator()(handler cgh) const
+	decltype(auto) operator()(handler &cgh) const
 	{
 		return std::invoke(sequence_, cgh);
 	}
 
-	auto get_sequence() { return sequence_; }
+	auto sequence() { return sequence_; }
 
-private:
-	celerity::algorithm::sequence<Actions...> sequence_;
+	sequence_type sequence_;
 };
 
 template <typename... Ts, typename... Us>

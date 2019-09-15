@@ -3,34 +3,35 @@
 
 #include "sycl.h"
 #include <cmath>
+#include "inplace_function.h"
 
 namespace celerity::algorithm
 {
 namespace detail
 {
 template <typename T>
-using slice_element_getter_t = std::function<T(int)>;
+using slice_element_getter_t = stdext::inplace_function<T(int), 128>;
 
 template <typename T, size_t... Extents>
-using chunk_element_getter_t = std::function<T(cl::sycl::rel_id<sizeof...(Extents)>)>;
+using chunk_element_getter_t = stdext::inplace_function<T(cl::sycl::rel_id<sizeof...(Extents)>), 128>;
 
 template <typename T, int Rank>
-using all_element_getter_t = std::function<T(cl::sycl::id<Rank>)>;
+using all_element_getter_t = stdext::inplace_function<T(cl::sycl::id<Rank>), 128>;
 } // namespace detail
 
-template <typename AccessorType>
+template <int Rank, typename AccessorType>
 struct accessor_traits;
 
 class one_to_one
 {
 };
 
-template <>
-struct accessor_traits<one_to_one>
+template <int Rank>
+struct accessor_traits<Rank, one_to_one>
 {
 	static auto range_mapper()
 	{
-		return []() {};
+		return celerity::access::one_to_one<Rank>();
 	}
 };
 
@@ -73,12 +74,12 @@ private:
 	const getter_t getter_;
 };
 
-template <typename T, size_t Dim>
-struct accessor_traits<slice<T, Dim>>
+template <int Rank, typename T, size_t Dim>
+struct accessor_traits<Rank, slice<T, Dim>>
 {
 	static auto range_mapper()
 	{
-		return []() {};
+		return celerity::access::slice<Rank>(Dim);
 	}
 };
 
@@ -134,12 +135,12 @@ private:
 	const getter_t getter_;
 };
 
-template <typename T, size_t... Extents>
-struct accessor_traits<chunk<T, Extents...>>
+template <int Rank, typename T, size_t... Extents>
+struct accessor_traits<Rank, chunk<T, Extents...>>
 {
 	static auto range_mapper()
 	{
-		return []() {};
+		return celerity::access::neighborhood<Rank>(Extents...);
 	}
 };
 
@@ -195,12 +196,12 @@ private:
 	const getter_t getter_;
 };
 
-template <typename T, int Rank>
-struct accessor_traits<all<T, Rank>>
+template <int Rank, typename T>
+struct accessor_traits<Rank, all<T, Rank>>
 {
 	static auto range_mapper()
 	{
-		return []() {};
+		return celerity::access::all<Rank, Rank>();
 	}
 };
 

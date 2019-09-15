@@ -3,6 +3,8 @@
 
 #include <utility>
 
+#ifdef MOCK_CELERITY
+
 #include "sycl/item.hpp"
 #include "sycl/range.hpp"
 #include "sycl/id.hpp"
@@ -17,9 +19,6 @@ template <int Dimensions>
 using id = trisycl::id<Dimensions>;
 
 template <int Dimensions>
-using rel_id = std::array<int, Dimensions>;
-
-template <int Dimensions>
 using range = trisycl::range<Dimensions>;
 
 using float2 = trisycl::float2;
@@ -30,6 +29,16 @@ struct exception
 	const char *what() { return nullptr; }
 };
 } // namespace cl::sycl
+
+#else
+#include <CL/sycl.hpp>
+#endif
+
+namespace cl::sycl
+{
+template <int Dimensions>
+using rel_id = std::array<int, Dimensions>;
+}
 
 namespace celerity
 {

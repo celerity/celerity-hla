@@ -1,10 +1,10 @@
+#ifndef CELERITY_HELPER_H
+#define CELERITY_HELPER_H
 // ReSharper disable once CppMissingIncludeGuard
 #ifndef MOCK_CELERITY
-#include <celerity>
+#define CELERITY_STRICT_CGF_SAFETY 1
+#include <celerity.h>
 #else
-#ifndef CELERITY_H
-#define CELERITY_H
-
 #include <iostream>
 #include <iterator>
 #include <vector>
@@ -62,13 +62,6 @@ public:
 
 private:
 	int invocation_count_ = 0;
-};
-
-enum class access_mode
-{
-	read,
-	write,
-	read_write
 };
 
 inline std::string to_string(const access_mode mode)
@@ -182,4 +175,15 @@ private:
 } // namespace celerity
 
 #endif
+
+namespace celerity
+{
+enum class access_mode
+{
+	read,
+	write,
+	read_write
+};
+}
+
 #endif

@@ -2,6 +2,7 @@
 #define ITERATOR_H
 
 #include "sycl.h"
+#include <type_traits>
 
 namespace celerity
 {
@@ -66,7 +67,7 @@ public:
 	using reference = std::add_lvalue_reference_t<T>;
 
 	buffer_iterator(cl::sycl::id<Rank> pos, buffer<T, Rank> &buffer)
-		: iterator<Rank>(pos, buffer.size()), buffer_(buffer)
+		: iterator<Rank>(pos, buffer.get_range()), buffer_(buffer)
 	{
 	}
 
@@ -127,7 +128,7 @@ algorithm::buffer_iterator<T, Rank> begin(celerity::buffer<T, Rank> &buffer)
 template <typename T, int Rank>
 algorithm::buffer_iterator<T, Rank> end(celerity::buffer<T, Rank> &buffer)
 {
-	return algorithm::buffer_iterator<T, Rank>(buffer.size(), buffer);
+	return algorithm::buffer_iterator<T, Rank>(buffer.get_range(), buffer);
 }
 
 template <int Rank, typename Iterator, typename F>
@@ -135,7 +136,7 @@ void for_each_index(Iterator beg, Iterator end, cl::sycl::range<Rank> r, cl::syc
 {
 	std::for_each(algorithm::iterator<Rank>{*beg, r}, algorithm::iterator<Rank>{*end, r},
 				  [&](auto i) {
-					  f(cl::sycl::item<Rank>{r, i, offset});
+					  f(cl::sycl::detail::make_item(i + offset, r, offset));
 				  });
 }
 } // namespace celerity

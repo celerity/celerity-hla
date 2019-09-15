@@ -1,17 +1,18 @@
-#define MOCK_CELERITY
 #include "../../src/algorithm.h"
 #include "../../src/actions.h"
 
 // Use define instead of constexpr as MSVC seems to have some trouble getting it into nested closure
 constexpr auto DEMO_DATA_SIZE = 10;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[])
+{
 	// std::this_thread::sleep_for(std::chrono::seconds(5));
 	bool verification_passed = true;
 
 	using namespace celerity;
 
-	try {
+	try
+	{
 		distr_queue queue;
 		buffer<float, 1> buf_a(cl::sycl::range<1>{DEMO_DATA_SIZE});
 		buffer<float, 1> buf_b(cl::sycl::range<1>{DEMO_DATA_SIZE});
@@ -34,7 +35,9 @@ int main(int argc, char* argv[]) {
 		});*/
 
 		fill(algorithm::distr<class produce_a>(queue), begin(buf_a), end(buf_a), 1.f);
-		
+
+		queue.slow_full_sync();
+
 		/*queue.submit([=](celerity::handler& cgh) {
 			auto r_a = buf_a.get_access<cl::sycl::access::mode::read>(cgh, [](celerity::chunk<1> chnk) -> celerity::subrange<1> {
 				celerity::subrange<1> sr(chnk);
@@ -51,7 +54,7 @@ int main(int argc, char* argv[]) {
 
 		*/
 
-		transform(algorithm::distr<class compute_b>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; });
+		//transform(algorithm::distr<class compute_b>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; });
 
 #define COMPUTE_C_ON_MASTER 1
 #if COMPUTE_C_ON_MASTER
@@ -68,8 +71,8 @@ int main(int argc, char* argv[]) {
 		});
 		*/
 
-		transform(algorithm::master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
-		
+		//transform(algorithm::master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
+
 #else
 		/*
 		queue.submit([=](celerity::handler& cgh) {
@@ -79,9 +82,9 @@ int main(int argc, char* argv[]) {
 		});
 		*/
 
-		algorithm::transform(algorithm::distr<class compute_c>(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
+		//algorithm::transform(algorithm::distr<class compute_c>(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
 #endif
-/*
+		/*
 		queue.submit([=](celerity::handler& cgh) {
 			auto r_b = buf_b.get_access<cl::sycl::access::mode::read>(cgh, celerity::access::one_to_one<1>());
 			auto r_c = buf_c.get_access<cl::sycl::access::mode::read>(cgh, celerity::access::one_to_one<1>());
@@ -91,8 +94,8 @@ int main(int argc, char* argv[]) {
 
 		*/
 
-		transform(algorithm::distr<class compute_d>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), [](float x, float y) { return x + y; });
-		
+		//transform(algorithm::distr<class compute_d>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), [](float x, float y) { return x + y; });
+
 		/*
 
 		queue.with_master_access([=, &verification_passed](celerity::handler& cgh) {
@@ -114,30 +117,32 @@ int main(int argc, char* argv[]) {
 			});
 		});}*/
 
-		auto sum_future = accumulate(algorithm::master(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
-		
-		// OR         
+		/*const auto sum = accumulate(algorithm::master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
+
+		// OR
 		// float sum = accumulate(algorithm::master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
 		//                                   ^^^^^^^^^^^^^^^^^^^^^^
 
-		algorithm::actions::on_master([&]()
-		{
-			const auto sum = sum_future.get();
-
+		algorithm::actions::on_master([&]() {
 			std::cout << "## RESULT: ";
-			if (sum == 3 * DEMO_DATA_SIZE) {
+			if (sum == 3 * DEMO_DATA_SIZE)
+			{
 				std::cout << "Success! Correct value was computed." << std::endl;
 			}
-			else {
+			else
+			{
 				std::cout << "Fail! Value is " << sum << std::endl;
 				verification_passed = false;
 			}
-		});
-
-	} catch(std::exception& e) {
+		});*/
+	}
+	catch (std::exception &e)
+	{
 		std::cerr << "Exception: " << e.what() << std::endl;
 		return EXIT_FAILURE;
-	} catch(cl::sycl::exception& e) {
+	}
+	catch (cl::sycl::exception &e)
+	{
 		std::cerr << "SYCL Exception: " << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}

@@ -5,7 +5,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "celerity.h"
+#include "celerity_helper.h"
 
 namespace celerity::algorithm::fixed
 {

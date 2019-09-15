@@ -35,21 +35,21 @@ template <typename InputAccessorType, typename IteratorType, typename ExecutionP
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
 {
-	return [=](celerity::handler cgh) {
+	return [=](celerity::handler &cgh) {
 		auto in_acc = get_access<celerity::access_mode::read, InputAccessorType>(cgh, beg, end);
 
 		if constexpr (is_celerity_iterator_v<IteratorType>)
 		{
 			auto out_acc = get_access<celerity::access_mode::write, one_to_one>(cgh, out, out);
 
-			dispatch(p, cgh, beg, end, [&](auto item) {
+			dispatch(p, cgh, beg, end, [=](auto item) {
 				out_acc[item] = f(in_acc[item]);
 			});
 		}
 		else
 		{
 			auto out_tmp = out;
-			dispatch(p, cgh, beg, end, [&](auto item) {
+			dispatch(p, cgh, beg, end, [=](auto item) {
 				*out_tmp++ = f(in_acc[item]);
 			});
 		}
@@ -60,20 +60,20 @@ template <typename InputAccessorType, typename IteratorType, typename ExecutionP
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
 {
-	return [=](celerity::handler cgh) {
+	return [=](celerity::handler &cgh) {
 		auto in_acc = get_access<celerity::access_mode::read, InputAccessorType>(cgh, beg, end);
 
 		if constexpr (is_celerity_iterator_v<IteratorType>)
 		{
 			auto out_acc = get_access<celerity::access_mode::write, one_to_one>(cgh, out, out);
 
-			dispatch(p, cgh, beg, end, [&](auto item) {
+			dispatch(p, cgh, beg, end, [=](auto item) {
 				out_acc[item] = f(item, in_acc[item]);
 			});
 		}
 		else
 		{
-			dispatch(p, cgh, beg, end, [&](auto item) {
+			dispatch(p, cgh, beg, end, [=](auto item) {
 				*out++ = f(item, in_acc[item]);
 			});
 		}
@@ -84,27 +84,29 @@ template <typename FirstInputAccessorType, typename SecondInputAccessorType, typ
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
-	return [=](celerity::handler cgh) {
-		if (&beg.get_buffer() == &out.get_buffer())
-		{
-			auto in_out_acc = get_access<celerity::access_mode::read_write, FirstInputAccessorType>(cgh, beg, end);
-			auto second_in_acc = get_access<celerity::access_mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
 
-			dispatch(p, cgh, beg, end, [&](auto item) {
-				in_out_acc[item] = f(in_out_acc[item], second_in_acc[item]);
-			});
-		}
-		else
-		{
-			auto first_in_acc = get_access<celerity::access_mode::read, FirstInputAccessorType>(cgh, beg, end);
-			auto second_in_acc = get_access<celerity::access_mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
+	std::cout << "transform" << std::endl;
+	return [=](celerity::handler &cgh) {
+		//if (&beg.get_buffer() == &out.get_buffer())
+		//{
+		//auto in_out_acc = get_access<celerity::access_mode::read_write, FirstInputAccessorType>(cgh, beg, end);
+		//auto second_in_acc = get_access<celerity::access_mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
 
-			auto out_acc = get_access<celerity::access_mode::write, OutputAccessorType>(cgh, out, out);
+		//dispatch(p, cgh, beg, end, [&](auto item) {
+		//	in_out_acc[item] = f(in_out_acc[item], second_in_acc[item]);
+		//});
+		//}
+		//else
+		//{
+		auto first_in_acc = get_access<celerity::access_mode::read, FirstInputAccessorType>(cgh, beg, end);
+		auto second_in_acc = get_access<celerity::access_mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
 
-			dispatch(p, cgh, beg, end, [&](auto item) {
-				out_acc[item] = f(first_in_acc[item], second_in_acc[item]);
-			});
-		}
+		auto out_acc = get_access<celerity::access_mode::write, OutputAccessorType>(cgh, out, out);
+
+		dispatch(p, cgh, beg, end, [=](auto item) {
+			out_acc[item] = f(first_in_acc[item], second_in_acc[item]);
+		});
+		//}
 	};
 }
 
@@ -112,13 +114,13 @@ template <typename FirstInputAccessorType, typename SecondInputAccessorType, typ
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 3, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
-	return [=](celerity::handler cgh) {
+	return [=](celerity::handler &cgh) {
 		if (&beg.get_buffer() == &out.get_buffer())
 		{
 			auto in_out_acc = get_access<celerity::access_mode::read_write, FirstInputAccessorType>(cgh, beg, end);
 			auto second_in_acc = get_access<celerity::access_mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
 
-			dispatch(p, cgh, beg, end, [&](auto item) {
+			dispatch(p, cgh, beg, end, [=](auto item) {
 				in_out_acc[item] = f(item, in_out_acc[item], second_in_acc[item]);
 			});
 		}
@@ -129,7 +131,7 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 
 			auto out_acc = get_access<celerity::access_mode::write, OutputAccessorType>(cgh, out, out);
 
-			dispatch(p, cgh, beg, end, [&](auto item) {
+			dispatch(p, cgh, beg, end, [=](auto item) {
 				out_acc[item] = f(item, first_in_acc[item], second_in_acc[item]);
 			});
 		}
@@ -139,10 +141,10 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 template <typename ExecutionPolicy, typename F, typename T, int Rank>
 auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
-	return [=](celerity::handler cgh) {
+	return [=](celerity::handler &cgh) {
 		auto out_acc = get_access<celerity::access_mode::write, one_to_one>(cgh, beg, end);
 
-		dispatch(p, cgh, beg, end, [&](auto item) {
+		dispatch(p, cgh, beg, end, [=](auto item) {
 			if constexpr (algorithm::detail::get_accessor_type<F, 0>() == access_type::item)
 			{
 				out_acc[item] = f(item);
@@ -158,10 +160,10 @@ auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T
 template <typename ExecutionPolicy, typename T, int Rank>
 auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
 {
-	return [=](celerity::handler cgh) {
+	return [=](celerity::handler &cgh) {
 		auto out_acc = get_access<celerity::access_mode::write, one_to_one>(cgh, beg, end);
 
-		dispatch(p, cgh, beg, end, [&](auto item) {
+		dispatch(p, cgh, beg, end, [=](auto item) {
 			out_acc[item] = value;
 		});
 	};
@@ -174,12 +176,12 @@ auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator
 	static_assert(!policy_traits<ExecutionPolicy>::is_distributed, "can not be distributed");
 	static_assert(Rank == 1, "Only 1-dimenionsal buffers for now");
 
-	return [=](celerity::handler cgh) {
+	return [=](celerity::handler &cgh) {
 		const auto in_acc = get_access<access_mode::read, one_to_one>(cgh, beg, end);
 
 		auto sum = init;
 
-		dispatch(p, cgh, beg, end, [&](auto item) {
+		dispatch(p, cgh, beg, end, [=](auto item) {
 			sum = op(std::move(sum), in_acc[item]);
 		});
 
@@ -191,10 +193,10 @@ template <typename InputAccessorType, typename ExecutionPolicy, typename F, type
 		  typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::item>>
 auto for_each(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
-	return [=](celerity::handler cgh) {
+	return [=](celerity::handler &cgh) {
 		auto in_acc = get_access<celerity::access_mode::read, InputAccessorType>(cgh, beg, end);
 
-		dispatch(p, cgh, beg, end, [&](auto item) {
+		dispatch(p, cgh, beg, end, [=](auto item) {
 			f(item, in_acc[item]);
 		});
 	};
@@ -206,7 +208,7 @@ auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 	static_assert(!policy_traits<std::decay_t<ExecutionPolicy>>::is_distributed);
 	static_assert(!is_celerity_iterator_v<IteratorType>);
 
-	return [=](celerity::handler cgh) {
+	return [=](celerity::handler &cgh) {
 		auto in_acc = get_access<celerity::access_mode::read, one_to_one>(cgh, beg, end);
 
 		if constexpr (algorithm::is_contiguous_iterator<IteratorType>() &&
@@ -216,7 +218,7 @@ auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 		}
 		else
 		{
-			dispatch(p, cgh, beg, end, [&](auto item) {
+			dispatch(p, cgh, beg, end, [=](auto item) {
 				*out++ = in_acc[item];
 			});
 		}

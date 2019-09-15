@@ -1,7 +1,7 @@
 #ifndef TASK_SEQUENCE_H
 #define TASK_SEQUENCE_H
 
-#include "celerity.h"
+#include "celerity_helper.h"
 #include "task.h"
 
 namespace celerity::algorithm
