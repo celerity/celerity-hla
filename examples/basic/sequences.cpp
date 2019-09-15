@@ -6,7 +6,7 @@
 #include "../../src/task_sequence.h"
 #include "../../src/kernel_sequence.h"
 #include "../../src/kernel_traits.h"
-#include "../../src/static_iterator.h"
+//#include "../../src/static_iterator.h"
 #include "../../src/algorithm.h"
 
 #include <iostream>
@@ -24,21 +24,20 @@ void sequence_static_assertions()
 	using hello_world_t = decltype(hello_world);
 	using zero_t = decltype(zero);
 
+	static_assert(std::is_same<
+					  decltype(zero | task(zero)),
+					  sequence<task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>>>::value,
+				  "action not promoted to task_t");
 
 	static_assert(std::is_same<
-		decltype(zero | task(zero)),
-		sequence<task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>>>::value,
-		"action not promoted to task_t");
+					  decltype(zero | zero),
+					  kernel_sequence<zero_t, zero_t>>::value,
+				  "actions not promoted to kernel_sequence");
 
 	static_assert(std::is_same<
-		decltype(zero | zero),
-		kernel_sequence<zero_t, zero_t>>::value,
-		"actions not promoted to kernel_sequence");
-
-	static_assert(std::is_same<
-		decltype(zero | zero | zero),
-		kernel_sequence<zero_t, zero_t, zero_t>>::value,
-		"action not appended to kernel_sequence");
+					  decltype(zero | zero | zero),
+					  kernel_sequence<zero_t, zero_t, zero_t>>::value,
+				  "action not appended to kernel_sequence");
 
 	/*static_assert(std::is_same<
 		decltype(hello_world | zero),
@@ -46,36 +45,36 @@ void sequence_static_assertions()
 		"action not promoted to task_t");*/
 
 	static_assert(std::is_same<
-		decltype(zero | hello_world),
-		sequence<task_t<distributed_execution_policy, zero_t>, hello_world_t>>::value,
-		"action not promoted to task_t");
+					  decltype(zero | hello_world),
+					  sequence<task_t<distributed_execution_policy, zero_t>, hello_world_t>>::value,
+				  "action not promoted to task_t");
 
 	static_assert(std::is_same<
-		decltype(task(zero)),
-		task_t<distributed_execution_policy, zero_t>>::value,
-		"action not promoted to task_t");
+					  decltype(task(zero)),
+					  task_t<distributed_execution_policy, zero_t>>::value,
+				  "action not promoted to task_t");
 
 	static_assert(std::is_same<
-		decltype(fuse(zero | zero)),
-		task_t<distributed_execution_policy, zero_t, zero_t>>::value,
-		"actions to fused");
+					  decltype(fuse(zero | zero)),
+					  task_t<distributed_execution_policy, zero_t, zero_t>>::value,
+				  "actions to fused");
 
 	static_assert(std::is_same<
-		decltype(fuse(zero | zero | zero)),
-		task_t<distributed_execution_policy, zero_t, zero_t, zero_t>>::value,
-		"actions to fused");
+					  decltype(fuse(zero | zero | zero)),
+					  task_t<distributed_execution_policy, zero_t, zero_t, zero_t>>::value,
+				  "actions to fused");
 
 	static_assert(std::is_same<
-		decltype(zero | zero | task(zero)),
-		sequence<task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>>>::value,
-		"action sequence not promoted to task_t sequence");
+					  decltype(zero | zero | task(zero)),
+					  sequence<task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>>>::value,
+				  "action sequence not promoted to task_t sequence");
 
-  	static_assert(std::is_same<
-		decltype(zero | task(zero) | zero),
-		sequence<task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>>>::value,
-		"action not promoted to task_t");
+	static_assert(std::is_same<
+					  decltype(zero | task(zero) | zero),
+					  sequence<task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>>>::value,
+				  "action not promoted to task_t");
 
-  	/*static_assert(std::is_same<
+	/*static_assert(std::is_same<
 		decltype(hello_world | zero | task(zero) | zero),
 		sequence<hello_world_t, task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>, task_t<distributed_execution_policy, zero_t>>>::value,
 		"action not promoted to task_t");*/
@@ -86,14 +85,11 @@ void sequence_static_assertions()
 	static_assert(algorithm::detail::get_accessor_type<decltype(zero), 0>() == access_type::one_to_one, "get_accessor_type");
 	static_assert(algorithm::detail::get_accessor_type<algorithm::buffer_iterator<float, 1>, 0>() == access_type::invalid, "get_accessor_type");
 
-
 	static_assert(!is_contiguous_iterator<decltype(begin(std::declval<vector<float>>()))>());
 	static_assert(is_contiguous_iterator<decltype(std::declval<vector<float>>().data())>());
 }
 
-
-
-template<typename BufferType>
+template <typename BufferType>
 struct slice_of : celerity::algorithm::slice<typename BufferType::value_type, BufferType::rank>
 {
 };
@@ -111,12 +107,12 @@ void sequence_examples()
 	auto i = 0;
 	auto seq = hello_world() | incr(i) | incr(i) | incr(i);
 	std::invoke(seq);
-	cout << i << endl << endl;
+	cout << i << endl
+		 << endl;
 
 	// example 2: celerity task sequence
 
-	auto zero = [](handler cgh)
-	{
+	auto zero = [](handler cgh) {
 		/*
 		auto dw_buf = buf.get_access<cl::sycl::access::mode::discard_write>(cgh, celerity::access::one_to_one<2>());
 			cgh.parallel_for<class zero>(buf.get_range(), [=](cl::sycl::item<2> item) { dw_buf[item] = 0.f; });
@@ -125,8 +121,7 @@ void sequence_examples()
 		cout << cgh.invocations << ": zero" << endl;
 	};
 
-	auto step = [](handler cgh)
-	{
+	auto step = [](handler cgh) {
 		/*
 			auto rw_up = up.template get_access<cl::sycl::access::mode::read_write>(cgh, celerity::access::one_to_one<2>());
 			auto r_u = u.template get_access<cl::sycl::access::mode::read>(cgh, celerity::access::neighborhood<2>(1, 1));
@@ -153,7 +148,7 @@ void sequence_examples()
 
 	distr_queue q{};
 
-    zero | fuse(step | step | step) | step | submit_to(q);
+	zero | fuse(step | step | step) | step | submit_to(q);
 
 	std::cout << endl;
 
@@ -161,33 +156,31 @@ void sequence_examples()
 
 	using namespace algorithm;
 
-	buffer<float, 1> b{ { 5 } };
-	buffer<float, 1> c{ { 5 } };
-	buffer<float, 1> b_out{ { 5 } };
+	buffer<float, 1> b{{5}};
+	buffer<float, 1> c{{5}};
+	buffer<float, 1> b_out{{5}};
 
 	static_assert(std::is_base_of_v<slice<float, 1>, slice_of<decltype(b)>>);
 
 	algorithm::fill(algorithm::distr<class fill>(q), begin(b), end(b), 1.f);
 	algorithm::transform(algorithm::distr<class mul2>(q), next(begin(b)), end(b), begin(c), [](const float x) { return 2 * x; });
-	
+
 	assert(c.data()[0] == 1 && c.data()[1] == 2 && c.data()[2] == 2 && c.data()[3] == 2 && c.data()[4] == 2);
-	
+
 	algorithm::transform(algorithm::distr<class sum>(q), begin(b), end(b), begin(b_out),
-		[&](slice<float, 0> x)
-		{
-			auto sum = *x;
+						 [&](slice<float, 0> x) {
+							 auto sum = *x;
 
-			for (int i = 0; i < 5; ++i)
-				sum += x[{i}];
+							 for (int i = 0; i < 5; ++i)
+								 sum += x[{i}];
 
-			return sum;
-		});
+							 return sum;
+						 });
 
 	algorithm::transform(master(q), begin(b), end(b), begin(b_out),
-		[](float x)
-		{
-			return 2 * x;
-		});
+						 [](float x) {
+							 return 2 * x;
+						 });
 
 	/*algorithm::transform(master(q), begin(b), end(b), begin(b_out),
 		[](chunk<float, 2> x)
@@ -196,23 +189,20 @@ void sequence_examples()
 		});*/
 
 	algorithm::transform(algorithm::distr<class product>(q), begin(b), end(b), begin(c), begin(b_out),
-		[](float x, float y)
-		{
-			return x * y;
-		});
-	
+						 [](float x, float y) {
+							 return x * y;
+						 });
+
 	algorithm::transform(algorithm::master(q), begin(b), end(b), begin(c), begin(b_out),
-		[](float x, float y)
-		{
-			return x * y;
-		});
+						 [](float x, float y) {
+							 return x * y;
+						 });
 
 	algorithm::transform(algorithm::master(q), begin(b), end(b), begin(b_out),
-		[](cl::sycl::item<1> item, float x)
-		{
-			return x;
-		});
-	
+						 [](cl::sycl::item<1> item, float x) {
+							 return x;
+						 });
+
 	// algorithm action
 
 	auto add_one = actions::transform(distr<class add_one>(q), begin(b), end(b), begin(b_out), [](float x) { return x + 1.0f; });
@@ -222,6 +212,7 @@ void sequence_examples()
 
 void iterator_static_assertions()
 {
+	/*
 	using namespace celerity::algorithm::fixed;
 
 	static_assert(static_index<1>::rank == 1, "static_index rank");
@@ -229,7 +220,8 @@ void iterator_static_assertions()
 
 	static_assert(static_index<1>::components[0] == 1, "static_index::components");
 	static_assert(static_index<1, 2>::components[0] == 1 &&
-		static_index<1, 2>::components[1] == 2, "static_index::components");
+					  static_index<1, 2>::components[1] == 2,
+				  "static_index::components");
 
 	static_assert(is_same<static_index<1>, static_index<1>>::value, "static_index equality");
 	static_assert(is_same<static_index<1, 3>, static_index<1, 3>>::value, "static_index equality");
@@ -241,29 +233,28 @@ void iterator_static_assertions()
 	static_assert(is_same<static_iterator<float, 1, 2, 3>, static_iterator<float, 1, 2, 3>>::value, "static_iterator equality");
 	static_assert(!is_same<static_iterator<float, 1, 2, 3>, static_iterator<float, 3, 3, 3>>::value, "static_iterator inequality");
 
-
 	static_assert(static_view<1, static_iterator<float, 0>, static_iterator<float, 0>>::id == 1, "static_view::id");
 	static_assert(static_view<1, static_iterator<float, 0, 0>, static_iterator<float, 1, 1>>::rank == 2, "static_view::rank");
 
 	static_assert(is_same<static_view<1, static_iterator<float, 0, 0>, static_iterator<float, 1, 1>>,
-		static_view<1, static_iterator<float, 0, 0>, static_iterator<float, 1, 1>>>::value,
-		"static_view::rank");
+						  static_view<1, static_iterator<float, 0, 0>, static_iterator<float, 1, 1>>>::value,
+				  "static_view::rank");
 
 	static_assert(!is_same<static_view<1, static_iterator<float, 0, 0>, static_iterator<float, 1, 1>>,
-		static_view<1, static_iterator<float, 0, 1>, static_iterator<float, 1, 1>>>::value,
-		"static_view::rank");
+						   static_view<1, static_iterator<float, 0, 1>, static_iterator<float, 1, 1>>>::value,
+				  "static_view::rank");
 
-	static_assert(is_same<decltype(begin(celerity::buffer<float, 1>{{1}})), static_iterator<float, 0 >> ::value, "begin");
+	static_assert(is_same<decltype(begin(celerity::buffer<float, 1>{{1}})), static_iterator<float, 0>>::value, "begin");
 
-	static_assert(is_same<decltype(end(celerity::buffer<float, 1>{{1}})), static_iterator<float, 0 >> ::value, "end");
+	static_assert(is_same<decltype(end(celerity::buffer<float, 1>{{1}})), static_iterator<float, 0>>::value, "end");
 
-	static_assert(is_same<decltype(make_view<1>(celerity::buffer<float, 1>{{1}})), static_view<1, static_iterator<float, 0>, static_iterator<float, 0>> > ::value, "make_view return type");
+	static_assert(is_same<decltype(make_view<1>(celerity::buffer<float, 1>{{1}})), static_view<1, static_iterator<float, 0>, static_iterator<float, 0>>>::value, "make_view return type");
 
 	using namespace celerity;
 	using namespace algorithm;
 
 	const auto src_view = fixed::make_view<1>(celerity::buffer<float, 1>{{1}});
-	const auto dst_view = fixed::make_view<2>(celerity::buffer<float, 1>{{1}});
+	const auto dst_view = fixed::make_view<2>(celerity::buffer<float, 1>{{1}});*/
 }
 
 void sycl_helper_assertions()
@@ -313,7 +304,8 @@ void sycl_helper_assertions()
 	static_assert(equals(distance(id<2>{1, 3}, id<2>{2, 3}), range<2>{ 1, 0 }), "distance");*/
 }
 
-int main(int, char*[]) {
+int main(int, char *[])
+{
 
 	sequence_static_assertions();
 	iterator_static_assertions();
