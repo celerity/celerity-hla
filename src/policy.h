@@ -84,6 +84,21 @@ struct decay_policy<named_distributed_execution_and_queue_policy<KernelName>>
 template <typename T>
 using decay_policy_t = typename decay_policy<T>::type;
 
+template <typename T>
+struct strip_queue
+{
+	using type = T;
+};
+
+template <typename KernelName>
+struct strip_queue<named_distributed_execution_and_queue_policy<KernelName>>
+{
+	using type = decay_policy_t<named_distributed_execution_and_queue_policy<KernelName>>;
+};
+
+template <typename T>
+using strip_queue_t = typename strip_queue<T>::type;
+
 template <typename KernelName>
 auto distr(::celerity::distr_queue q) { return named_distributed_execution_and_queue_policy<KernelName>{q}; }
 
