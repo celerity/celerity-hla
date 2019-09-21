@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 		});
 		*/
 
-		//transform(algorithm::master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
+		transform(algorithm::master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
 
 #else
 		/*
@@ -115,10 +115,10 @@ int main(int argc, char *argv[])
 			});
 		});}*/
 
-		/*const auto sum = accumulate(algorithm::master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
+		//const auto sum = accumulate(algorithm::master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
 
 		// OR
-		// float sum = accumulate(algorithm::master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
+		float sum = accumulate(algorithm::master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
 		//                                   ^^^^^^^^^^^^^^^^^^^^^^
 
 		algorithm::actions::on_master([&]() {
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
 				std::cout << "Fail! Value is " << sum << std::endl;
 				verification_passed = false;
 			}
-		});*/
+		});
 	}
 	catch (std::exception &e)
 	{

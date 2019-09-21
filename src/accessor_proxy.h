@@ -201,25 +201,21 @@ private:
 	AccessorType accessor_;
 };
 
-template <celerity::access_mode Mode, typename AccessorType, typename T, int Rank>
+template <typename ExecutionPolicy, cl::sycl::access::mode Mode, typename AccessorType, typename T, int Rank>
 auto get_access(celerity::handler &cgh, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end)
 {
 	//assert(&beg.buffer() == &end.buffer());
 	//assert(*beg <= *end);
 
-	if constexpr (Mode == access_mode::read)
+	if constexpr (policy_traits<ExecutionPolicy>::is_distributed)
 	{
-		auto acc = beg.get_buffer().template get_access<cl::sycl::access::mode::read>(cgh, accessor_traits<Rank, AccessorType>::range_mapper());
-		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{acc, beg.get_buffer().get_range()};
-	}
-	else if constexpr (Mode == access_mode::write)
-	{
-		auto acc = beg.get_buffer().template get_access<cl::sycl::access::mode::write>(cgh, accessor_traits<Rank, AccessorType>::range_mapper());
+		auto acc = beg.get_buffer().template get_access<Mode>(cgh, accessor_traits<Rank, AccessorType>::range_mapper());
 		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{acc, beg.get_buffer().get_range()};
 	}
 	else
 	{
-		auto acc = beg.get_buffer().template get_access<cl::sycl::access::mode::read_write>(cgh, accessor_traits<Rank, AccessorType>::range_mapper());
+		static_assert(std::is_same_v<one_to_one, AccessorType>);
+		auto acc = beg.get_buffer().template get_access<Mode>(cgh, beg.get_buffer().get_range());
 		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{acc, beg.get_buffer().get_range()};
 	}
 }

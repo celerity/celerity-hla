@@ -76,7 +76,7 @@ public:
 		return *this;
 	}
 
-	[[nodiscard]] buffer<T, Rank> get_buffer() { return buffer_; }
+	[[nodiscard]] buffer<T, Rank> get_buffer() const { return buffer_; }
 
 	celerity::buffer<T, Rank> buffer_;
 };
