@@ -35,7 +35,7 @@ template <typename InputAccessorType, typename IteratorType, typename ExecutionP
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
 {
-	using policy_type = decay_policy_t<ExecutionPolicy>;
+	using policy_type = strip_queue_t<ExecutionPolicy>;
 
 	return [=](celerity::handler &cgh) {
 		auto in_acc = get_access<policy_type, cl::sycl::access::mode::read, InputAccessorType>(cgh, beg, end);
@@ -62,7 +62,7 @@ template <typename InputAccessorType, typename IteratorType, typename ExecutionP
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
 {
-	using policy_type = decay_policy_t<ExecutionPolicy>;
+	using policy_type = strip_queue_t<ExecutionPolicy>;
 
 	return [=](celerity::handler &cgh) {
 		auto in_acc = get_access<policy_type, cl::sycl::access::mode::read, InputAccessorType>(cgh, beg, end);
@@ -88,7 +88,7 @@ template <typename FirstInputAccessorType, typename SecondInputAccessorType, typ
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
-	using policy_type = decay_policy_t<ExecutionPolicy>;
+	using policy_type = strip_queue_t<ExecutionPolicy>;
 
 	return [=](celerity::handler &cgh) {
 		/*if (beg.get_buffer().get_id() == out.get_buffer().get_id())
@@ -118,7 +118,7 @@ template <typename FirstInputAccessorType, typename SecondInputAccessorType, typ
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 3, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
-	using policy_type = decay_policy_t<ExecutionPolicy>;
+	using policy_type = strip_queue_t<ExecutionPolicy>;
 
 	return [=](celerity::handler &cgh) {
 		/*if (beg.get_buffer().get_id() == out.get_buffer().get_id())
@@ -147,7 +147,7 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 template <typename ExecutionPolicy, typename F, typename T, int Rank>
 auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
-	using policy_type = algorithm::decay_policy_t<ExecutionPolicy>;
+	using policy_type = strip_queue_t<ExecutionPolicy>;
 
 	return [=](celerity::handler &cgh) {
 		auto out_acc = get_access<policy_type, cl::sycl::access::mode::write, one_to_one>(cgh, beg, end);
@@ -168,7 +168,7 @@ auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T
 template <typename ExecutionPolicy, typename T, int Rank>
 auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
 {
-	using policy_type = decay_policy_t<ExecutionPolicy>;
+	using policy_type = strip_queue_t<ExecutionPolicy>;
 
 	return [=](celerity::handler &cgh) {
 		auto out_acc = get_access<policy_type, cl::sycl::access::mode::write, one_to_one>(cgh, beg, end);
@@ -182,7 +182,7 @@ auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank, typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<BinaryOp, 1>() == access_type::one_to_one>>
 auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
 {
-	using policy_type = decay_policy_t<ExecutionPolicy>;
+	using policy_type = strip_queue_t<ExecutionPolicy>;
 
 	static_assert(!policy_traits<ExecutionPolicy>::is_distributed, "can not be distributed");
 	static_assert(Rank == 1, "Only 1-dimenionsal buffers for now");
@@ -204,7 +204,7 @@ template <typename InputAccessorType, typename ExecutionPolicy, typename F, type
 		  typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::item>>
 auto for_each(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
-	using policy_type = decay_policy_t<ExecutionPolicy>;
+	using policy_type = strip_queue_t<ExecutionPolicy>;
 
 	return [=](celerity::handler &cgh) {
 		auto in_acc = get_access<policy_type, cl::sycl::access::mode::read, InputAccessorType>(cgh, beg, end);
@@ -218,7 +218,7 @@ auto for_each(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
 auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
 {
-	using policy_type = decay_policy_t<ExecutionPolicy>;
+	using policy_type = strip_queue_t<ExecutionPolicy>;
 
 	static_assert(!policy_traits<std::decay_t<ExecutionPolicy>>::is_distributed);
 	static_assert(!is_celerity_iterator_v<IteratorType>);
