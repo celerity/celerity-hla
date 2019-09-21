@@ -87,6 +87,9 @@ using decay_policy_t = typename decay_policy<T>::type;
 template <typename KernelName>
 auto distr(::celerity::distr_queue q) { return named_distributed_execution_and_queue_policy<KernelName>{q}; }
 
+template <typename KernelName>
+auto distr() { return named_distributed_execution_policy<KernelName>{}; }
+
 inline auto master(celerity::distr_queue q) { return non_blocking_master_execution_policy{q}; }
 inline auto master_blocking(celerity::distr_queue q) { return blocking_master_execution_policy{q}; }
 
