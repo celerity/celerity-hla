@@ -2,7 +2,7 @@
 #define CELERITY_HELPER_H
 // ReSharper disable once CppMissingIncludeGuard
 #ifndef MOCK_CELERITY
-#define CELERITY_STRICT_CGF_SAFETY 1
+#define CELERITY_STRICT_CGF_SAFETY 0
 #include <celerity.h>
 #else
 #include <iostream>

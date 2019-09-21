@@ -36,8 +36,6 @@ int main(int argc, char *argv[])
 
 		fill(algorithm::distr<class produce_a>(queue), begin(buf_a), end(buf_a), 1.f);
 
-		queue.slow_full_sync();
-
 		/*queue.submit([=](celerity::handler& cgh) {
 			auto r_a = buf_a.get_access<cl::sycl::access::mode::read>(cgh, [](celerity::chunk<1> chnk) -> celerity::subrange<1> {
 				celerity::subrange<1> sr(chnk);
@@ -54,7 +52,7 @@ int main(int argc, char *argv[])
 
 		*/
 
-		//transform(algorithm::distr<class compute_b>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; });
+		transform(algorithm::distr<class compute_b>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; });
 
 #define COMPUTE_C_ON_MASTER 1
 #if COMPUTE_C_ON_MASTER
@@ -82,7 +80,7 @@ int main(int argc, char *argv[])
 		});
 		*/
 
-		//algorithm::transform(algorithm::distr<class compute_c>(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
+		algorithm::transform(algorithm::distr<class compute_c>(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
 #endif
 		/*
 		queue.submit([=](celerity::handler& cgh) {
@@ -94,7 +92,7 @@ int main(int argc, char *argv[])
 
 		*/
 
-		//transform(algorithm::distr<class compute_d>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), [](float x, float y) { return x + y; });
+		transform(algorithm::distr<class compute_d>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), [](float x, float y) { return x + y; });
 
 		/*
 

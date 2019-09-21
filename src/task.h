@@ -54,12 +54,7 @@ public:
 
 		//q.submit([&](handler &cgh) { std::invoke(sequence_, cgh); });
 
-		static_assert(std::is_standard_layout_v<decltype(sequence_)>);
-		static_assert(std::is_standard_layout_v<typename decltype(sequence_)::sequence_type>);
-		static_assert(std::is_standard_layout_v<typename decltype(sequence_)::sequence_type::actions_t>);
-		static_assert(std::is_standard_layout_v<F>);
-
-		auto f = [seq = sequence_](handler &cgh) { std::invoke(seq, cgh); };
+		const auto f = [seq = sequence_](handler &cgh) { std::invoke(seq, cgh); };
 
 		q.submit(f);
 

@@ -13,7 +13,7 @@ class buffer;
 namespace celerity::algorithm
 {
 template <int Rank>
-class iterator
+struct iterator
 {
 public:
 	iterator(cl::sycl::id<Rank> pos, cl::sycl::range<Rank> range)
@@ -47,7 +47,6 @@ public:
 
 	[[nodiscard]] cl::sycl::id<Rank> operator*() const { return pos_; }
 
-private:
 	cl::sycl::id<Rank> pos_ = 0;
 	cl::sycl::range<Rank> range_;
 };
@@ -57,7 +56,7 @@ struct celerity_iterator_tag // : contiguous_iterator_tag
 };
 
 template <typename T, int Rank>
-class buffer_iterator : public iterator<Rank>
+struct buffer_iterator : public iterator<Rank>
 {
 public:
 	using iterator_category = celerity_iterator_tag;
@@ -66,7 +65,7 @@ public:
 	using pointer = std::add_pointer_t<T>;
 	using reference = std::add_lvalue_reference_t<T>;
 
-	buffer_iterator(cl::sycl::id<Rank> pos, buffer<T, Rank> &buffer)
+	buffer_iterator(cl::sycl::id<Rank> pos, buffer<T, Rank> buffer)
 		: iterator<Rank>(pos, buffer.get_range()), buffer_(buffer)
 	{
 	}
@@ -77,9 +76,9 @@ public:
 		return *this;
 	}
 
-	[[nodiscard]] buffer<T, Rank> &get_buffer() const { return buffer_; }
+	[[nodiscard]] buffer<T, Rank> get_buffer() { return buffer_; }
 
-	private : celerity::buffer<T, Rank> &buffer_;
+	celerity::buffer<T, Rank> buffer_;
 };
 
 template <typename T, int Rank>
@@ -120,13 +119,13 @@ buffer_iterator<T, Rank> next(buffer_iterator<T, Rank> it)
 namespace celerity
 {
 template <typename T, int Rank>
-algorithm::buffer_iterator<T, Rank> begin(celerity::buffer<T, Rank> &buffer)
+algorithm::buffer_iterator<T, Rank> begin(celerity::buffer<T, Rank> buffer)
 {
 	return algorithm::buffer_iterator<T, Rank>(cl::sycl::id<Rank>{}, buffer);
 }
 
 template <typename T, int Rank>
-algorithm::buffer_iterator<T, Rank> end(celerity::buffer<T, Rank> &buffer)
+algorithm::buffer_iterator<T, Rank> end(celerity::buffer<T, Rank> buffer)
 {
 	return algorithm::buffer_iterator<T, Rank>(buffer.get_range(), buffer);
 }
