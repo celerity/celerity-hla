@@ -67,10 +67,14 @@ int main(int argc, char *argv[])
 					 verification_passed = false;
 				 });
 
-		if (verification_passed)
-		{
-			printf("VERIFICATION PASSED!\n");
-		}
+		queue.slow_full_sync();
+
+		actions::on_master([&]() {
+			if (verification_passed)
+			{
+				printf("VERIFICATION PASSED!\n");
+			}
+		});
 	}
 	catch (std::exception &e)
 	{
