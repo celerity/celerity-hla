@@ -163,15 +163,7 @@ public:
 
 	slice<T, Dim> operator[](const cl::sycl::item<Rank> it) const
 	{
-		auto getter = [this, it](int i) {
-			auto id = it.get_id();
-
-			id[Dim] = i;
-
-			return accessor_[cl::sycl::detail::make_item(id, it.get_range()), it.get_offset()];
-		};
-
-		return slice<T, Dim>{static_cast<int>(it.get_id()[Dim]), getter};
+		return slice<T, Dim>(it, accessor_);
 	}
 
 private:
@@ -193,7 +185,7 @@ public:
 						id[i] = std::max(0l, std::min(static_cast<long>(item.get_id()[i]) + rel_id[i], static_cast<long>(item.get_range()[i]) - 1));
 					}
 
-					return accessor_[{item.get_range(), id}];
+					return accessor_[id];
 				}};
 	}
 
