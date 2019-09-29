@@ -51,7 +51,7 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 		else
 		{
 			auto out_tmp = out;
-			dispatch<policy_type>(cgh, beg, end, [=](auto item) {
+			dispatch<policy_type>(cgh, beg, end, [&](auto item) {
 				*out_tmp++ = f(in_acc[item]);
 			});
 		}
@@ -223,7 +223,7 @@ auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 	static_assert(!policy_traits<std::decay_t<ExecutionPolicy>>::is_distributed);
 	static_assert(!is_celerity_iterator_v<IteratorType>);
 
-	return [=](celerity::handler &cgh) {
+	return [&](celerity::handler &cgh) {
 		auto in_acc = get_access<policy_type, cl::sycl::access::mode::read, one_to_one>(cgh, beg, end);
 
 		if constexpr (algorithm::is_contiguous_iterator<IteratorType>() &&
@@ -233,7 +233,7 @@ auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 		}
 		else
 		{
-			dispatch<policy_type>(cgh, beg, end, [=](auto item) {
+			dispatch<policy_type>(cgh, beg, end, [&](auto item) {
 				*out++ = in_acc[item];
 			});
 		}

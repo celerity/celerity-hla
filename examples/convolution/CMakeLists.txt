@@ -10,13 +10,14 @@ set_property(TARGET convolution PROPERTY CXX_STANDARD 17)
 
 target_link_libraries(convolution
 	PUBLIC
+  Celerity::celerity_runtime
 	Boost::boost
 	MPI::MPI_CXX)
 
-#add_celerity_to_target(
-#  TARGET sequences
-#  SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sequences.cpp
-#)
+add_celerity_to_target(
+  TARGET convolution
+  SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/convolution.cc
+)
 
 if(MSVC)
   target_compile_options(convolution PRIVATE /D_CRT_SECURE_NO_WARNINGS /MP /W3)
