@@ -1,9 +1,11 @@
 #ifndef ACCESSORS_H
 #define ACCESSORS_H
 
-#include "sycl.h"
 #include <cmath>
 #include "inplace_function.h"
+
+#include "any_accessor.h"
+#include "variant_item.h"
 
 namespace celerity::algorithm
 {
@@ -43,50 +45,6 @@ struct is_slice : std::false_type
 template <typename T>
 inline constexpr auto is_slice_v = is_slice<T>::value;
 
-template <typename T, int Rank, cl::sycl::access::mode mode, cl::sycl::access::target target,
-		  std::enable_if_t<target == cl::sycl::access::target::host_buffer, int> = 0>
-T get_value(const void *accessor, cl::sycl::id<Rank> id)
-{
-	return (*reinterpret_cast<const cl::sycl::accessor<T, Rank, mode, target> *>(accessor))[id];
-}
-
-template <typename T, int Rank, cl::sycl::access::mode mode, cl::sycl::access::target target,
-		  std::enable_if_t<target == cl::sycl::access::target::global_buffer, int> = 0>
-T get_value(const void *accessor, cl::sycl::id<Rank> id)
-{
-	return (*reinterpret_cast<const cl::sycl::accessor<T, Rank, mode, target, cl::sycl::access::placeholder::true_t> *>(accessor))[id];
-}
-
-template <typename T, int Rank, cl::sycl::access::mode mode>
-T get_value(const void *accessor, cl::sycl::access::target target, cl::sycl::id<Rank> id)
-{
-	using namespace cl::sycl::access;
-
-	switch (target)
-	{
-	case target::global_buffer:
-		return get_value<T, Rank, mode, target::global_buffer>(accessor, id);
-	case target::host_buffer:
-		return get_value<T, Rank, mode, target::host_buffer>(accessor, id);
-	}
-}
-
-template <typename T, int Rank>
-T get_value(const void *accessor, cl::sycl::access::mode mode, cl::sycl::access::target target, cl::sycl::id<Rank> id)
-{
-	using namespace cl::sycl::access;
-
-	switch (mode)
-	{
-	case mode::read:
-		return get_value<T, Rank, mode::read>(accessor, target, id);
-	case mode::write:
-		return get_value<T, Rank, mode::write>(accessor, target, id);
-	case mode::read_write:
-		return get_value<T, Rank, mode::read_write>(accessor, target, id);
-	}
-}
-
 template <typename T, size_t Dim>
 class slice
 {
@@ -96,16 +54,14 @@ public:
 
 	template <int Rank, cl::sycl::access::mode Mode>
 	slice(const cl::sycl::item<Rank> item, cl::sycl::accessor<T, Rank, Mode, cl::sycl::access::target::host_buffer> acc)
-		: idx_(static_cast<int>(item.get_id()[Dim])), rank_(Rank), mode_(Mode), target_(cl::sycl::access::target::host_buffer)
+		: idx_(static_cast<int>(item.get_id()[Dim])), item_(item), accessor_(acc)
 	{
-		init(item, acc);
 	}
 
 	template <int Rank, cl::sycl::access::mode Mode>
 	slice(const cl::sycl::item<Rank> item, cl::sycl::accessor<T, Rank, Mode, cl::sycl::access::target::global_buffer, cl::sycl::access::placeholder::true_t> acc)
-		: idx_(static_cast<int>(item.get_id()[Dim])), rank_(Rank), mode_(Mode), target_(cl::sycl::access::target::global_buffer)
+		: idx_(static_cast<int>(item.get_id()[Dim])), item_(item), accessor_(acc)
 	{
-		init(item, acc);
 	}
 
 	int index() const { return idx_; }
@@ -117,25 +73,11 @@ public:
 
 	T operator[](int pos) const
 	{
-
-		switch (rank_)
-		{
-		case 2:
-		{
-			const auto item = *reinterpret_cast<const cl::sycl::item<2> *>(item_.data());
+		item_.apply([pos, acc = accessor_](const auto &item) {
 			auto id = item.get_id();
 			id[Dim] = pos;
-			return get_value<T, 2>(accessor_.data(), mode_, target_, id);
-		}
-
-		case 3:
-		{
-			const auto item = *reinterpret_cast<const cl::sycl::item<3> *>(item_.data());
-			auto id = item.get_id();
-			id[Dim] = pos;
-			return get_value<T, 3>(accessor_.data(), mode_, target_, id);
-		}
-		}
+			return acc.template get(id);
+		});
 	}
 
 	slice<T, Dim> &operator=(const T &)
@@ -146,22 +88,8 @@ public:
 
 private:
 	int idx_;
-	int rank_;
-	cl::sycl::access::mode mode_;
-	cl::sycl::access::target target_;
-
-	item_store_t item_;
-	accessor_store_t accessor_;
-
-	template<typename ItemType, typename AccessorType>
-	void init(ItemType item, AccessorType acc)
-	{
-		static_assert(sizeof(ItemType) <= sizeof(item_store_t));
-		static_assert(sizeof(AccessorType) <= sizeof(accessor_store_t));
-
-		new (item_.data()) ItemType(item);
-		new (accessor_.data()) AccessorType(acc);
-	}
+	variant_item<2, 3> item_;
+	any_accessor<T> accessor_;
 };
 
 template <int Rank, typename T, size_t Dim>
