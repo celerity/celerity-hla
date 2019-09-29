@@ -9,17 +9,6 @@
 
 namespace celerity::algorithm
 {
-namespace detail
-{
-template <typename T>
-using slice_element_getter_t = stdext::inplace_function<T(int), 128>;
-
-template <typename T, size_t... Extents>
-using chunk_element_getter_t = stdext::inplace_function<T(cl::sycl::rel_id<sizeof...(Extents)>), 128>;
-
-template <typename T, int Rank>
-using all_element_getter_t = stdext::inplace_function<T(cl::sycl::id<Rank>), 128>;
-} // namespace detail
 
 template <int Rank, typename AccessorType>
 struct accessor_traits;
@@ -117,7 +106,6 @@ class chunk
 public:
 	static constexpr auto rank = sizeof...(Extents);
 	static constexpr std::array<size_t, rank> extents = {Extents...};
-	using getter_t = detail::chunk_element_getter_t<T, Extents...>;
 
 	template <typename AccessorType>
 	chunk(cl::sycl::item<rank> item, AccessorType acc)
@@ -157,7 +145,7 @@ public:
 	}
 
 private:
-	cl::sycl::item<rank> item_;
+	const cl::sycl::item<rank> item_;
 	const any_accessor<T> accessor_;
 };
 
@@ -200,16 +188,16 @@ template <typename T, int Rank>
 class all
 {
 public:
-	using getter_t = detail::all_element_getter_t<T, Rank>;
-
-	all(const getter_t &f)
-		: getter_(f)
+	template <typename AccessorType>
+	all(const cl::sycl::range<Rank> range, AccessorType acc)
+		: range_(range), accessor_(acc)
 	{
 	}
 
 	T operator[](cl::sycl::id<Rank> id) const
 	{
-		return getter_(id);
+		const auto item = cl::sycl::detail::make_item(id, range_);
+		return accessor_.template get(item.get_id());
 	}
 
 	all<T, Rank> &operator=(const T &)
@@ -219,7 +207,8 @@ public:
 	}
 
 private:
-	const getter_t getter_;
+	const cl::sycl::range<Rank> range_;
+	const any_accessor<T> accessor_;
 };
 
 template <int Rank, typename T>

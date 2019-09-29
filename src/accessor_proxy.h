@@ -140,7 +140,7 @@ public:
 
 	all<T, Rank> operator[](const cl::sycl::item<Rank>) const
 	{
-		return {[=](const auto id) { return accessor_[{range_, id}]; }};
+		return {range_, accessor_};
 	}
 
 	AccessorType &get_accessor() { return accessor_; }
@@ -155,8 +155,6 @@ struct accessor_proxy<T, Rank, AccessorType, slice<T, Dim>>
 {
 public:
 	static_assert(Dim >= 0 && Dim < Rank, "Dim out of bounds");
-
-	using getter_t = detail::slice_element_getter_t<T>;
 
 	explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank>)
 		: accessor_(acc) {}
