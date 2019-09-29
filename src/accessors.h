@@ -49,9 +49,6 @@ template <typename T, size_t Dim>
 class slice
 {
 public:
-	using item_store_t = std::array<std::byte, sizeof(cl::sycl::item<3>)>;
-	using accessor_store_t = std::array<std::byte, 128>;
-
 	template <int Rank, cl::sycl::access::mode Mode>
 	slice(const cl::sycl::item<Rank> item, cl::sycl::accessor<T, Rank, Mode, cl::sycl::access::target::host_buffer> acc)
 		: idx_(static_cast<int>(item.get_id()[Dim])), item_(item), accessor_(acc)
@@ -87,9 +84,9 @@ public:
 	}
 
 private:
-	int idx_;
-	variant_item<2, 3> item_;
-	any_accessor<T> accessor_;
+	const int idx_;
+	const variant_item<2, 3> item_;
+	const any_accessor<T> accessor_;
 };
 
 template <int Rank, typename T, size_t Dim>
@@ -122,24 +119,35 @@ public:
 	static constexpr std::array<size_t, rank> extents = {Extents...};
 	using getter_t = detail::chunk_element_getter_t<T, Extents...>;
 
-	chunk(cl::sycl::item<rank> item, const getter_t &f)
-		: item_(item), getter_(f)
+	template <typename AccessorType>
+	chunk(cl::sycl::item<rank> item, AccessorType acc)
+		: item_(item), accessor_(acc)
 	{
 	}
 
-	int item() const { return item_; }
+	auto item() const { return item_; }
 
 	T operator*() const
 	{
-		return getter_({});
+		return this->operator[]({});
 	}
 
-	T operator[](cl::sycl::rel_id<rank> relative) const
+	T operator[](cl::sycl::rel_id<rank> rel_id) const
 	{
 		//for (auto i = 0; i < rank; ++i)
 		//	assert(cl::sycl::fabs(relative[i]) <= extents[i]);
 
-		return getter_(relative);
+		cl::sycl::id<rank> id;
+
+		for (auto i = 0; i < rank; ++i)
+		{
+			id[i] = std::max(0l,
+							 std::min(
+								 static_cast<long>(item_.get_id()[i]) + rel_id[i],
+								 static_cast<long>(item_.get_range()[i]) - 1));
+		}
+
+		return accessor_.template get(id);
 	}
 
 	chunk<T, Extents...> &operator=(const T &)
@@ -150,7 +158,7 @@ public:
 
 private:
 	cl::sycl::item<rank> item_;
-	const getter_t getter_;
+	const any_accessor<T> accessor_;
 };
 
 template <int Rank, typename T, size_t... Extents>

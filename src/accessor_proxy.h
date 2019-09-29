@@ -178,15 +178,7 @@ public:
 
 	chunk<T, Extents...> operator[](const cl::sycl::item<Rank> item) const
 	{
-		return {item, [this, item](cl::sycl::rel_id<Rank> rel_id) {
-					cl::sycl::id<Rank> id;
-					for (auto i = 0; i < Rank; ++i)
-					{
-						id[i] = std::max(0l, std::min(static_cast<long>(item.get_id()[i]) + rel_id[i], static_cast<long>(item.get_range()[i]) - 1));
-					}
-
-					return accessor_[id];
-				}};
+		return {item, accessor_};
 	}
 
 private:
