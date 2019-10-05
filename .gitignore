@@ -7,3 +7,5 @@
 /build/x64-Debug
 /CMakeSettings.json
 build/
+wave_sim_result.csv
+output.png
