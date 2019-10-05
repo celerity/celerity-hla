@@ -122,18 +122,10 @@ public:
 
 	T operator[](cl::sycl::rel_id<rank> rel_id) const
 	{
-		//for (auto i = 0; i < rank; ++i)
-		//	assert(cl::sycl::fabs(relative[i]) <= extents[i]);
+		auto id = item_.get_id();
 
-		cl::sycl::id<rank> id;
-
-		for (auto i = 0; i < rank; ++i)
-		{
-			id[i] = std::max(0l,
-							 std::min(
-								 static_cast<long>(item_.get_id()[i]) + rel_id[i],
-								 static_cast<long>(item_.get_range()[i]) - 1));
-		}
+		for (auto i = 0u; i < rank; ++i)
+			id[i] = static_cast<size_t>(static_cast<long>(id[i]) + rel_id[i]);
 
 		return accessor_.template get(id);
 	}
@@ -144,9 +136,22 @@ public:
 		return *this;
 	}
 
+	bool is_on_boundary(cl::sycl::range<rank> range)
+	{
+		return dispatch_is_on_boundary(range, std::make_index_sequence<rank>());
+	}
+
 private:
 	const cl::sycl::item<rank> item_;
 	const any_accessor<T> accessor_;
+
+	template <size_t... Is>
+	bool dispatch_is_on_boundary(cl::sycl::range<rank> range, std::index_sequence<Is...>)
+	{
+		const auto id = item_.get_id();
+		return ((id[Is] < (std::get<Is>(extents) / 2)) || ...) ||
+			   ((id[Is] > range[Is] - (std::get<Is>(extents) / 2) - 1) || ...);
+	}
 };
 
 template <int Rank, typename T, size_t... Extents>
