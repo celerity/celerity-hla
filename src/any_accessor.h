@@ -40,18 +40,18 @@ private:
         new (&storage_) AccessorType(acc);
     }
 
-    template <int Rank, cl::sycl::access::mode mode, cl::sycl::access::target target,
-              std::enable_if_t<target == cl::sycl::access::target::host_buffer, int> = 0>
+    template <int Rank, cl::sycl::access::mode Mode, cl::sycl::access::target Target,
+              std::enable_if_t<Target == cl::sycl::access::target::host_buffer, int> = 0>
     T get(cl::sycl::id<Rank> id) const
     {
-        return (*reinterpret_cast<const cl::sycl::accessor<T, Rank, mode, target> *>(&storage_))[id];
+        return (*reinterpret_cast<const cl::sycl::accessor<T, Rank, Mode, Target> *>(&storage_))[id];
     }
 
-    template <int Rank, cl::sycl::access::mode mode, cl::sycl::access::target target,
-              std::enable_if_t<target == cl::sycl::access::target::global_buffer, int> = 0>
+    template <int Rank, cl::sycl::access::mode Mode, cl::sycl::access::target Target,
+              std::enable_if_t<Target == cl::sycl::access::target::global_buffer, int> = 0>
     T get(cl::sycl::id<Rank> id) const
     {
-        return (*reinterpret_cast<const cl::sycl::accessor<T, Rank, mode, target, cl::sycl::access::placeholder::true_t> *>(&storage_))[id];
+        return (*reinterpret_cast<const cl::sycl::accessor<T, Rank, Mode, Target, cl::sycl::access::placeholder::true_t> *>(&storage_))[id];
     }
 
     template <int Rank, cl::sycl::access::mode Mode>
@@ -65,7 +65,11 @@ private:
             return get<Rank, Mode, target::global_buffer>(id);
         case target::host_buffer:
             return get<Rank, Mode, target::host_buffer>(id);
+        default:
+            assert(false && "unsupported target");
         }
+
+        return T{};
     }
 
     template <int Rank>
@@ -81,7 +85,11 @@ private:
             return get<Rank, mode::write>(target, id);
         case mode::read_write:
             return get<Rank, mode::read_write>(target, id);
+        default:
+            assert(false && "unsupported mode");
         }
+
+        return T{};
     }
 
     const int rank_;
