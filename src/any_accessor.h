@@ -29,7 +29,7 @@ public:
     T get(cl::sycl::id<Rank> id) const
     {
         assert(Rank == rank_);
-        get<Rank>(mode_, target_, id);
+        return get<Rank>(mode_, target_, id);
     }
 
 private:
