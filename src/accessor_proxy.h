@@ -124,6 +124,7 @@ protected:
 	accessor_proxy_base(AccessorType acc)
 		: accessor_(acc) {}
 
+public:
 	const auto &get_accessor() const { return accessor_; }
 
 private:
@@ -135,7 +136,7 @@ class accessor_proxy;
 
 template <typename T, int Rank, typename AccessorType>
 class accessor_proxy<T, Rank, AccessorType, one_to_one>
-	: protected accessor_proxy_base<AccessorType>
+	: public accessor_proxy_base<AccessorType>
 {
 public:
 	using base = accessor_proxy_base<AccessorType>;
@@ -156,7 +157,7 @@ public:
 
 template <typename T, int Rank, typename AccessorType>
 class accessor_proxy<T, Rank, AccessorType, all<T, Rank>>
-	: protected accessor_proxy_base<AccessorType>
+	: public accessor_proxy_base<AccessorType>
 {
 public:
 	using base = accessor_proxy_base<AccessorType>;
@@ -175,7 +176,7 @@ private:
 
 template <typename T, int Rank, typename AccessorType, size_t Dim>
 class accessor_proxy<T, Rank, AccessorType, slice<T, Dim>>
-	: protected accessor_proxy_base<AccessorType>
+	: public accessor_proxy_base<AccessorType>
 {
 public:
 	using base = accessor_proxy_base<AccessorType>;
@@ -193,7 +194,7 @@ public:
 
 template <typename T, int Rank, typename AccessorType, size_t... Extents>
 class accessor_proxy<T, Rank, AccessorType, chunk<T, Extents...>>
-	: protected accessor_proxy_base<AccessorType>
+	: public accessor_proxy_base<AccessorType>
 {
 public:
 	using base = accessor_proxy_base<AccessorType>;

@@ -21,7 +21,6 @@ int main(int argc, char *argv[])
 		buffer<float, 1> buf_d(cl::sycl::range<1>{DEMO_DATA_SIZE});
 
 		using namespace algorithm;
-		using namespace actions;
 
 		const auto verify = [&](float sum) {
 			return [=, &verification_passed]() mutable {
@@ -40,26 +39,25 @@ int main(int argc, char *argv[])
 
 		{
 			auto sum =
-				actions::fill(distr<class produce_a_1>(), begin(buf_a), end(buf_a), 1.f) |
-				actions::transform(distr<class compute_b_1>(), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; }) |
-				actions::transform(master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](const float x) { return 2.f - x; }) |
-				actions::transform(distr<class compute_d_1>(), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), std::plus<float>{}) |
-				actions::accumulate(master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, std::plus<float>{}) |
-				submit_to(queue);
+				fill(distr<class produce_a_1>(queue), begin(buf_a), end(buf_a), 1.f) |
+				transform(distr<class compute_b_1>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; }) |
+				transform(master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](const float x) { return 2.f - x; }) |
+				transform(distr<class compute_d_1>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), std::plus<float>{}) |
+				accumulate(master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, std::plus<float>{});
 
-			on_master(verify(sum));
+			actions::on_master(verify(sum));
 		}
 
 		//
 
 		{
-			auto produce_a = actions::fill(distr<class produce_a_2>(), begin(buf_a), end(buf_a), 1.f);
-			auto compute_b = actions::transform(distr<class compute_b_2>(), begin(buf_a), end(buf_a), begin(buf_b), [](const float x) { return 2.f * x; });
-			auto compute_c = actions::transform(master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](const float x) { return 2.f - x; });
-			auto compute_d = actions::transform(distr<class compute_d_2>(), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), std::plus<float>{});
-			auto reduce_d = actions::accumulate(master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, std::plus<float>{});
+			auto produce_a = fill(distr<class produce_a_2>(queue), begin(buf_a), end(buf_a), 1.f);
+			auto compute_b = transform(distr<class compute_b_2>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](const float x) { return 2.f * x; });
+			auto compute_c = transform(master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](const float x) { return 2.f - x; });
+			auto compute_d = transform(distr<class compute_d_2>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), std::plus<float>{});
+			auto reduce_d = accumulate(master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, std::plus<float>{});
 
-			on_master(verify(produce_a | compute_b | compute_c | compute_d | reduce_d | submit_to(queue)));
+			actions::on_master(verify(produce_a | compute_b | compute_c | compute_d | reduce_d));
 		}
 	}
 	catch (std::exception &e)

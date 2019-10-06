@@ -18,6 +18,12 @@ decltype(auto) operator|(Sequence<Actions...> &&lhs, celerity::distr_queue &queu
 }
 
 template <template <typename...> typename Sequence, typename... Actions>
+decltype(auto) operator|(Sequence<Actions...> &lhs, celerity::distr_queue &queue)
+{
+	return std::invoke(lhs, queue);
+}
+
+template <template <typename...> typename Sequence, typename... Actions>
 decltype(auto) operator|(Sequence<Actions...> &&lhs, celerity::distr_queue &&queue)
 {
 	return std::invoke(lhs, queue);
@@ -29,10 +35,16 @@ decltype(auto) operator|(task_t<ExecutionPolicy, T> &&lhs, celerity::distr_queue
 	return std::invoke(lhs, queue);
 }
 
-template <typename ExecutionPolicy, typename... Ts, typename... Us>
-auto operator|(task_t<ExecutionPolicy, Ts...> lhs, task_t<ExecutionPolicy, Us...> rhs)
+template <typename ExecutionPolicy, typename T, typename... Actions>
+decltype(auto) operator|(task_t<ExecutionPolicy, T> &lhs, celerity::distr_queue &queue)
 {
-	return sequence<task_t<ExecutionPolicy, Ts...>, task_t<ExecutionPolicy, Us...>>{lhs, rhs};
+	return std::invoke(lhs, queue);
+}
+
+template <typename LhsExecutionPolicy, typename RhsExecutionPolicy, typename... Ts, typename... Us>
+auto operator|(task_t<LhsExecutionPolicy, Ts...> lhs, task_t<RhsExecutionPolicy, Us...> rhs)
+{
+	return sequence<task_t<LhsExecutionPolicy, Ts...>, task_t<RhsExecutionPolicy, Us...>>{lhs, rhs};
 }
 
 template <typename T, typename U,
