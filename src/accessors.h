@@ -38,7 +38,7 @@ public:
 
 	T operator[](int pos) const
 	{
-		item_.apply([pos, acc = accessor_](const auto &item) {
+		return item_.apply([pos, acc = accessor_](const auto &item) {
 			auto id = item.get_id();
 			id[Dim] = pos;
 			return acc.template get(id);
