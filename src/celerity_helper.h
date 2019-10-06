@@ -176,14 +176,4 @@ private:
 
 #endif
 
-namespace celerity
-{
-enum class access_mode
-{
-	read,
-	write,
-	read_write
-};
-}
-
 #endif

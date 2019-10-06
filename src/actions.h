@@ -18,6 +18,7 @@ inline void sync()
 #endif
 }
 
+// TODO: rename this so it does not seem like it submits a with_master_access task...
 template <typename F, typename... Args>
 auto on_master(F &&f, Args &&... args)
 {
@@ -39,16 +40,6 @@ auto on_master(F &&f, Args &&... args)
 
 	std::invoke(f, std::forward<Args>(args)...);
 #endif
-}
-
-auto hello_world()
-{
-	return []() { std::cout << "hello world" << std::endl; };
-}
-
-auto incr(int &i)
-{
-	return [&i]() { ++i; };
 }
 
 } // namespace celerity::algorithm::actions
