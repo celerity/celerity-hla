@@ -14,7 +14,7 @@
 namespace celerity::algorithm
 {
 template <typename... Actions>
-struct sequence
+class sequence
 {
 public:
 	using actions_t = std::tuple<Actions...>;
@@ -44,6 +44,7 @@ public:
 
 	constexpr actions_t &actions() { return actions_; }
 
+private:
 	actions_t actions_;
 
 	template <typename... SequenceActions, typename Action, size_t... Ids>

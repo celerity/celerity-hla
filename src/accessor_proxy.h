@@ -3,6 +3,7 @@
 
 #include "celerity_helper.h"
 #include "accessors.h"
+#include "accessor_traits.h"
 
 #include <type_traits>
 #include <cmath>
@@ -77,15 +78,15 @@ using accessor_type_t = typename accessor_type<arg_type_t<F, I>, ElementType>::t
 template <typename ArgType>
 constexpr access_type get_accessor_type_()
 {
-	if constexpr (is_slice_v<ArgType>)
+	if constexpr (detail::is_slice_v<ArgType>)
 	{
 		return access_type::slice;
 	}
-	else if constexpr (is_chunk_v<ArgType>)
+	else if constexpr (detail::is_chunk_v<ArgType>)
 	{
 		return access_type::chunk;
 	}
-	else if constexpr (is_item_v<ArgType>)
+	else if constexpr (detail::is_item_v<ArgType>)
 	{
 		return access_type::item;
 	}
@@ -114,73 +115,98 @@ constexpr std::enable_if_t<!has_call_operator_v<F>, access_type> get_accessor_ty
 }
 } // namespace detail
 
-template <typename T, int Rank, typename AccessorType, typename Type>
-struct accessor_proxy;
-
-template <typename T, int Rank, typename AccessorType>
-struct accessor_proxy<T, Rank, AccessorType, one_to_one>
+template <typename AccessorType>
+class accessor_proxy_base
 {
-public:
-	explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank> range) : accessor_(acc) {}
+protected:
+	accessor_proxy_base(AccessorType acc)
+		: accessor_(acc) {}
 
-	decltype(auto) operator[](const cl::sycl::item<Rank> item) const { return accessor_[item]; }
-	decltype(auto) operator[](const cl::sycl::item<Rank> item) { return accessor_[item]; }
-
-	AccessorType &get_accessor() { return accessor_; }
-
-	AccessorType accessor_;
-};
-
-template <typename T, int Rank, typename AccessorType>
-struct accessor_proxy<T, Rank, AccessorType, all<T, Rank>>
-{
-public:
-	explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank> range)
-		: accessor_(acc), range_(range) {}
-
-	all<T, Rank> operator[](const cl::sycl::item<Rank>) const
-	{
-		return {range_, accessor_};
-	}
-
-	AccessorType &get_accessor() { return accessor_; }
+	const auto &get_accessor() const { return accessor_; }
 
 private:
 	AccessorType accessor_;
+};
+
+template <typename T, int Rank, typename AccessorType, typename Type>
+class accessor_proxy;
+
+template <typename T, int Rank, typename AccessorType>
+class accessor_proxy<T, Rank, AccessorType, one_to_one>
+	: protected accessor_proxy_base<AccessorType>
+{
+public:
+	using base = accessor_proxy_base<AccessorType>;
+
+	explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank>)
+		: base(acc) {}
+
+	decltype(auto) operator[](const cl::sycl::item<Rank> item) const
+	{
+		return base::get_accessor()[item];
+	}
+
+	decltype(auto) operator[](const cl::sycl::item<Rank> item)
+	{
+		return base::get_accessor()[item];
+	}
+};
+
+template <typename T, int Rank, typename AccessorType>
+class accessor_proxy<T, Rank, AccessorType, all<T, Rank>>
+	: protected accessor_proxy_base<AccessorType>
+{
+public:
+	using base = accessor_proxy_base<AccessorType>;
+
+	explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank> range)
+		: base(acc), range_(range) {}
+
+	all<T, Rank> operator[](const cl::sycl::item<Rank>) const
+	{
+		return {range_, base::get_accessor()};
+	}
+
+private:
 	cl::sycl::range<Rank> range_;
 };
 
 template <typename T, int Rank, typename AccessorType, size_t Dim>
-struct accessor_proxy<T, Rank, AccessorType, slice<T, Dim>>
+class accessor_proxy<T, Rank, AccessorType, slice<T, Dim>>
+	: protected accessor_proxy_base<AccessorType>
 {
 public:
+	using base = accessor_proxy_base<AccessorType>;
+
 	static_assert(Dim >= 0 && Dim < Rank, "Dim out of bounds");
 
 	explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank>)
-		: accessor_(acc) {}
+		: base(acc) {}
 
-	slice<T, Dim> operator[](const cl::sycl::item<Rank> it) const
+	slice<T, Dim> operator[](const cl::sycl::item<Rank> item) const
 	{
-		return slice<T, Dim>(it, accessor_);
+		return {item, base::get_accessor()};
 	}
-
-private:
-	AccessorType accessor_;
 };
 
 template <typename T, int Rank, typename AccessorType, size_t... Extents>
-struct accessor_proxy<T, Rank, AccessorType, chunk<T, Extents...>>
+class accessor_proxy<T, Rank, AccessorType, chunk<T, Extents...>>
+	: protected accessor_proxy_base<AccessorType>
 {
 public:
-	explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank>) : accessor_(acc) {}
+	using base = accessor_proxy_base<AccessorType>;
+
+	static_assert(sizeof...(Extents) == Rank, "must specify extent for every dimension");
+
+	explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank>)
+		: base(acc)
+	{
+	}
 
 	chunk<T, Extents...> operator[](const cl::sycl::item<Rank> item) const
 	{
-		return {item, accessor_};
+		return {item, base::get_accessor()};
 	}
-
-private:
-	AccessorType accessor_;
 };
 
 template <typename ExecutionPolicy, cl::sycl::access::mode Mode, typename AccessorType, typename T, int Rank>
@@ -191,12 +217,12 @@ auto get_access(celerity::handler &cgh, buffer_iterator<T, Rank> beg, buffer_ite
 
 	if constexpr (policy_traits<ExecutionPolicy>::is_distributed)
 	{
-		auto acc = beg.get_buffer().template get_access<Mode>(cgh, accessor_traits<Rank, AccessorType>::range_mapper());
+		auto acc = beg.get_buffer().template get_access<Mode>(cgh, detail::accessor_traits<Rank, AccessorType>::range_mapper());
 		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{acc, beg.get_buffer().get_range()};
 	}
 	else
 	{
-		static_assert(std::is_same_v<one_to_one, AccessorType>);
+		static_assert(std::is_same_v<one_to_one, AccessorType>, "range mappers not supported for host access");
 		auto acc = beg.get_buffer().template get_access<Mode>(cgh, beg.get_buffer().get_range());
 		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{acc, beg.get_buffer().get_range()};
 	}

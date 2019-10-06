@@ -13,7 +13,7 @@ class buffer;
 namespace celerity::algorithm
 {
 template <int Rank>
-struct iterator
+class iterator
 {
 public:
 	iterator(cl::sycl::id<Rank> pos, cl::sycl::range<Rank> range)
@@ -47,6 +47,7 @@ public:
 
 	[[nodiscard]] cl::sycl::id<Rank> operator*() const { return pos_; }
 
+private:
 	cl::sycl::id<Rank> pos_ = 0;
 	cl::sycl::range<Rank> range_;
 };
@@ -56,7 +57,7 @@ struct celerity_iterator_tag // : contiguous_iterator_tag
 };
 
 template <typename T, int Rank>
-struct buffer_iterator : public iterator<Rank>
+class buffer_iterator : public iterator<Rank>
 {
 public:
 	using iterator_category = celerity_iterator_tag;
@@ -78,6 +79,7 @@ public:
 
 	[[nodiscard]] buffer<T, Rank> get_buffer() const { return buffer_; }
 
+private:
 	celerity::buffer<T, Rank> buffer_;
 };
 

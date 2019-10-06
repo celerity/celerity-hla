@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 		//const auto sum = accumulate(algorithm::master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
 
 		// OR
-		float sum = accumulate(algorithm::master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
+		float sum = accumulate(algorithm::master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, std::plus<float>{});
 		//                                   ^^^^^^^^^^^^^^^^^^^^^^
 
 		algorithm::actions::on_master([&]() {
