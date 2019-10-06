@@ -22,18 +22,9 @@ public:
 
 	void operator()(distr_queue &q) const
 	{
-#ifdef DEBUG_
-		std::cout << "queue.submit([](handler cgh){" << std::endl;
-#endif
-
-		auto f = [seq = sequence_](handler &cgh) { std::invoke(seq, cgh); };
-
-		q.submit(f);
-
-#ifdef DEBUG_
-		std::cout << "});" << std::endl
-				  << std::endl;
-#endif
+		q.submit([seq = sequence_](handler &cgh) { 
+			std::invoke(seq, cgh);
+		});
 	}
 
 private:
@@ -48,20 +39,9 @@ public:
 
 	void operator()(distr_queue &q) const
 	{
-#ifdef DEBUG_
-		std::cout << "queue.submit([](handler cgh){" << std::endl;
-#endif
-
-		//q.submit([&](handler &cgh) { std::invoke(sequence_, cgh); });
-
-		const auto f = [seq = sequence_](handler &cgh) { std::invoke(seq, cgh); };
-
-		q.submit(f);
-
-#ifdef DEBUG_
-		std::cout << "});" << std::endl
-				  << std::endl;
-#endif
+		q.submit([seq = sequence_](handler &cgh) { 
+			std::invoke(seq, cgh);
+		});
 	}
 
 private:
@@ -76,10 +56,6 @@ public:
 
 	decltype(auto) operator()(distr_queue &q) const
 	{
-#ifdef DEBUG_
-		std::cout << "queue.with_master_access([](handler cgh){" << std::endl;
-#endif
-
 		using ret_type = std::invoke_result_t<decltype(sequence_), handler &>;
 
 		if constexpr (std::is_void_v<ret_type>)
@@ -87,27 +63,21 @@ public:
 			q.with_master_access([seq = sequence_](handler &cgh) {
 				std::invoke(seq, cgh);
 			});
-
-#ifdef DEBUG_
-			std::cout << "});" << std::endl
-					  << std::endl;
-#endif
 		}
 		else
 		{
+			static_assert(std::is_void_v<ret_type>, "tasks may not return values  due to constness restrictions on master task");
+
+			/*
 			std::promise<ret_type> ret_value{};
 			auto future = ret_value.get_future();
 
-			/*q.with_master_access([&, promise = std::move(ret_value)](auto cgh) mutable {
+			q.with_master_access([&, promise = std::move(ret_value)](auto cgh) mutable {
 				promise.set_value(std::invoke(sequence_, cgh));
-			});*/
-
-#ifdef DEBUG_
-			std::cout << "});" << std::endl
-					  << std::endl;
-#endif
+			});
 
 			return future;
+			*/
 		}
 	}
 
@@ -123,10 +93,6 @@ public:
 
 	decltype(auto) operator()(distr_queue &q) const
 	{
-#ifdef DEBUG_
-		std::cout << "queue.with_master_access([](handler cgh){" << std::endl;
-#endif
-
 		using ret_type = std::invoke_result_t<decltype(sequence_), handler &>;
 
 		if constexpr (std::is_void_v<ret_type>)
@@ -136,11 +102,6 @@ public:
 			});
 
 			q.slow_full_sync();
-
-#ifdef DEBUG_
-			std::cout << "});" << std::endl
-					  << std::endl;
-#endif
 		}
 		else
 		{
@@ -151,11 +112,6 @@ public:
 			});
 
 			q.slow_full_sync();
-
-#ifdef DEBUG_
-			std::cout << "});" << std::endl
-					  << std::endl;
-#endif
 
 			return ret_value;
 		}

@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 		transform(algorithm::distr<class mul_ab>(queue), begin(mat_a_buf), end(mat_a_buf), begin(mat_b_buf), begin(mat_c_buf), multiply);
 		transform(algorithm::distr<class mul_bc>(queue), begin(mat_b_buf), end(mat_b_buf), begin(mat_c_buf), begin(mat_a_buf), multiply);
 
-		for_each(algorithm::master(queue), begin(mat_a_buf), end(mat_a_buf),
+		for_each(algorithm::master_blocking(queue), begin(mat_a_buf), end(mat_a_buf),
 				 [&verification_passed](cl::sycl::item<2> item, float x) {
 					 const float correct_value = item[0] == item[1];
 
@@ -66,8 +66,6 @@ int main(int argc, char *argv[])
 					 fprintf(stderr, "VERIFICATION FAILED for element %llu,%llu: %f != %f\n", item[0], item[1], x, correct_value);
 					 verification_passed = false;
 				 });
-
-		queue.slow_full_sync();
 
 		actions::on_master([&]() {
 			if (verification_passed)
