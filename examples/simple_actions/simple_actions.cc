@@ -43,6 +43,7 @@ int main(int argc, char *argv[])
 				actions::fill(distr<class produce_a_1>(), begin(buf_a), end(buf_a), 1.f) |
 				actions::transform(distr<class compute_b_1>(), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; }) |
 				actions::transform(master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](const float x) { return 2.f - x; }) |
+				actions::transform(distr<class compute_d_1>(), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), std::plus<float>{}) |
 				actions::accumulate(master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, std::plus<float>{}) |
 				submit_to(queue);
 
@@ -55,6 +56,7 @@ int main(int argc, char *argv[])
 			auto produce_a = actions::fill(distr<class produce_a_2>(), begin(buf_a), end(buf_a), 1.f);
 			auto compute_b = actions::transform(distr<class compute_b_2>(), begin(buf_a), end(buf_a), begin(buf_b), [](const float x) { return 2.f * x; });
 			auto compute_c = actions::transform(master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](const float x) { return 2.f - x; });
+			auto compute_d = actions::transform(distr<class compute_d_2>(), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), std::plus<float>{});
 			auto reduce_d = actions::accumulate(master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, std::plus<float>{});
 
 			on_master(verify(produce_a | compute_b | compute_c | compute_d | reduce_d | submit_to(queue)));
