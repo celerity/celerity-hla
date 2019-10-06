@@ -73,20 +73,22 @@ struct accessor_type
 };
 
 template <typename F, int I, typename ElementType>
-using accessor_type_t = typename accessor_type<arg_type_t<F, I>, ElementType>::type;
+using accessor_type_t = typename accessor_type<std::decay_t<arg_type_t<F, I>>, ElementType>::type;
 
 template <typename ArgType>
 constexpr access_type get_accessor_type_()
 {
-	if constexpr (detail::is_slice_v<ArgType>)
+	using decayed_type = std::decay_t<ArgType>;
+
+	if constexpr (detail::is_slice_v<decayed_type>)
 	{
 		return access_type::slice;
 	}
-	else if constexpr (detail::is_chunk_v<ArgType>)
+	else if constexpr (detail::is_chunk_v<decayed_type>)
 	{
 		return access_type::chunk;
 	}
-	else if constexpr (detail::is_item_v<ArgType>)
+	else if constexpr (detail::is_item_v<decayed_type>)
 	{
 		return access_type::item;
 	}
