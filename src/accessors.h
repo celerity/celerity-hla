@@ -138,5 +138,59 @@ private:
 	const any_accessor<T> accessor_;
 };
 
+template <int Dim>
+using slice_f = slice<float, Dim>;
+
+template <int Dim>
+using slice_d = slice<double, Dim>;
+
+template <int Dim>
+using slice_i = slice<int, Dim>;
+
+template <int Dim>
+using slice_2f = slice<cl::sycl::float2, Dim>;
+
+template <int Dim>
+using slice_2d = slice<cl::sycl::double2, Dim>;
+
+template <int Dim>
+using slice_2i = slice<cl::sycl::int2, Dim>;
+
+template <int Dim>
+using slice_3f = slice<cl::sycl::float3, Dim>;
+
+template <int Dim>
+using slice_3d = slice<cl::sycl::double3, Dim>;
+
+template <int Dim>
+using slice_3i = slice<cl::sycl::int3, Dim>;
+
+template <size_t... Extents>
+using chunk_f = chunk<float, Extents...>;
+
+template <size_t... Extents>
+using chunk_d = chunk<double, Extents...>;
+
+template <size_t... Extents>
+using chunk_i = chunk<int, Extents...>;
+
+template <size_t... Extents>
+using chunk_2f = chunk<cl::sycl::float2, Extents...>;
+
+template <size_t... Extents>
+using chunk_2d = chunk<cl::sycl::double2, Extents...>;
+
+template <size_t... Extents>
+using chunk_2i = chunk<cl::sycl::int2, Extents...>;
+
+template <size_t... Extents>
+using chunk_3f = chunk<cl::sycl::float3, Extents...>;
+
+template <size_t... Extents>
+using chunk_3d = chunk<cl::sycl::double3, Extents...>;
+
+template <size_t... Extents>
+using chunk_3i = chunk<cl::sycl::int3, Extents...>;
+
 } // namespace celerity::algorithm
 #endif // ACCESSORS_H

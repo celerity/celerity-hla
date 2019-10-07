@@ -1,6 +1,7 @@
 //#define MOCK_CELERITY
 #include "../../src/algorithm.h"
 #include "../../src/actions.h"
+#include "../../src/buffer_traits.h"
 
 constexpr auto MAT_SIZE = 1024;
 
@@ -32,12 +33,16 @@ int main(int argc, char *argv[])
 
 	try
 	{
-		celerity::distr_queue queue;
-		celerity::buffer<float, 2> mat_a_buf(mat_a.data(), cl::sycl::range<2>{MAT_SIZE, MAT_SIZE});
-		celerity::buffer<float, 2> mat_b_buf(mat_b.data(), cl::sycl::range<2>{MAT_SIZE, MAT_SIZE});
-		celerity::buffer<float, 2> mat_c_buf(cl::sycl::range<2>{MAT_SIZE, MAT_SIZE});
+		using buffer_type = celerity::buffer<float, 2>;
+		//using t = celerity::algorithm::buffer_traits<buffer_type>;
+		using t = celerity::algorithm::buffer_traits<float, 2>;
 
-		auto multiply = [](slice<float, 1> a, slice<float, 0> b) {
+		celerity::distr_queue queue;
+		buffer_type mat_a_buf(mat_a.data(), cl::sycl::range<2>{MAT_SIZE, MAT_SIZE});
+		buffer_type mat_b_buf(mat_b.data(), cl::sycl::range<2>{MAT_SIZE, MAT_SIZE});
+		buffer_type mat_c_buf(cl::sycl::range<2>{MAT_SIZE, MAT_SIZE});
+
+		auto multiply = [](t::slice<1> a, t::slice<0> b) {
 			auto sum = 0.f;
 
 			for (auto k = 0; k < MAT_SIZE; ++k)
@@ -57,7 +62,7 @@ int main(int argc, char *argv[])
 		transform(algorithm::distr<class mul_bc>(queue), begin(mat_b_buf), end(mat_b_buf), begin(mat_c_buf), begin(mat_a_buf), multiply);
 
 		for_each(algorithm::master_blocking(queue), begin(mat_a_buf), end(mat_a_buf),
-				 [&verification_passed](cl::sycl::item<2> item, float x) {
+				 [&verification_passed](t::item item, float x) {
 					 const float correct_value = item[0] == item[1];
 
 					 if (x == correct_value)

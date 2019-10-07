@@ -7,10 +7,10 @@
 #include "../../src/celerity_helper.h"
 #include "../../src/algorithm.h"
 #include "../../src/actions.h"
+#include "../../src/buffer_traits.h"
 
 void setup_wave(celerity::distr_queue &queue, celerity::buffer<float, 2> &u, cl::sycl::float2 center, float amplitude, cl::sycl::float2 sigma)
 {
-
 	using namespace celerity::algorithm;
 
 	generate(distr<class setup>(queue), begin(u), end(u),
@@ -23,7 +23,6 @@ void setup_wave(celerity::distr_queue &queue, celerity::buffer<float, 2> &u, cl:
 
 void zero(celerity::distr_queue &queue, celerity::buffer<float, 2> &buf)
 {
-
 	using namespace celerity::algorithm;
 
 	fill(distr<class zero>(queue), begin(buf), end(buf), 0.f);
@@ -43,14 +42,13 @@ struct update_config
 	static constexpr float c = 1.f;
 };
 
-template <typename T, typename Config, typename KernelName>
+template <typename Config, typename KernelName, typename T>
 void step(celerity::distr_queue &queue, celerity::buffer<T, 2> &up, celerity::buffer<T, 2> &u, float dt, cl::sycl::float2 delta)
 {
-
 	using namespace celerity::algorithm;
 
 	transform(distr<KernelName>(queue), begin(up), end(up), begin(u), begin(up),
-			  [=](float v_up, chunk<T, 1, 1> v_u) {
+			  [=](T v_up, chunk<T, 1, 1> v_u) {
 				  const float lap = (dt / delta.y()) * (dt / delta.y()) * ((v_u[{1, 0}] - *v_u) - (*v_u - v_u[{-1, 0}])) + (dt / delta.x()) * (dt / delta.x()) * ((v_u[{0, 1}] - *v_u) - (*v_u - v_u[{0, -1}]));
 
 				  return Config::a * 2 * *v_u - Config::b * v_up + Config::c * lap;
@@ -59,18 +57,17 @@ void step(celerity::distr_queue &queue, celerity::buffer<T, 2> &up, celerity::bu
 
 void initialize(celerity::distr_queue &queue, celerity::buffer<float, 2> &up, celerity::buffer<float, 2> &u, float dt, cl::sycl::float2 delta)
 {
-	step<float, init_config, class initialize>(queue, up, u, dt, delta);
+	step<init_config, class initialize>(queue, up, u, dt, delta);
 }
 
 void update(celerity::distr_queue &queue, celerity::buffer<float, 2> &up, celerity::buffer<float, 2> &u, float dt, cl::sycl::float2 delta)
 {
-	step<float, update_config, class update>(queue, up, u, dt, delta);
+	step<update_config, class update>(queue, up, u, dt, delta);
 }
 
 template <typename T>
 void store(celerity::distr_queue &queue, celerity::buffer<T, 2> &up, std::vector<std::vector<float>> &result_frames)
 {
-
 	using namespace celerity::algorithm;
 
 	const auto range = up.get_range();
