@@ -8,7 +8,7 @@
 #include <iostream>
 #include <stdexcept>
 
-namespace celerity::algorithm::actions
+namespace celerity::algorithm
 {
 // unused
 inline void sync()
@@ -42,6 +42,6 @@ auto on_master(F &&f, Args &&... args)
 #endif
 }
 
-} // namespace celerity::algorithm::actions
+} // namespace celerity::algorithm
 
 #endif

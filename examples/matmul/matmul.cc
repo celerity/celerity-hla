@@ -58,10 +58,10 @@ int main(int argc, char *argv[])
 		MPI_Barrier(MPI_COMM_WORLD);
 		celerity::experimental::bench::begin("main program");
 
-		transform(algorithm::distr<class mul_ab>(queue), begin(mat_a_buf), end(mat_a_buf), begin(mat_b_buf), begin(mat_c_buf), multiply);
-		transform(algorithm::distr<class mul_bc>(queue), begin(mat_b_buf), end(mat_b_buf), begin(mat_c_buf), begin(mat_a_buf), multiply);
+		transform(algorithm::distr<class mul_ab>(queue), mat_a_buf, mat_b_buf, mat_c_buf, multiply);
+		transform(algorithm::distr<class mul_bc>(queue), mat_b_buf, mat_c_buf, mat_a_buf, multiply);
 
-		for_each(algorithm::master_blocking(queue), begin(mat_a_buf), end(mat_a_buf),
+		for_each(algorithm::master_blocking(queue), mat_a_buf,
 				 [&verification_passed](t::item item, float x) {
 					 const float correct_value = item[0] == item[1];
 
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 					 verification_passed = false;
 				 });
 
-		actions::on_master([&]() {
+		on_master([&]() {
 			if (verification_passed)
 			{
 				printf("VERIFICATION PASSED!\n");

@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 				transform(distr<class compute_d_1>(queue), buf_b, buf_c, buf_d, std::plus<float>{}) |
 				accumulate(master_blocking(queue), buf_d, 0.0f, std::plus<float>{});
 
-			actions::on_master(verify(sum));
+			on_master(verify(sum));
 		}
 
 		//
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 			auto compute_d = transform(distr<class compute_d_2>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), std::plus<float>{});
 			auto reduce_d = accumulate(master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, std::plus<float>{});
 
-			actions::on_master(verify(produce_a | compute_b | compute_c | compute_d | reduce_d));
+			on_master(verify(produce_a | compute_b | compute_c | compute_d | reduce_d));
 		}
 	}
 	catch (std::exception &e)
