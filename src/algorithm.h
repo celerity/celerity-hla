@@ -321,7 +321,7 @@ auto transform(ExecutionPolicy p, buffer<T, Rank> in, IteratorType out, const F 
 	return transform(p, begin(in), end(in), out, f);
 }
 
-template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank, typename F,
+template <typename ExecutionPolicy, typename T, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
 auto transform(ExecutionPolicy p, buffer<T, Rank> in, buffer<T, Rank> out, const F &f)
 {
@@ -407,7 +407,7 @@ template <typename ExecutionPolicy, typename T, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() == access_type::item>>
 auto for_each(ExecutionPolicy p, buffer<T, Rank> in, const F &f)
 {
-	return for_each(p, begin(in), end(in));
+	return for_each(p, begin(in), end(in), f);
 }
 
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
