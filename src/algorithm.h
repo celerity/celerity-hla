@@ -304,6 +304,7 @@ auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 {
 	return task<ExecutionPolicy>(detail::copy(p, beg, end, out));
 }
+
 } // namespace actions
 
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank, typename F,
@@ -313,12 +314,50 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 	return scoped_sequence{actions::transform(p, beg, end, out, f), submit_to(p.q)};
 }
 
+template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
+auto transform(ExecutionPolicy p, buffer<T, Rank> in, IteratorType out, const F &f)
+{
+	return transform(p, begin(in), end(in), out, f);
+}
+
+template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
+auto transform(ExecutionPolicy p, buffer<T, Rank> in, buffer<T, Rank> out, const F &f)
+{
+	return transform(p, begin(in), end(in), begin(out), f);
+}
+
 template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
 									  detail::get_accessor_type<F, 1>() != access_type::invalid>>
-auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
+auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<U, Rank> out, const F &f)
 {
 	return scoped_sequence{actions::transform(p, beg, end, beg2, out, f), submit_to(p.q)};
+}
+
+template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
+									  detail::get_accessor_type<F, 1>() != access_type::invalid>>
+auto transform(ExecutionPolicy p, buffer<T, Rank> in, buffer_iterator<U, Rank> beg2, buffer_iterator<U, Rank> out, const F &f)
+{
+	return transform(p, begin(in), end(in), beg2, out, f);
+}
+
+template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
+									  detail::get_accessor_type<F, 1>() != access_type::invalid>>
+auto transform(ExecutionPolicy p, buffer<T, Rank> first, buffer<T, Rank> second, buffer_iterator<U, Rank> out, const F &f)
+{
+	return transform(p, begin(first), end(first), begin(second), out, f);
+}
+
+template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
+									  detail::get_accessor_type<F, 1>() != access_type::invalid>>
+auto transform(ExecutionPolicy p, buffer<T, Rank> first, buffer<T, Rank> second, buffer<U, Rank> out, const F &f)
+{
+	return transform(p, begin(first), end(first), begin(second), begin(out), f);
 }
 
 template <typename ExecutionPolicy, typename T, int Rank, typename F>
@@ -327,16 +366,35 @@ auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T
 	return scoped_sequence{actions::generate(p, beg, end, f), submit_to(p.q)};
 }
 
+template <typename ExecutionPolicy, typename T, int Rank, typename F>
+auto generate(ExecutionPolicy p, buffer<T, Rank> in, const F &f)
+{
+	return generate(p, begin(in), end(in), f);
+}
+
 template <typename ExecutionPolicy, typename T, int Rank>
 auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
 {
 	return scoped_sequence{actions::fill(p, beg, end, value), submit_to(p.q)};
 }
 
+template <typename ExecutionPolicy, typename T, int Rank>
+auto fill(ExecutionPolicy p, buffer<T, Rank> in, const T &value)
+{
+	return fill(p, begin(in), end(in), value);
+}
+
 template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank>
-auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op){
+auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
+{
 	return scoped_sequence{actions::accumulate(p, beg, end, init, op), submit_to(p.q)};
-} // namespace celerity::algorithm
+}
+
+template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank>
+auto accumulate(ExecutionPolicy p, buffer<T, Rank> in, T init, const BinaryOp &op)
+{
+	return accumulate(p, begin(in), end(in), init, op);
+}
 
 template <typename ExecutionPolicy, typename T, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() == access_type::item>>
@@ -345,11 +403,31 @@ auto for_each(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T
 	return scoped_sequence{actions::for_each(p, beg, end, f), submit_to(p.q)};
 }
 
+template <typename ExecutionPolicy, typename T, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() == access_type::item>>
+auto for_each(ExecutionPolicy p, buffer<T, Rank> in, const F &f)
+{
+	return for_each(p, begin(in), end(in));
+}
+
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
 auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
 {
 	return scoped_sequence{actions::copy(p, beg, end, out), submit_to(p.q)};
 }
+
+template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
+auto copy(ExecutionPolicy p, buffer<T, Rank> in, IteratorType out)
+{
+	return copy(p, begin(in), end(in), out);
+}
+
+template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
+auto copy(ExecutionPolicy p, buffer<T, Rank> in, buffer<T, Rank> out)
+{
+	return copy(p, begin(in), end(in), begin(out));
+}
+
 } // namespace celerity::algorithm
 
 #endif

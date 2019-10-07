@@ -39,11 +39,11 @@ int main(int argc, char *argv[])
 
 		{
 			auto sum =
-				fill(distr<class produce_a_1>(queue), begin(buf_a), end(buf_a), 1.f) |
-				transform(distr<class compute_b_1>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; }) |
-				transform(master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](const float x) { return 2.f - x; }) |
-				transform(distr<class compute_d_1>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), std::plus<float>{}) |
-				accumulate(master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, std::plus<float>{});
+				fill(distr<class produce_a_1>(queue), buf_a, 1.f) |
+				transform(distr<class compute_b_1>(queue), buf_a, buf_b, [](float x) { return 2.f * x; }) |
+				transform(master(queue), buf_a, buf_c, [](const float x) { return 2.f - x; }) |
+				transform(distr<class compute_d_1>(queue), buf_b, buf_c, buf_d, std::plus<float>{}) |
+				accumulate(master_blocking(queue), buf_d, 0.0f, std::plus<float>{});
 
 			actions::on_master(verify(sum));
 		}
