@@ -321,41 +321,41 @@ auto transform(ExecutionPolicy p, buffer<T, Rank> in, IteratorType out, const F 
 	return transform(p, begin(in), end(in), out, f);
 }
 
-template <typename ExecutionPolicy, typename T, int Rank, typename F,
+template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
-auto transform(ExecutionPolicy p, buffer<T, Rank> in, buffer<T, Rank> out, const F &f)
+auto transform(ExecutionPolicy p, buffer<T, Rank> in, buffer<U, Rank> out, const F &f)
 {
 	return transform(p, begin(in), end(in), begin(out), f);
 }
 
-template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
+template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
 									  detail::get_accessor_type<F, 1>() != access_type::invalid>>
-auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<U, Rank> out, const F &f)
+auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<V, Rank> beg2, buffer_iterator<U, Rank> out, const F &f)
 {
 	return scoped_sequence{actions::transform(p, beg, end, beg2, out, f), submit_to(p.q)};
 }
 
-template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
+template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
 									  detail::get_accessor_type<F, 1>() != access_type::invalid>>
-auto transform(ExecutionPolicy p, buffer<T, Rank> in, buffer_iterator<U, Rank> beg2, buffer_iterator<U, Rank> out, const F &f)
+auto transform(ExecutionPolicy p, buffer<T, Rank> in, buffer_iterator<V, Rank> beg2, buffer_iterator<U, Rank> out, const F &f)
 {
 	return transform(p, begin(in), end(in), beg2, out, f);
 }
 
-template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
+template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
 									  detail::get_accessor_type<F, 1>() != access_type::invalid>>
-auto transform(ExecutionPolicy p, buffer<T, Rank> first, buffer<T, Rank> second, buffer_iterator<U, Rank> out, const F &f)
+auto transform(ExecutionPolicy p, buffer<T, Rank> first, buffer<V, Rank> second, buffer_iterator<U, Rank> out, const F &f)
 {
 	return transform(p, begin(first), end(first), begin(second), out, f);
 }
 
-template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
+template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
 									  detail::get_accessor_type<F, 1>() != access_type::invalid>>
-auto transform(ExecutionPolicy p, buffer<T, Rank> first, buffer<T, Rank> second, buffer<U, Rank> out, const F &f)
+auto transform(ExecutionPolicy p, buffer<T, Rank> first, buffer<V, Rank> second, buffer<U, Rank> out, const F &f)
 {
 	return transform(p, begin(first), end(first), begin(second), begin(out), f);
 }

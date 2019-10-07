@@ -13,19 +13,13 @@ namespace celerity::algorithm
 // unused
 inline void sync()
 {
-#ifndef MOCK_CELERITY
 	MPI_Barrier(MPI_COMM_WORLD);
-#endif
 }
 
 // TODO: rename this so it does not seem like it submits a with_master_access task...
 template <typename F, typename... Args>
 auto on_master(F &&f, Args &&... args)
 {
-#ifdef MOCK_CELERITY
-	std::invoke(f, std::forward<Args>(args)...);
-#else
-
 	static thread_local const bool is_master = []() {
 		if (int world_rank; MPI_Comm_rank(MPI_COMM_WORLD, &world_rank) == MPI_SUCCESS)
 		{
@@ -39,7 +33,6 @@ auto on_master(F &&f, Args &&... args)
 		return;
 
 	std::invoke(f, std::forward<Args>(args)...);
-#endif
 }
 
 } // namespace celerity::algorithm

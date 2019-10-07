@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 		float sum = accumulate(algorithm::master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, std::plus<float>{});
 		//                                   ^^^^^^^^^^^^^^^^^^^^^^
 
-		algorithm::actions::on_master([&]() {
+		algorithm::on_master([&]() {
 			std::cout << "## RESULT: ";
 			if (sum == 3 * DEMO_DATA_SIZE)
 			{

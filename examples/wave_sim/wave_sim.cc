@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
 	})(); // IIFE
 
 	const auto num_steps = static_cast<int>(cfg.T / cfg.dt);
-	celerity::algorithm::actions::on_master([&]() {
+	celerity::algorithm::on_master([&]() {
 		if (cfg.output_sample_rate != 0 && num_steps % cfg.output_sample_rate != 0)
 		{
 			std::cerr << "Warning: Number of time steps (" << num_steps << ") is not a multiple of the output sample rate (wasted frames)" << std::endl;
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 	//	{"dx", std::to_string(cfg.dx)}, {"dy", std::to_string(cfg.dy)}, {"outputSampleRate", std::to_string(cfg.output_sample_rate)} });
 
 	auto is_master = false;
-	celerity::algorithm::actions::on_master([&]() { is_master = true; });
+	celerity::algorithm::on_master([&]() { is_master = true; });
 
 	// TODO: We could allocate the required size at the beginning
 	std::vector<std::vector<float>> result_frames;
