@@ -13,6 +13,14 @@
 
 namespace celerity::algorithm
 {
+struct no_result_t {};
+
+template<typename T>
+inline constexpr bool is_no_result_v = std::is_same_v<no_result_t, T>;
+
+template<typename T, size_t...Is>
+inline constexpr bool is_empty_result_v = (is_no_result_v<std::tuple_element_t<Is, T>> && ...);
+
 template <typename... Actions>
 class sequence
 {
@@ -34,12 +42,7 @@ public:
 	template <typename... Args>
 	decltype(auto) operator()(Args &&... args) const
 	{
-		if constexpr (num_actions > 1)
-		{
-			dispatch(std::make_index_sequence<num_actions - 1>{}, std::forward<Args>(args)...);
-		}
-
-		return invoke(std::get<num_actions - 1>(actions_), std::forward<Args>(args)...);
+		return dispatch(std::make_index_sequence<num_actions>{}, std::forward<Args>(args)...);
 	}
 
 	constexpr actions_t &actions() { return actions_; }
@@ -61,6 +64,7 @@ private:
 			if constexpr (std::is_void_v<std::invoke_result_t<Invocable, Args...>>)
 			{
 				std::invoke(invocable, std::forward<Args>(args)...);
+				return no_result_t{};
 			}
 			else
 			{
@@ -72,6 +76,7 @@ private:
 			if constexpr (std::is_void_v<std::invoke_result_t<Invocable>>)
 			{
 				std::invoke(invocable);
+				return no_result_t{};
 			}
 			else
 			{
@@ -85,10 +90,28 @@ private:
 	}
 
 	template <typename... Args, size_t... Is>
-	void dispatch(std::index_sequence<Is...>, Args &&... args) const
+	auto dispatch(std::index_sequence<Is...> idx, Args &&... args) const
 	{
-		((invoke(std::get<Is>(actions_), std::forward<Args>(args)...)), ...);
+		auto result_tuple = std::make_tuple(((invoke(std::get<Is>(actions_), std::forward<Args>(args)...)), ...));
+
+		using tuple_t = decltype(result_tuple);
+
+		if constexpr(is_empty_result_v<tuple_t, Is...>)
+		{
+			return;
+		}	
+		else if constexpr(num_actions == 1)
+		{
+			return std::get<0>(result_tuple);
+
+		}
+		else
+		{
+			return result_tuple;
+		}
 	}
+
+
 };
 
 template <typename... Actions>
