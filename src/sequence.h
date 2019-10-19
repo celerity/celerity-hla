@@ -13,12 +13,14 @@
 
 namespace celerity::algorithm
 {
-struct no_result_t {};
+struct no_result_t
+{
+};
 
-template<typename T>
+template <typename T>
 inline constexpr bool is_no_result_v = std::is_same_v<no_result_t, T>;
 
-template<typename T, size_t...Is>
+template <typename T, size_t... Is>
 inline constexpr bool is_empty_result_v = (is_no_result_v<std::tuple_element_t<Is, T>> && ...);
 
 template <typename... Actions>
@@ -47,8 +49,11 @@ public:
 	template <typename... Args>
 	decltype(auto) operator()(Args &&... args) const
 	{
-		if constexpr (num_actions == 1 && std::is_void_v<std::invoke_result_t<std::tuple_element_t<0, actions_t>>>)
-			return invoke(std::get<0>(actions_), std::forward<Args>(args)...);
+		if constexpr (num_actions == 1 && std::is_void_v<std::invoke_result_t<std::tuple_element_t<0, actions_t>, Args...>>)
+		{
+			invoke(std::get<0>(actions_), std::forward<Args>(args)...);
+			return;
+		}
 
 		return dispatch(std::make_index_sequence<num_actions>{}, std::forward<Args>(args)...);
 	}
@@ -104,11 +109,11 @@ private:
 
 		using tuple_t = decltype(result_tuple);
 
-		if constexpr(is_empty_result_v<tuple_t, Is...>)
+		if constexpr (is_empty_result_v<tuple_t, Is...>)
 		{
 			return;
-		}	
-		else if constexpr(num_actions == 1)
+		}
+		else if constexpr (num_actions == 1)
 		{
 			return std::get<0>(result_tuple);
 		}
@@ -117,12 +122,10 @@ private:
 			return result_tuple;
 		}
 	}
-
-
 };
 
-template<class...Actions>
-sequence(std::tuple<Actions...> actions) -> sequence<Actions...>;
+template <class... Actions>
+sequence(std::tuple<Actions...> actions)->sequence<Actions...>;
 
 template <typename... Actions>
 struct sequence_traits<algorithm::sequence<Actions...>>
