@@ -33,6 +33,11 @@ public:
 	{
 	}
 
+	sequence(actions_t actions)
+		: actions_(actions)
+	{
+	}
+
 	template <typename... SequenceActions, typename Action>
 	sequence(sequence<SequenceActions...> &&seq, Action action)
 		: sequence(std::move(seq), action, std::index_sequence_for<SequenceActions...>{})
@@ -42,6 +47,9 @@ public:
 	template <typename... Args>
 	decltype(auto) operator()(Args &&... args) const
 	{
+		if constexpr (num_actions == 1 && std::is_void_v<std::invoke_result_t<std::tuple_element_t<0, actions_t>>>)
+			return invoke(std::get<0>(actions_), std::forward<Args>(args)...);
+
 		return dispatch(std::make_index_sequence<num_actions>{}, std::forward<Args>(args)...);
 	}
 
@@ -103,7 +111,6 @@ private:
 		else if constexpr(num_actions == 1)
 		{
 			return std::get<0>(result_tuple);
-
 		}
 		else
 		{
@@ -113,6 +120,9 @@ private:
 
 
 };
+
+template<class...Actions>
+sequence(std::tuple<Actions...> actions) -> sequence<Actions...>;
 
 template <typename... Actions>
 struct sequence_traits<algorithm::sequence<Actions...>>
