@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 
 		*/
 
-		transform(algorithm::distr<class compute_b>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; });
+		//transform(algorithm::distr<class compute_b>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; });
 
 #define COMPUTE_C_ON_MASTER 1
 #if COMPUTE_C_ON_MASTER
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 		});
 		*/
 
-		transform(algorithm::master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
+		//transform(algorithm::master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
 
 #else
 		/*
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 
 		*/
 
-		transform(algorithm::distr<class compute_d>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), std::plus<float>{});
+		//transform(algorithm::distr<class compute_d>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), std::plus<float>{});
 
 		/*
 
@@ -112,16 +112,16 @@ int main(int argc, char *argv[])
 					std::cout << "Fail! Value is " << sum << std::endl;
 					verification_passed = false;
 				}
-			});
+			}); 
 		});}*/
 
 		//const auto sum = accumulate(algorithm::master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
 
 		// OR
-		float sum = accumulate(algorithm::master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, std::plus<float>{});
+		//float sum = accumulate(algorithm::master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, std::plus<float>{});
 		//                                   ^^^^^^^^^^^^^^^^^^^^^^
 
-		algorithm::on_master([&]() {
+		/*algorithm::on_master([&]() {
 			std::cout << "## RESULT: ";
 			if (sum == 3 * DEMO_DATA_SIZE)
 			{
@@ -129,10 +129,10 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				std::cout << "Fail! Value is " << sum << std::endl;
+	 			std::cout << "Fail! Value is " << sum << std::endl;
 				verification_passed = false;
 			}
-		});
+		});*/
 	}
 	catch (std::exception &e)
 	{
