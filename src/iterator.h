@@ -79,9 +79,14 @@ public:
 
 	[[nodiscard]] buffer<T, Rank> get_buffer() const { return buffer_; }
 
-private:
-	celerity::buffer<T, Rank> buffer_;
+	private : celerity::buffer<T, Rank> buffer_;
 };
+
+template <int Rank>
+cl::sycl::range<Rank> distance(iterator<Rank> from, iterator<Rank> to)
+{
+	return celerity::distance(*from, *to);
+}
 
 template <typename T, int Rank>
 cl::sycl::range<Rank> distance(buffer_iterator<T, Rank> from, buffer_iterator<T, Rank> to)
