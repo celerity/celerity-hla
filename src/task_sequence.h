@@ -6,6 +6,9 @@
 
 namespace celerity::algorithm
 {
+template <typename T, int Rank>
+class decorated_task;
+
 inline auto submit_to(celerity::distr_queue q)
 {
 	return q;
@@ -31,6 +34,30 @@ decltype(auto) operator|(Sequence<Actions...> &&lhs, celerity::distr_queue &&que
 
 template <typename ExecutionPolicy, typename T, typename... Actions>
 decltype(auto) operator|(task_t<ExecutionPolicy, T> &&lhs, celerity::distr_queue &&queue)
+{
+	return std::invoke(lhs, queue);
+}
+
+template <typename T, int Rank>
+decltype(auto) operator|(decorated_task<T, Rank> &&lhs, celerity::distr_queue &&queue)
+{
+	return std::invoke(lhs, queue);
+}
+
+template <typename T, int Rank>
+decltype(auto) operator|(decorated_task<T, Rank> &&lhs, celerity::distr_queue &queue)
+{
+	return std::invoke(lhs, queue);
+}
+
+template <typename T, int Rank>
+decltype(auto) operator|(decorated_task<T, Rank> &lhs, celerity::distr_queue &&queue)
+{
+	return std::invoke(lhs, queue);
+}
+
+template <typename T, int Rank>
+decltype(auto) operator|(decorated_task<T, Rank> &lhs, celerity::distr_queue &queue)
 {
 	return std::invoke(lhs, queue);
 }
