@@ -7,6 +7,7 @@
 #include "accessor_proxy.h"
 #include "policy.h"
 #include "scoped_sequence.h"
+#include "decorated_task.h"
 
 #include <future>
 
@@ -30,6 +31,23 @@ void dispatch(celerity::handler &cgh, Iterator beg, Iterator end, const F f)
 	else
 	{
 		cgh.run([&]() { for_each_index(beg, end, r, *beg, f); });
+	}
+}
+
+template <typename ExecutionPolicy, typename Iterator>
+auto create_dispatcher(Iterator beg, Iterator end)
+{
+	using execution_policy_type = std::decay_t<ExecutionPolicy>;
+
+	const auto r = distance(beg, end);
+
+	if constexpr (policy_traits<execution_policy_type>::is_distributed)
+	{
+		return [=](celerity::handler &cgh, auto kernel) { cgh.template parallel_for<typename policy_traits<execution_policy_type>::kernel_name>(r, *beg, kernel); };
+	}
+	else
+	{
+		//cgh.run([&]() { for_each_index(beg, end, r, *beg, f); });
 	}
 }
 
@@ -176,10 +194,7 @@ auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 
 	return [=](celerity::handler &cgh) {
 		auto out_acc = get_access<policy_type, cl::sycl::access::mode::write, one_to_one>(cgh, beg, end);
-
-		dispatch<policy_type>(cgh, beg, end, [=](auto item) {
-			out_acc[item] = value;
-		});
+		return [=](auto item) { out_acc[item] = value; };
 	};
 }
 
@@ -284,7 +299,7 @@ auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T
 template <typename ExecutionPolicy, typename T, int Rank>
 auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
 {
-	return task<ExecutionPolicy>(detail::fill(p, beg, end, value));
+	return decorated_task(task<ExecutionPolicy>(detail::fill(p, beg, end, value)), beg, end);
 }
 
 template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank>
