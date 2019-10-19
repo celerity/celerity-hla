@@ -4,43 +4,50 @@
 #include "celerity_helper.h"
 #include "kernel_sequence.h"
 #include "policy.h"
+#include "kernel_traits.h"
+#include "iterator.h"
 
 #include <future>
 
 namespace celerity::algorithm
 {
 
+template <typename T, std::enable_if_t<!detail::_is_kernel_v<T>, int> = 0>
+auto to_kernel(T t)
+{
+	return sequence(t);
+}
+
+template <typename T, std::enable_if_t<detail::_is_kernel_v<T>, int> = 0>
+auto to_kernel(T t)
+{
+	return t;
+}
+
 template <typename ExecutionPolicy, typename... Actions>
 class task_t;
 
-template <typename... Actions>
-class task_t<distributed_execution_policy, Actions...>
+template <typename KernelName, typename... Actions>
+class task_t<named_distributed_execution_policy<KernelName>, Actions...>
 {
 public:
+	static_assert(((detail::_is_task_v<Actions>)&&...), "task can only contain task functors");
+
 	explicit task_t(kernel_sequence<Actions...> &&s)
 		: sequence_(std::move(s)) {}
 
-	template<typename F, std::enable_if_t<sizeof...(Actions) == 1, int> = 0>
+	template <typename F, std::enable_if_t<sizeof...(Actions) == 1, int> = 0>
 	task_t(F f) : sequence_(std::move(f)) {}
 
-	void operator()(distr_queue &q) const
+	template <int Rank>
+	void operator()(distr_queue &q, iterator<Rank> beg, iterator<Rank> end) const
 	{
-		using ret_type = std::invoke_result_t<decltype(sequence_), handler&>;
+		const auto d = distance(beg, end);
 
-		q.submit([seq = sequence_](handler &cgh) 
-		{
-			if constexpr (contains_kernel_sequence_v<ret_type>)
-			{
-				auto kernels = std::invoke(seq, cgh);
-				auto kernel_seq = kernel_sequence(sequence(kernels));
-
-				std::invoke(kernel_seq, cgh);
-			}
-			else
-			{
-				std::invoke(seq, cgh);
-			}
-		});			
+		q.submit([seq = sequence_, d, beg](handler &cgh) {
+			auto r = std::invoke(seq, cgh);
+			cgh.template parallel_for<KernelName>(d, *beg, to_kernel(r));
+		});
 	}
 
 private:
@@ -65,25 +72,25 @@ public:
 		}
 		if constexpr (is_kernel_v<ret_type>)
 		{
-			using kernel_ret_type = std::invoke_result_t<ret_type, handler&>;
+			using kernel_ret_type = std::invoke_result_t<ret_type, handler &>;
 
-			if constexpr(std::is_void_v<ret_type>)
+			if constexpr (std::is_void_v<ret_type>)
 			{
 				q.with_master_access([seq = sequence_](handler &cgh) {
 					auto kernel = std::invoke(seq, cgh);
 					std::invoke(kernel, cgh);
-				});		
+				});
 			}
 			else
 			{
 				static_assert(std::is_void_v<kernel_ret_type>, "tasks may not return values  due to constness restrictions on master task");
-			}		
+			}
 		}
 		else if constexpr (contains_kernel_sequence_v<ret_type>)
 		{
-			using kernel_ret_type = std::invoke_result_t<ret_type, handler&>;
+			using kernel_ret_type = std::invoke_result_t<ret_type, handler &>;
 
-			if constexpr(std::is_void_v<ret_type>)
+			if constexpr (std::is_void_v<ret_type>)
 			{
 				q.with_master_access([seq = sequence_](handler &cgh) {
 					auto kernels = std::invoke(seq, cgh);
@@ -91,11 +98,11 @@ public:
 
 					std::invoke(kernel_seq, cgh);
 				});
-			}		
+			}
 			else
 			{
 				static_assert(std::is_void_v<kernel_ret_type>, "tasks may not return values  due to constness restrictions on master task");
-			}	
+			}
 		}
 		else
 		{
@@ -138,14 +145,14 @@ public:
 		}
 		else if constexpr (is_kernel_v<ret_type>)
 		{
-			using kernel_ret_type = std::invoke_result_t<ret_type, handler&>;
+			using kernel_ret_type = std::invoke_result_t<ret_type, handler &>;
 
-			if constexpr(std::is_void_v<ret_type>)
+			if constexpr (std::is_void_v<ret_type>)
 			{
 				q.with_master_access([seq = sequence_](handler &cgh) {
 					auto kernel = std::invoke(seq, cgh);
 					std::invoke(kernel, cgh);
-				});		
+				});
 
 				q.slow_full_sync();
 			}
@@ -156,24 +163,24 @@ public:
 				q.with_master_access([&ret_value, seq = sequence_](handler &cgh) {
 					auto kernel = std::invoke(seq, cgh);
 					ret_value = std::invoke(kernel, cgh);
-				});		
+				});
 
 				q.slow_full_sync();
 
 				return ret_value;
-			}	
+			}
 		}
 		else if constexpr (contains_kernel_sequence_v<ret_type>)
 		{
-			using kernel_ret_type = std::invoke_result_t<ret_type, handler&>;
+			using kernel_ret_type = std::invoke_result_t<ret_type, handler &>;
 
-			if constexpr(std::is_void_v<ret_type>)
+			if constexpr (std::is_void_v<ret_type>)
 			{
 				q.with_master_access([seq = sequence_](handler &cgh) {
 					auto kernels = std::invoke(seq, cgh);
 					auto kernel_seq = kernel_sequence(sequence(kernels));
 					std::invoke(kernel_seq, cgh);
-				});		
+				});
 
 				q.slow_full_sync();
 			}
@@ -185,12 +192,12 @@ public:
 					auto kernels = std::invoke(seq, cgh);
 					auto kernel_seq = kernel_sequence(sequence(kernels));
 					ret_value = std::invoke(kernel_seq, cgh);
-				});		
+				});
 
 				q.slow_full_sync();
 
 				return ret_value;
-			}	
+			}
 		}
 		else
 		{
@@ -208,13 +215,6 @@ public:
 
 private:
 	kernel_sequence<F> sequence_;
-};
-
-template <typename KernelName, typename F>
-class task_t<named_distributed_execution_policy<KernelName>, F> : public task_t<distributed_execution_policy, F>
-{
-	using base_type = task_t<distributed_execution_policy, F>;
-	using base_type::base_type;
 };
 
 template <typename... Actions>
