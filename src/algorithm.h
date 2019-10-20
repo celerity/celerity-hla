@@ -34,23 +34,6 @@ void dispatch(celerity::handler &cgh, Iterator beg, Iterator end, const F f)
 	}
 }
 
-template <typename ExecutionPolicy, typename Iterator>
-auto create_dispatcher(Iterator beg, Iterator end)
-{
-	using execution_policy_type = std::decay_t<ExecutionPolicy>;
-
-	const auto r = distance(beg, end);
-
-	if constexpr (policy_traits<execution_policy_type>::is_distributed)
-	{
-		return [=](celerity::handler &cgh, auto kernel) { cgh.template parallel_for<typename policy_traits<execution_policy_type>::kernel_name>(r, *beg, kernel); };
-	}
-	else
-	{
-		//cgh.run([&]() { for_each_index(beg, end, r, *beg, f); });
-	}
-}
-
 template <typename InputAccessorType, typename IteratorType, typename ExecutionPolicy, typename F, typename T, int Rank,
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
@@ -63,17 +46,12 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 		if constexpr (is_celerity_iterator_v<IteratorType>)
 		{
 			auto out_acc = get_access<policy_type, cl::sycl::access::mode::write, one_to_one>(cgh, out, out);
-
-			dispatch<policy_type>(cgh, beg, end, [=](auto item) {
-				out_acc[item] = f(in_acc[item]);
-			});
+			return [=](auto item) { out_acc[item] = f(in_acc[item]); };
 		}
 		else
 		{
 			auto out_tmp = out;
-			dispatch<policy_type>(cgh, beg, end, [&](auto item) {
-				*out_tmp++ = f(in_acc[item]);
-			});
+			return [=](auto item) { *out_tmp++ = f(in_acc[item]); };
 		}
 	};
 }
@@ -90,18 +68,12 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 		if constexpr (is_celerity_iterator_v<IteratorType>)
 		{
 			auto out_acc = get_access<policy_type, cl::sycl::access::mode::write, one_to_one>(cgh, out, out);
-
-			dispatch<policy_type>(cgh, beg, end, [=](auto item) {
-				out_acc[item] = f(item, in_acc[item]);
-			});
+			return [=](auto item) { out_acc[item] = f(item, in_acc[item]); };
 		}
 		else
 		{
-			static_assert(!policy_traits<policy_type>::is_distributed);
-
-			dispatch<policy_type>(cgh, beg, end, [=](auto item) {
-				*out++ = f(item, in_acc[item]);
-			});
+			auto out_tmp = out;
+			return [=](auto item) { *out_tmp++ = f(item, in_acc[item]); };
 		}
 	};
 }
@@ -129,9 +101,7 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 
 			auto out_acc = get_access<policy_type, cl::sycl::access::mode::write, OutputAccessorType>(cgh, out, out);
 
-			dispatch<policy_type>(cgh, beg, end, [=](auto item) {
-				out_acc[item] = f(first_in_acc[item], second_in_acc[item]);
-			});
+			return [=](auto item) { out_acc[item] = f(first_in_acc[item], second_in_acc[item]); };
 		}
 	};
 }
@@ -265,21 +235,27 @@ template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank,
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
 {
-	return task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>>(p, beg, end, out, f));
+	return decorated_task(
+		task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>>(p, beg, end, out, f)),
+		beg, end);
 }
 
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank, typename F,
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
 {
-	return task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 1, T>>(p, beg, end, out, f));
+	return decorated_task(
+		task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 1, T>>(p, beg, end, out, f)),
+		beg, end);
 }
 
 template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
-	return task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>, algorithm::detail::accessor_type_t<F, 1, U>, one_to_one>(p, beg, end, beg2, out, f));
+	return decorated_task(
+		task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>, algorithm::detail::accessor_type_t<F, 1, U>, one_to_one>(p, beg, end, beg2, out, f)),
+		beg, end);
 }
 
 template <typename ExecutionPolicy, typename T, int Rank, typename F, typename U,

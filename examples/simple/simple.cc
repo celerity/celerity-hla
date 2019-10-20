@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 
 		*/
 
-		//transform(algorithm::distr<class compute_b>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; });
+		transform(algorithm::distr<class compute_b>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; });
 
 #define COMPUTE_C_ON_MASTER 1
 #if COMPUTE_C_ON_MASTER
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 		});
 		*/
 
-		//transform(algorithm::master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
+		transform(algorithm::master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
 
 #else
 		/*
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 
 		*/
 
-		//transform(algorithm::distr<class compute_d>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), std::plus<float>{});
+		transform(algorithm::distr<class compute_d>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), std::plus<float>{});
 
 		/*
 
