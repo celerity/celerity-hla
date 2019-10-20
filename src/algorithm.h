@@ -229,6 +229,7 @@ auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 		}
 	};
 }
+
 } // namespace detail
 
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank, typename F,
@@ -296,6 +297,13 @@ template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
 auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
 {
 	return task<ExecutionPolicy>(detail::copy(p, beg, end, out));
+}
+
+template <typename F>
+auto master_task(const F &f)
+{
+	static_assert(algorithm::detail::_is_master_task_v<F>, "not a compute task");
+	return task<non_blocking_master_execution_policy>(f);
 }
 
 } // namespace actions
@@ -419,6 +427,13 @@ template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
 auto copy(ExecutionPolicy p, buffer<T, Rank> in, buffer<T, Rank> out)
 {
 	return copy(p, begin(in), end(in), begin(out));
+}
+
+template <typename ExecutionPolicy, typename F>
+auto master_task(ExecutionPolicy p, const F &f)
+{
+	static_assert(std::is_same_v<non_blocking_master_execution_policy, std::decay_t<ExecutionPolicy>>, "non-blocking master only");
+	return scoped_sequence{actions::master_task(f), submit_to(p.q)};
 }
 
 } // namespace celerity::algorithm

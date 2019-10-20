@@ -31,7 +31,7 @@ template <typename KernelName, typename... Actions>
 class task_t<named_distributed_execution_policy<KernelName>, Actions...>
 {
 public:
-	static_assert(((detail::_is_task_v<Actions>)&&...), "task can only contain task functors");
+	static_assert(((detail::_is_compute_task_v<Actions>)&&...), "task can only contain compute task functors");
 
 	explicit task_t(kernel_sequence<Actions...> &&s)
 		: sequence_(std::move(s)) {}
@@ -58,6 +58,8 @@ template <typename F>
 class task_t<non_blocking_master_execution_policy, F>
 {
 public:
+	static_assert(detail::_is_master_task_v<F>, "task can only contain master task functors");
+
 	explicit task_t(F f) : sequence_(std::move(f)) {}
 
 	template <int Rank>
@@ -65,9 +67,16 @@ public:
 	{
 		const auto d = distance(beg, end);
 
-		q.submit([seq = sequence_, d, beg, end](handler &cgh) {
+		q.with_master_access([seq = sequence_, d, beg, end](handler &cgh) {
 			const auto r = std::invoke(seq, cgh);
 			cgh.run([&]() { for_each_index(beg, end, d, *beg, to_kernel(r)); });
+		});
+	}
+
+	void operator()(distr_queue &q) const
+	{
+		q.with_master_access([seq = sequence_](handler &cgh) {
+			cgh.run(std::invoke(seq, cgh));
 		});
 	}
 

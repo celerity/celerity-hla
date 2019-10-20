@@ -3,6 +3,8 @@
 
 #include <type_traits>
 
+#include "accessor_proxy.h"
+
 namespace celerity::algorithm
 {
 template <typename A, typename B>
@@ -51,14 +53,24 @@ template <typename F>
 constexpr inline bool _is_kernel_v = _is_kernel<F>::value;
 
 template <typename F>
-struct _is_task : std::bool_constant<
-					  std::is_invocable_v<F, task_arg_t> &&
-					  _is_kernel_v<task_invoke_result_t<F>>>
+struct _is_compute_task : std::bool_constant<
+							  std::is_invocable_v<F, task_arg_t> &&
+							  _is_kernel_v<task_invoke_result_t<F>>>
 {
 };
 
 template <typename F>
-constexpr inline bool _is_task_v = _is_task<F>::value;
+constexpr inline bool _is_compute_task_v = _is_compute_task<F>::value;
+
+template <typename F>
+struct _is_master_task : std::bool_constant<
+							 std::is_invocable_v<F, task_arg_t> &&
+							 (_is_kernel_v<task_invoke_result_t<F>> || function_traits<task_invoke_result_t<F>>::arity == 0)>
+{
+};
+
+template <typename F>
+constexpr inline bool _is_master_task_v = _is_master_task<F>::value;
 
 } // namespace detail
 
