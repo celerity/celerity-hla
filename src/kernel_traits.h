@@ -72,6 +72,12 @@ struct _is_master_task : std::bool_constant<
 template <typename F>
 constexpr inline bool _is_master_task_v = _is_master_task<F>::value;
 
+template <typename T>
+struct _is_task_decorator : std::bool_constant<std::is_invocable_v<T, celerity::distr_queue&>> {};
+
+template <typename F>
+constexpr inline bool _is_task_decorator_v = _is_task_decorator<F>::value;
+
 } // namespace detail
 
 } // namespace celerity::algorithm

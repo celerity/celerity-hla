@@ -21,9 +21,6 @@ template <typename InputAccessorType, typename U, typename ExecutionPolicy, type
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
-	assert(beg.get_buffer().get_id() == end.get_buffer().get_id());
-	assert(beg.get_buffer().get_id() != out.get_buffer().get_id());
-
 	using policy_type = strip_queue_t<ExecutionPolicy>;
 	using namespace cl::sycl::access;
 
@@ -39,9 +36,6 @@ template <typename InputAccessorType, typename U, typename ExecutionPolicy, type
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
-	assert(beg.get_buffer().get_id() == end.get_buffer().get_id());
-	assert(beg.get_buffer().get_id() != out.get_buffer().get_id());
-
 	using policy_type = strip_queue_t<ExecutionPolicy>;
 	using namespace cl::sycl::access;
 
@@ -195,18 +189,18 @@ template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
-	return decorated_task(
+	return decorate_transform<algorithm::detail::get_accessor_type<F, 0>()>(
 		task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>>(p, beg, end, out, f)),
-		beg, end);
+		beg, end, out);
 }
 
 template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
-	return decorated_task(
+	return decorate_transform<algorithm::detail::get_accessor_type<F, 0>()>(
 		task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 1, T>>(p, beg, end, out, f)),
-		beg, end);
+		beg, end, out);
 }
 
 template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
