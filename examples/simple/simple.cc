@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 			cgh.parallel_for<class produce_a>(cl::sycl::range<1>(DEMO_DATA_SIZE), [=](cl::sycl::item<1> item) { dw_a[DEMO_DATA_SIZE - 1 - item[0]] = 1.f; });
 		});*/
 
-		fill(algorithm::distr<class produce_a>(queue), begin(buf_a), end(buf_a), 1.f);
+		algorithm::fill<class produce_a>(queue, buf_a, 1.f);
 
 		/*queue.submit([=](celerity::handler& cgh) {
 			auto r_a = buf_a.get_access<cl::sycl::access::mode::read>(cgh, [](celerity::chunk<1> chnk) -> celerity::subrange<1> {
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 
 		*/
 
-		transform(algorithm::distr<class compute_b>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; });
+		algorithm::transform<class compute_b>(queue, buf_a, buf_b, [](float x) { return 2.f * x; });
 
 #define COMPUTE_C_ON_MASTER 0
 #if COMPUTE_C_ON_MASTER
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 		});
 		*/
 
-		algorithm::transform(algorithm::distr<class compute_c>(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });
+		algorithm::transform<class compute_c>(queue, buf_a, buf_c, [](float x) { return 2.f - x; });
 #endif
 		/*
 		queue.submit([=](celerity::handler& cgh) {
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 
 		*/
 
-		transform(algorithm::distr<class compute_d>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), std::plus<float>{});
+		algorithm::transform<class compute_d>(queue, buf_b, buf_c, buf_d, std::plus<float>{});
 
 		algorithm::master_task(algorithm::master(queue), [=, &verification_passed](auto &cgh) {
 			auto r_d = buf_d.get_access<cl::sycl::access::mode::read>(cgh, cl::sycl::range<1>(DEMO_DATA_SIZE));
