@@ -129,9 +129,9 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 
 			auto out_acc = get_access<policy_type, cl::sycl::access::mode::write, OutputAccessorType>(cgh, out, out);
 
-			dispatch<policy_type>(cgh, beg, end, [=](auto item) {
+			return [=](auto item) {
 				out_acc[item] = f(item, first_in_acc[item], second_in_acc[item]);
-			});
+			};
 		}
 	};
 }
@@ -262,7 +262,9 @@ template <typename ExecutionPolicy, typename T, int Rank, typename F, typename U
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 3, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
-	return task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 1, T>, algorithm::detail::accessor_type_t<F, 2, U>, one_to_one>(p, beg, end, beg2, out, f));
+	return decorated_task(
+		task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 1, T>, algorithm::detail::accessor_type_t<F, 2, U>, one_to_one>(p, beg, end, beg2, out, f)),
+		beg, end);
 }
 
 template <typename ExecutionPolicy, typename F, typename T, int Rank,
