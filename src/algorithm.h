@@ -231,7 +231,7 @@ auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T
 template <typename ExecutionPolicy, typename T, int Rank>
 auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
 {
-	return decorated_task(task<ExecutionPolicy>(detail::fill(p, beg, end, value)), beg, end);
+	return decorate_generate<T>(task<ExecutionPolicy>(detail::fill(p, beg, end, value)), beg, end);
 }
 
 template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank>
