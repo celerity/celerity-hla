@@ -17,9 +17,9 @@ namespace actions
 {
 namespace detail
 {
-template <typename InputAccessorType, typename IteratorType, typename ExecutionPolicy, typename F, typename T, int Rank,
+template <typename InputAccessorType, typename U, typename ExecutionPolicy, typename F, typename T, int Rank,
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1, int> = 0>
-auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
+auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
 	using policy_type = strip_queue_t<ExecutionPolicy>;
 	using namespace cl::sycl::access;
@@ -32,9 +32,9 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 	};
 }
 
-template <typename InputAccessorType, typename IteratorType, typename ExecutionPolicy, typename F, typename T, int Rank,
+template <typename InputAccessorType, typename U, typename ExecutionPolicy, typename F, typename T, int Rank,
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
-auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
+auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
 	using policy_type = strip_queue_t<ExecutionPolicy>;
 	using namespace cl::sycl::access;
@@ -173,18 +173,18 @@ auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 
 } // namespace detail
 
-template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank, typename F,
+template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1, int> = 0>
-auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
+auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
 	return decorated_task(
 		task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>>(p, beg, end, out, f)),
 		beg, end);
 }
 
-template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank, typename F,
+template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
-auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
+auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
 	return decorated_task(
 		task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 1, T>>(p, beg, end, out, f)),
@@ -249,30 +249,30 @@ auto master_task(const F &f)
 
 } // namespace actions
 
-template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank, typename F,
+template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
-auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
+auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
 	return scoped_sequence{actions::transform(p, beg, end, out, f), submit_to(p.q)};
 }
 
-template <typename KernelName, typename IteratorType, typename T, int Rank, typename F,
+template <typename KernelName, typename T, typename U, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
-auto transform(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
+auto transform(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
 	return transform(distr<KernelName>(q), beg, end, out, f);
 }
 
-template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank, typename F,
+template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
-auto transform(ExecutionPolicy p, buffer<T, Rank> in, IteratorType out, const F &f)
+auto transform(ExecutionPolicy p, buffer<T, Rank> in, buffer_iterator<U, Rank> out, const F &f)
 {
 	return transform(p, begin(in), end(in), out, f);
 }
 
-template <typename KernelName, typename IteratorType, typename T, int Rank, typename F,
+template <typename KernelName, typename T, typename U, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
-auto transform(celerity::distr_queue q, buffer<T, Rank> in, IteratorType out, const F &f)
+auto transform(celerity::distr_queue q, buffer<T, Rank> in, buffer_iterator<U, Rank> out, const F &f)
 {
 	return transform(distr<KernelName>(q), begin(in), end(in), out, f);
 }
