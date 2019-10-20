@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 
 		*/
 
-		//algorithm::transform<class compute_d>(queue, buf_b, buf_c, buf_d, std::plus<float>{});
+		algorithm::transform<class compute_d>(queue, buf_b, buf_c, buf_d, std::plus<float>{});
 
 		algorithm::master_task(algorithm::master(queue), [=, &verification_passed](auto &cgh) {
 			auto r_d = buf_d.get_access<cl::sycl::access::mode::read>(cgh, cl::sycl::range<1>(DEMO_DATA_SIZE));
