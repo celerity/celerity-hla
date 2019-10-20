@@ -315,6 +315,13 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 	return scoped_sequence{actions::transform(p, beg, end, out, f), submit_to(p.q)};
 }
 
+template <typename KernelName, typename IteratorType, typename T, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
+auto transform(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
+{
+	return transform(distr<KernelName>(q), beg, end, out, f);
+}
+
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
 auto transform(ExecutionPolicy p, buffer<T, Rank> in, IteratorType out, const F &f)
@@ -322,11 +329,25 @@ auto transform(ExecutionPolicy p, buffer<T, Rank> in, IteratorType out, const F 
 	return transform(p, begin(in), end(in), out, f);
 }
 
+template <typename KernelName, typename IteratorType, typename T, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
+auto transform(celerity::distr_queue q, buffer<T, Rank> in, IteratorType out, const F &f)
+{
+	return transform(distr<KernelName>(q), begin(in), end(in), out, f);
+}
+
 template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
 auto transform(ExecutionPolicy p, buffer<T, Rank> in, buffer<U, Rank> out, const F &f)
 {
 	return transform(p, begin(in), end(in), begin(out), f);
+}
+
+template <typename KernelName, typename T, typename U, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
+auto transform(celerity::distr_queue q, buffer<T, Rank> in, buffer<U, Rank> out, const F &f)
+{
+	return transform(distr<KernelName>(q), begin(in), end(in), begin(out), f);
 }
 
 template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, typename F,
@@ -337,12 +358,28 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 	return scoped_sequence{actions::transform(p, beg, end, beg2, out, f), submit_to(p.q)};
 }
 
+template <typename KernelName, typename T, typename U, typename V, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
+									  detail::get_accessor_type<F, 1>() != access_type::invalid>>
+auto transform(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<V, Rank> beg2, buffer_iterator<U, Rank> out, const F &f)
+{
+	return transform(distr<KernelName>(q), beg, end, beg2, out, f);
+}
+
 template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
 									  detail::get_accessor_type<F, 1>() != access_type::invalid>>
 auto transform(ExecutionPolicy p, buffer<T, Rank> in, buffer_iterator<V, Rank> beg2, buffer_iterator<U, Rank> out, const F &f)
 {
 	return transform(p, begin(in), end(in), beg2, out, f);
+}
+
+template <typename KernelName, typename T, typename U, typename V, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
+									  detail::get_accessor_type<F, 1>() != access_type::invalid>>
+auto transform(celerity::distr_queue q, buffer<T, Rank> in, buffer_iterator<V, Rank> beg2, buffer_iterator<U, Rank> out, const F &f)
+{
+	return transform(distr<KernelName>(q), begin(in), end(in), beg2, out, f);
 }
 
 template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, typename F,
@@ -353,6 +390,14 @@ auto transform(ExecutionPolicy p, buffer<T, Rank> first, buffer<V, Rank> second,
 	return transform(p, begin(first), end(first), begin(second), out, f);
 }
 
+template <typename KernelName, typename T, typename U, typename V, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
+									  detail::get_accessor_type<F, 1>() != access_type::invalid>>
+auto transform(celerity::distr_queue q, buffer<T, Rank> first, buffer<V, Rank> second, buffer_iterator<U, Rank> out, const F &f)
+{
+	return transform(distr<KernelName>(q), begin(first), end(first), begin(second), out, f);
+}
+
 template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
 									  detail::get_accessor_type<F, 1>() != access_type::invalid>>
@@ -361,10 +406,24 @@ auto transform(ExecutionPolicy p, buffer<T, Rank> first, buffer<V, Rank> second,
 	return transform(p, begin(first), end(first), begin(second), begin(out), f);
 }
 
+template <typename KernelName, typename T, typename U, typename V, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
+									  detail::get_accessor_type<F, 1>() != access_type::invalid>>
+auto transform(celerity::distr_queue q, buffer<T, Rank> first, buffer<V, Rank> second, buffer<U, Rank> out, const F &f)
+{
+	return transform(distr<KernelName>(q), begin(first), end(first), begin(second), begin(out), f);
+}
+
 template <typename ExecutionPolicy, typename T, int Rank, typename F>
 auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
 	return scoped_sequence{actions::generate(p, beg, end, f), submit_to(p.q)};
+}
+
+template <typename KernelName, typename T, int Rank, typename F>
+auto generate(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
+{
+	return generate(distr<KernelName>(q), beg, end, f);
 }
 
 template <typename ExecutionPolicy, typename T, int Rank, typename F>
@@ -373,10 +432,22 @@ auto generate(ExecutionPolicy p, buffer<T, Rank> in, const F &f)
 	return generate(p, begin(in), end(in), f);
 }
 
+template <typename KernelName, typename T, int Rank, typename F>
+auto generate(celerity::distr_queue q, buffer<T, Rank> in, const F &f)
+{
+	return generate(distr<KernelName>(q), begin(in), end(in), f);
+}
+
 template <typename ExecutionPolicy, typename T, int Rank>
 auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
 {
 	return scoped_sequence{actions::fill(p, beg, end, value), submit_to(p.q)};
+}
+
+template <typename KernelName, typename T, int Rank>
+auto fill(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
+{
+	return fill(distr<KernelName>(q), beg, end, value);
 }
 
 template <typename ExecutionPolicy, typename T, int Rank>
@@ -385,16 +456,34 @@ auto fill(ExecutionPolicy p, buffer<T, Rank> in, const T &value)
 	return fill(p, begin(in), end(in), value);
 }
 
+template <typename KernelName, typename T, int Rank>
+auto fill(celerity::distr_queue q, buffer<T, Rank> in, const T &value)
+{
+	return fill(distr<KernelName>(q), begin(in), end(in), value);
+}
+
 template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank>
 auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
 {
 	return scoped_sequence{actions::accumulate(p, beg, end, init, op), submit_to(p.q)};
 }
 
+template <typename KernelName, typename BinaryOp, typename T, int Rank>
+auto accumulate(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
+{
+	return accumulate(distr<KernelName>(q), beg, end, init, op);
+}
+
 template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank>
 auto accumulate(ExecutionPolicy p, buffer<T, Rank> in, T init, const BinaryOp &op)
 {
 	return accumulate(p, begin(in), end(in), init, op);
+}
+
+template <typename KernelName, typename BinaryOp, typename T, int Rank>
+auto accumulate(celerity::distr_queue q, buffer<T, Rank> in, T init, const BinaryOp &op)
+{
+	return accumulate(distr<KernelName>(q), begin(in), end(in), init, op);
 }
 
 template <typename ExecutionPolicy, typename T, int Rank, typename F,
