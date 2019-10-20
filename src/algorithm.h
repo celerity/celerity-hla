@@ -21,6 +21,9 @@ template <typename InputAccessorType, typename U, typename ExecutionPolicy, type
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
+	assert(beg.get_buffer().get_id() == end.get_buffer().get_id());
+	assert(beg.get_buffer().get_id() != out.get_buffer().get_id());
+
 	using policy_type = strip_queue_t<ExecutionPolicy>;
 	using namespace cl::sycl::access;
 
@@ -36,6 +39,9 @@ template <typename InputAccessorType, typename U, typename ExecutionPolicy, type
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
+	assert(beg.get_buffer().get_id() == end.get_buffer().get_id());
+	assert(beg.get_buffer().get_id() != out.get_buffer().get_id());
+
 	using policy_type = strip_queue_t<ExecutionPolicy>;
 	using namespace cl::sycl::access;
 
@@ -51,6 +57,10 @@ template <typename FirstInputAccessorType, typename SecondInputAccessorType, typ
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
+	assert(beg.get_buffer().get_id() == end.get_buffer().get_id());
+	assert(beg.get_buffer().get_id() != beg2.get_buffer().get_id());
+	assert(beg.get_buffer().get_id() != out.get_buffer().get_id());
+
 	using policy_type = strip_queue_t<ExecutionPolicy>;
 	using namespace cl::sycl::access;
 
@@ -67,6 +77,10 @@ template <typename FirstInputAccessorType, typename SecondInputAccessorType, typ
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 3, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
+	assert(beg.get_buffer().get_id() == end.get_buffer().get_id());
+	assert(beg.get_buffer().get_id() != beg2.get_buffer().get_id());
+	assert(beg.get_buffer().get_id() != out.get_buffer().get_id());
+
 	using policy_type = strip_queue_t<ExecutionPolicy>;
 	using namespace cl::sycl::access;
 
@@ -82,6 +96,8 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 template <typename ExecutionPolicy, typename F, typename T, int Rank>
 auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
+	assert(beg.get_buffer().get_id() == end.get_buffer().get_id());
+
 	using policy_type = strip_queue_t<ExecutionPolicy>;
 	using namespace cl::sycl::access;
 
@@ -102,6 +118,8 @@ auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T
 template <typename ExecutionPolicy, typename T, int Rank>
 auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
 {
+	assert(beg.get_buffer().get_id() == end.get_buffer().get_id());
+
 	using policy_type = strip_queue_t<ExecutionPolicy>;
 	using namespace cl::sycl::access;
 
