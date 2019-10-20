@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 
 		transform(algorithm::distr<class compute_b>(queue), begin(buf_a), end(buf_a), begin(buf_b), [](float x) { return 2.f * x; });
 
-#define COMPUTE_C_ON_MASTER 1
+#define COMPUTE_C_ON_MASTER 0
 #if COMPUTE_C_ON_MASTER
 		/*
 		queue.with_master_access([=](celerity::handler& cgh) {
@@ -94,26 +94,30 @@ int main(int argc, char *argv[])
 
 		transform(algorithm::distr<class compute_d>(queue), begin(buf_b), end(buf_b), begin(buf_c), begin(buf_d), std::plus<float>{});
 
-		/*
-
-		queue.with_master_access([=, &verification_passed](celerity::handler& cgh) {
+		algorithm::master_task(algorithm::master(queue), [=, &verification_passed](auto &cgh) {
 			auto r_d = buf_d.get_access<cl::sycl::access::mode::read>(cgh, cl::sycl::range<1>(DEMO_DATA_SIZE));
 
-			cgh.run([=, &verification_passed]() {
+			return [=, &verification_passed]() {
 				size_t sum = 0;
-				for(int i = 0; i < DEMO_DATA_SIZE; ++i) {
+				for (int i = 0; i < DEMO_DATA_SIZE; ++i)
+				{
 					sum += (size_t)r_d[i];
 				}
 
 				std::cout << "## RESULT: ";
-				if(sum == 3 * DEMO_DATA_SIZE) {
+				if (sum == 3 * DEMO_DATA_SIZE)
+				{
 					std::cout << "Success! Correct value was computed." << std::endl;
-				} else {
+				}
+				else
+				{
 					std::cout << "Fail! Value is " << sum << std::endl;
 					verification_passed = false;
 				}
-			}); 
-		});}*/
+			};
+		});
+
+		queue.slow_full_sync();
 
 		//const auto sum = accumulate(algorithm::master_blocking(queue), begin(buf_d), end(buf_d), 0.0f, [](float acc, float x) { return acc + x; });
 
