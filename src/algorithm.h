@@ -22,20 +22,13 @@ template <typename InputAccessorType, typename IteratorType, typename ExecutionP
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
 {
 	using policy_type = strip_queue_t<ExecutionPolicy>;
+	using namespace cl::sycl::access;
 
 	return [=](celerity::handler &cgh) {
-		auto in_acc = get_access<policy_type, cl::sycl::access::mode::read, InputAccessorType>(cgh, beg, end);
+		auto in_acc = get_access<policy_type, mode::read, InputAccessorType>(cgh, beg, end);
+		auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
 
-		if constexpr (is_celerity_iterator_v<IteratorType>)
-		{
-			auto out_acc = get_access<policy_type, cl::sycl::access::mode::write, one_to_one>(cgh, out, out);
-			return [=](auto item) { out_acc[item] = f(in_acc[item]); };
-		}
-		else
-		{
-			auto out_tmp = out;
-			return [=](auto item) { *out_tmp++ = f(in_acc[item]); };
-		}
+		return [=](auto item) { out_acc[item] = f(in_acc[item]); };
 	};
 }
 
@@ -44,20 +37,13 @@ template <typename InputAccessorType, typename IteratorType, typename ExecutionP
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
 {
 	using policy_type = strip_queue_t<ExecutionPolicy>;
+	using namespace cl::sycl::access;
 
 	return [=](celerity::handler &cgh) {
-		auto in_acc = get_access<policy_type, cl::sycl::access::mode::read, InputAccessorType>(cgh, beg, end);
+		auto in_acc = get_access<policy_type, mode::read, InputAccessorType>(cgh, beg, end);
+		auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
 
-		if constexpr (is_celerity_iterator_v<IteratorType>)
-		{
-			auto out_acc = get_access<policy_type, cl::sycl::access::mode::write, one_to_one>(cgh, out, out);
-			return [=](auto item) { out_acc[item] = f(item, in_acc[item]); };
-		}
-		else
-		{
-			auto out_tmp = out;
-			return [=](auto item) { *out_tmp++ = f(item, in_acc[item]); };
-		}
+		return [=](auto item) { out_acc[item] = f(item, in_acc[item]); };
 	};
 }
 
@@ -66,26 +52,14 @@ template <typename FirstInputAccessorType, typename SecondInputAccessorType, typ
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
 	using policy_type = strip_queue_t<ExecutionPolicy>;
+	using namespace cl::sycl::access;
 
 	return [=](celerity::handler &cgh) {
-		/*if (beg.get_buffer().get_id() == out.get_buffer().get_id())
-		{
-			auto in_out_acc = get_access<policy_type, cl::sycl::access::mode::read_write, FirstInputAccessorType>(cgh, beg, end);
-			auto second_in_acc = get_access<policy_type, cl::sycl::access::mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
+		auto first_in_acc = get_access<policy_type, mode::read, FirstInputAccessorType>(cgh, beg, end);
+		auto second_in_acc = get_access<policy_type, mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
+		auto out_acc = get_access<policy_type, mode::write, OutputAccessorType>(cgh, out, out);
 
-			dispatch(p, cgh, beg, end, [&](auto item) {
-				in_out_acc[item] = f(in_out_acc[item], second_in_acc[item]);
-			});
-		}
-		else*/
-		{
-			auto first_in_acc = get_access<policy_type, cl::sycl::access::mode::read, FirstInputAccessorType>(cgh, beg, end);
-			auto second_in_acc = get_access<policy_type, cl::sycl::access::mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
-
-			auto out_acc = get_access<policy_type, cl::sycl::access::mode::write, OutputAccessorType>(cgh, out, out);
-
-			return [=](auto item) { out_acc[item] = f(first_in_acc[item], second_in_acc[item]); };
-		}
+		return [=](auto item) { out_acc[item] = f(first_in_acc[item], second_in_acc[item]); };
 	};
 }
 
@@ -94,28 +68,14 @@ template <typename FirstInputAccessorType, typename SecondInputAccessorType, typ
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
 	using policy_type = strip_queue_t<ExecutionPolicy>;
+	using namespace cl::sycl::access;
 
 	return [=](celerity::handler &cgh) {
-		/*if (beg.get_buffer().get_id() == out.get_buffer().get_id())
-		{
-			auto in_out_acc = get_access<policy_type, cl::sycl::access::mode::read_write, FirstInputAccessorType>(cgh, beg, end);
-			auto second_in_acc = get_access<policy_type, cl::sycl::access::mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
+		auto first_in_acc = get_access<policy_type, mode::read, FirstInputAccessorType>(cgh, beg, end);
+		auto second_in_acc = get_access<policy_type, mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
+		auto out_acc = get_access<policy_type, mode::write, OutputAccessorType>(cgh, out, out);
 
-			dispatch<policy_type>(cgh, beg, end, [=](auto item) {
-				in_out_acc[item] = f(item, in_out_acc[item], second_in_acc[item]);
-			});
-		}
-		else*/
-		{
-			auto first_in_acc = get_access<policy_type, cl::sycl::access::mode::read, FirstInputAccessorType>(cgh, beg, end);
-			auto second_in_acc = get_access<policy_type, cl::sycl::access::mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
-
-			auto out_acc = get_access<policy_type, cl::sycl::access::mode::write, OutputAccessorType>(cgh, out, out);
-
-			return [=](auto item) {
-				out_acc[item] = f(item, first_in_acc[item], second_in_acc[item]);
-			};
-		}
+		return [=](auto item) { out_acc[item] = f(item, first_in_acc[item], second_in_acc[item]); };
 	};
 }
 
@@ -123,9 +83,10 @@ template <typename ExecutionPolicy, typename F, typename T, int Rank>
 auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
 	using policy_type = strip_queue_t<ExecutionPolicy>;
+	using namespace cl::sycl::access;
 
 	return [=](celerity::handler &cgh) {
-		auto out_acc = get_access<policy_type, cl::sycl::access::mode::write, one_to_one>(cgh, beg, end);
+		auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, beg, end);
 
 		if constexpr (algorithm::detail::get_accessor_type<F, 0>() == access_type::item)
 		{
@@ -142,9 +103,10 @@ template <typename ExecutionPolicy, typename T, int Rank>
 auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
 {
 	using policy_type = strip_queue_t<ExecutionPolicy>;
+	using namespace cl::sycl::access;
 
 	return [=](celerity::handler &cgh) {
-		auto out_acc = get_access<policy_type, cl::sycl::access::mode::write, one_to_one>(cgh, beg, end);
+		auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, beg, end);
 		return [=](auto item) { out_acc[item] = value; };
 	};
 }
