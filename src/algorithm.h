@@ -17,23 +17,6 @@ namespace actions
 {
 namespace detail
 {
-template <typename ExecutionPolicy, typename Iterator, typename F>
-void dispatch(celerity::handler &cgh, Iterator beg, Iterator end, const F f)
-{
-	using execution_policy_type = std::decay_t<ExecutionPolicy>;
-
-	const auto r = distance(beg, end);
-
-	if constexpr (policy_traits<execution_policy_type>::is_distributed)
-	{
-		cgh.template parallel_for<typename policy_traits<execution_policy_type>::kernel_name>(r, *beg, f);
-	}
-	else
-	{
-		cgh.run([&]() { for_each_index(beg, end, r, *beg, f); });
-	}
-}
-
 template <typename InputAccessorType, typename IteratorType, typename ExecutionPolicy, typename F, typename T, int Rank,
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, const F &f)
@@ -144,16 +127,14 @@ auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T
 	return [=](celerity::handler &cgh) {
 		auto out_acc = get_access<policy_type, cl::sycl::access::mode::write, one_to_one>(cgh, beg, end);
 
-		dispatch<policy_type>(cgh, beg, end, [=](auto item) {
-			if constexpr (algorithm::detail::get_accessor_type<F, 0>() == access_type::item)
-			{
-				out_acc[item] = f(item);
-			}
-			else
-			{
-				out_acc[item] = f();
-			}
-		});
+		if constexpr (algorithm::detail::get_accessor_type<F, 0>() == access_type::item)
+		{
+			return [=](auto item) { out_acc[item] = f(item); };
+		}
+		else
+		{
+			return [=](auto item) { out_acc[item] = f(); };
+		}
 	};
 }
 
@@ -171,7 +152,7 @@ auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank, typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<BinaryOp, 1>() == access_type::one_to_one>>
 auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
 {
-	using policy_type = strip_queue_t<ExecutionPolicy>;
+	/*using policy_type = strip_queue_t<ExecutionPolicy>;
 
 	static_assert(!policy_traits<ExecutionPolicy>::is_distributed, "can not be distributed");
 	static_assert(Rank == 1, "Only 1-dimenionsal buffers for now");
@@ -186,14 +167,14 @@ auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator
 		});
 
 		return sum;
-	};
+	};*/
 }
 
 template <typename InputAccessorType, typename ExecutionPolicy, typename F, typename T, int Rank,
 		  typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::item>>
 auto for_each(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
-	using policy_type = strip_queue_t<ExecutionPolicy>;
+	/*using policy_type = strip_queue_t<ExecutionPolicy>;
 
 	return [=](celerity::handler &cgh) {
 		auto in_acc = get_access<policy_type, cl::sycl::access::mode::read, InputAccessorType>(cgh, beg, end);
@@ -201,13 +182,13 @@ auto for_each(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T
 		dispatch<policy_type>(cgh, beg, end, [=](auto item) {
 			f(item, in_acc[item]);
 		});
-	};
+	};*/
 }
 
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
 auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
 {
-	using policy_type = strip_queue_t<ExecutionPolicy>;
+	/*using policy_type = strip_queue_t<ExecutionPolicy>;
 
 	static_assert(!policy_traits<std::decay_t<ExecutionPolicy>>::is_distributed);
 	static_assert(!is_celerity_iterator_v<IteratorType>);
@@ -218,16 +199,14 @@ auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 		if constexpr (algorithm::is_contiguous_iterator<IteratorType>() &&
 					  std::is_same_v<T, typename std::iterator_traits<IteratorType>::value_type>)
 		{
-			memcpy(out, in_acc.get_accessor().get_pointer(), distance(beg, end).size() * sizeof(T));
+			return [=]() { memcpy(out, in_acc.get_accessor().get_pointer(), distance(beg, end).size() * sizeof(T)); };
 		}
 		else
 		{
 			auto out_copy = out;
-			dispatch<policy_type>(cgh, beg, end, [&](auto item) {
-				*out_copy++ = in_acc[item];
-			});
+			return [=](auto item) { *out_copy++ = in_acc[item]; };
 		}
-	};
+	};*/
 }
 
 } // namespace detail
