@@ -45,7 +45,7 @@ public:
 		const auto d = distance(beg, end);
 
 		q.submit([seq = sequence_, d, beg](handler &cgh) {
-			auto r = std::invoke(seq, cgh);
+			const auto r = std::invoke(seq, cgh);
 			cgh.template parallel_for<KernelName>(d, *beg, to_kernel(r));
 		});
 	}
@@ -60,65 +60,15 @@ class task_t<non_blocking_master_execution_policy, F>
 public:
 	explicit task_t(F f) : sequence_(std::move(f)) {}
 
-	decltype(auto) operator()(distr_queue &q) const
+	template <int Rank>
+	void operator()(distr_queue &q, iterator<Rank> beg, iterator<Rank> end) const
 	{
-		using ret_type = std::invoke_result_t<decltype(sequence_), handler &>;
+		const auto d = distance(beg, end);
 
-		if constexpr (std::is_void_v<ret_type>)
-		{
-			q.with_master_access([seq = sequence_](handler &cgh) {
-				std::invoke(seq, cgh);
-			});
-		}
-		if constexpr (is_kernel_v<ret_type>)
-		{
-			using kernel_ret_type = std::invoke_result_t<ret_type, handler &>;
-
-			if constexpr (std::is_void_v<ret_type>)
-			{
-				q.with_master_access([seq = sequence_](handler &cgh) {
-					auto kernel = std::invoke(seq, cgh);
-					std::invoke(kernel, cgh);
-				});
-			}
-			else
-			{
-				static_assert(std::is_void_v<kernel_ret_type>, "tasks may not return values  due to constness restrictions on master task");
-			}
-		}
-		else if constexpr (contains_kernel_sequence_v<ret_type>)
-		{
-			using kernel_ret_type = std::invoke_result_t<ret_type, handler &>;
-
-			if constexpr (std::is_void_v<ret_type>)
-			{
-				q.with_master_access([seq = sequence_](handler &cgh) {
-					auto kernels = std::invoke(seq, cgh);
-					auto kernel_seq = kernel_sequence(sequence(kernels));
-
-					std::invoke(kernel_seq, cgh);
-				});
-			}
-			else
-			{
-				static_assert(std::is_void_v<kernel_ret_type>, "tasks may not return values  due to constness restrictions on master task");
-			}
-		}
-		else
-		{
-			static_assert(std::is_void_v<ret_type>, "tasks may not return values  due to constness restrictions on master task");
-
-			/*
-			std::promise<ret_type> ret_value{};
-			auto future = ret_value.get_future();
-
-			q.with_master_access([&, promise = std::move(ret_value)](auto cgh) mutable {
-				promise.set_value(std::invoke(sequence_, cgh));
-			});
-
-			return future;
-			*/
-		}
+		q.submit([seq = sequence_, d, beg, end](handler &cgh) {
+			const auto r = std::invoke(seq, cgh);
+			cgh.run([&]() { for_each_index(beg, end, d, *beg, to_kernel(r)); });
+		});
 	}
 
 private:
