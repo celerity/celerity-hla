@@ -6,6 +6,7 @@
 
 namespace celerity::algorithm
 {
+/*
 template <typename... Actions>
 struct kernel_sequence
 {
@@ -36,6 +37,8 @@ struct sequence_traits<algorithm::kernel_sequence<Actions...>>
 {
 	using is_sequence_type = std::integral_constant<bool, true>;
 };
+
+*/
 } // namespace celerity::algorithm
 
 #endif
