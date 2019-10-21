@@ -2,7 +2,7 @@
 #define TASK_H
 
 #include "celerity_helper.h"
-#include "kernel_sequence.h"
+#include "sequence.h"
 #include "policy.h"
 #include "kernel_traits.h"
 #include "iterator.h"
@@ -33,7 +33,7 @@ class task_t<named_distributed_execution_policy<KernelName>, Actions...>
 public:
 	static_assert(((detail::_is_compute_task_v<Actions>)&&...), "task can only contain compute task functors");
 
-	explicit task_t(kernel_sequence<Actions...> &&s)
+	explicit task_t(algorithm::sequence<Actions...> &&s)
 		: sequence_(std::move(s)) {}
 
 	template <typename F, std::enable_if_t<sizeof...(Actions) == 1, int> = 0>
@@ -51,7 +51,7 @@ public:
 	}
 
 private:
-	kernel_sequence<Actions...> sequence_;
+	algorithm::sequence<Actions...> sequence_;
 };
 
 template <typename F>
@@ -81,106 +81,14 @@ public:
 	}
 
 private:
-	kernel_sequence<F> sequence_;
+	algorithm::sequence<F> sequence_;
 };
 
-template <typename F>
-class task_t<blocking_master_execution_policy, F>
-{
-public:
-	explicit task_t(F f) : sequence_(std::move(f)) {}
-
-	decltype(auto) operator()(distr_queue &q) const
-	{
-		using ret_type = std::invoke_result_t<decltype(sequence_), handler &>;
-
-		if constexpr (std::is_void_v<ret_type>)
-		{
-			q.with_master_access([&](auto &cgh) {
-				std::invoke(sequence_, cgh);
-			});
-
-			q.slow_full_sync();
-		}
-		else if constexpr (is_kernel_v<ret_type>)
-		{
-			using kernel_ret_type = std::invoke_result_t<ret_type, handler &>;
-
-			if constexpr (std::is_void_v<ret_type>)
-			{
-				q.with_master_access([seq = sequence_](handler &cgh) {
-					auto kernel = std::invoke(seq, cgh);
-					std::invoke(kernel, cgh);
-				});
-
-				q.slow_full_sync();
-			}
-			else
-			{
-				kernel_ret_type ret_value{};
-
-				q.with_master_access([&ret_value, seq = sequence_](handler &cgh) {
-					auto kernel = std::invoke(seq, cgh);
-					ret_value = std::invoke(kernel, cgh);
-				});
-
-				q.slow_full_sync();
-
-				return ret_value;
-			}
-		}
-		else if constexpr (contains_kernel_sequence_v<ret_type>)
-		{
-			using kernel_ret_type = std::invoke_result_t<ret_type, handler &>;
-
-			if constexpr (std::is_void_v<ret_type>)
-			{
-				q.with_master_access([seq = sequence_](handler &cgh) {
-					auto kernels = std::invoke(seq, cgh);
-					auto kernel_seq = kernel_sequence(sequence(kernels));
-					std::invoke(kernel_seq, cgh);
-				});
-
-				q.slow_full_sync();
-			}
-			else
-			{
-				kernel_ret_type ret_value{};
-
-				q.with_master_access([&ret_value, seq = sequence_](handler &cgh) {
-					auto kernels = std::invoke(seq, cgh);
-					auto kernel_seq = kernel_sequence(sequence(kernels));
-					ret_value = std::invoke(kernel_seq, cgh);
-				});
-
-				q.slow_full_sync();
-
-				return ret_value;
-			}
-		}
-		else
-		{
-			ret_type ret_value{};
-
-			q.with_master_access([&](auto &cgh) {
-				ret_value = std::invoke(sequence_, cgh);
-			});
-
-			q.slow_full_sync();
-
-			return ret_value;
-		}
-	}
-
-private:
-	kernel_sequence<F> sequence_;
-};
-
-template <typename... Actions>
+/*template <typename... Actions>
 auto fuse(kernel_sequence<Actions...> &&seq)
 {
 	return task_t<distributed_execution_policy, Actions...>{std::move(seq)};
-}
+}*/
 
 template <typename T, typename = std::enable_if_t<is_kernel_v<T>>>
 auto task(const T &invocable)
