@@ -54,8 +54,10 @@ public:
 			invoke(std::get<0>(actions_), std::forward<Args>(args)...);
 			return;
 		}
-
-		return dispatch(std::make_index_sequence<num_actions>{}, std::forward<Args>(args)...);
+		else
+		{
+			return dispatch(std::make_index_sequence<num_actions>{}, std::forward<Args>(args)...);
+		}
 	}
 
 	constexpr actions_t &actions() { return actions_; }
@@ -67,6 +69,27 @@ private:
 	sequence(sequence<SequenceActions...> &&sequence, Action action, std::index_sequence<Ids...>)
 		: actions_(std::move(std::get<Ids>(sequence.actions()))..., action)
 	{
+	}
+
+	template <typename... Args, size_t... Is>
+	auto dispatch(std::index_sequence<Is...> idx, Args &&... args) const
+	{
+		std::tuple result_tuple = {invoke(std::get<Is>(actions_), std::forward<Args>(args)...)...};
+
+		using tuple_t = decltype(result_tuple);
+
+		if constexpr (is_empty_result_v<tuple_t, Is...>)
+		{
+			return;
+		}
+		else if constexpr (num_actions == 1)
+		{
+			return std::get<0>(result_tuple);
+		}
+		else
+		{
+			return result_tuple;
+		}
 	}
 
 	template <typename Invocable, typename... Args>
@@ -98,28 +121,7 @@ private:
 		}
 		else
 		{
-			assert((std::is_invocable_v<Invocable> || std::is_invocable_v<Invocable, Args...>)&&"invalid arguments");
-		}
-	}
-
-	template <typename... Args, size_t... Is>
-	auto dispatch(std::index_sequence<Is...> idx, Args &&... args) const
-	{
-		auto result_tuple = std::make_tuple(((invoke(std::get<Is>(actions_), std::forward<Args>(args)...)), ...));
-
-		using tuple_t = decltype(result_tuple);
-
-		if constexpr (is_empty_result_v<tuple_t, Is...>)
-		{
-			return;
-		}
-		else if constexpr (num_actions == 1)
-		{
-			return std::get<0>(result_tuple);
-		}
-		else
-		{
-			return result_tuple;
+			static_assert(std::is_void_v<Invocable>, "invalid arguments");
 		}
 	}
 };
