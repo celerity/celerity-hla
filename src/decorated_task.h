@@ -35,10 +35,12 @@ public:
         assert(in_beg_.get_buffer().get_id() != out_beg_.get_buffer().get_id());
     }
 
-    void operator()(celerity::distr_queue &queue)
+    void operator()(celerity::distr_queue &queue) const
     {
         std::invoke(task_, queue, in_beg_, in_end_);
     }
+
+    task_type get_task() const { return task_; }
 
 private:
     task_type task_;
@@ -72,10 +74,13 @@ public:
         assert(out_beg_.get_buffer().get_id() == out_end_.get_buffer().get_id());
     }
 
-    void operator()(celerity::distr_queue &queue)
+    void operator()(celerity::distr_queue &queue) const
     {
         std::invoke(task_, queue, out_beg_, out_end_);
     }
+
+    output_iterator_type get_out_iterator() const { return out_beg_; }
+    task_type get_task() const { return task_; }
 
 private:
     task_type task_;
@@ -118,10 +123,12 @@ public:
         assert(second_in_beg_.get_buffer().get_id() != out_beg_.get_buffer().get_id());
     }
 
-    void operator()(celerity::distr_queue &queue)
+    void operator()(celerity::distr_queue &queue) const
     {
         std::invoke(task_, queue, in_beg_, in_end_);
     }
+
+    task_type get_task() const { return task_; }
 
 private:
     task_type task_;
@@ -141,6 +148,22 @@ auto decorate_zip(TaskType task,
     return zip_task_decorator<TaskType, FirstInputValueType, SecondInputValueType, OutputValueType, Rank, FirstInputAccessType, SecondInputAccessType>(
         task, in_beg, in_end, second_in_beg, out_beg);
 }
+
+template <typename T, typename U, std::enable_if_t<T::computation_type == computation_type::generate && std::is_invocable_v<U, typename T::output_iterator_type, typename T::output_iterator_type>, int> = 0>
+auto operator|(T lhs, U rhs)
+{
+    const auto output_it = lhs.get_out_iterator();
+    const auto task = rhs(begin(output_it.get_buffer()), end(output_it.get_buffer()));
+    return sequence(lhs, task);
+}
+
+/*template<typename T, typename U, std::enable_if_t<
+    T::computation_type == computation_type::generate && 
+    T::computation_type == computation_type::transform, int> = 0>
+auto operator|(T lhs, U rhs)
+{
+    return decorate_transform(lhs.get_task() | rhs.get_task(), ;
+}*/
 
 } // namespace celerity::algorithm
 
