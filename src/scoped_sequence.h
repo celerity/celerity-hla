@@ -1,6 +1,8 @@
 #ifndef SCOPED_SEQUENCE_H
 #define SCOPED_SEQUENCE_H
 
+#include "sequence.h"
+
 template <typename Sequence, typename Invoker>
 class scoped_sequence
 {
@@ -24,16 +26,16 @@ public:
         sequence_ | invoker_;
     }
 
-    auto get_invoker() { return invoker_; }
-    auto get_sequence() { return sequence_; }
+    auto get_invoker() const { return invoker_; }
+    auto get_sequence() const { return sequence_; }
 
-    using invoke_result = decltype(std::declval<Sequence>() | std::declval<Invoker>());
+    //using invoke_result = decltype(std::declval<Sequence>() | std::declval<Invoker>());
 
-    operator invoke_result()
+    /*operator invoke_result()
     {
         disable();
         return sequence_ | invoker_;
-    }
+    }*/
 
 private:
     Sequence sequence_;
@@ -79,6 +81,20 @@ auto operator|(scoped_sequence<LhsSequence, LhsInvoker> &lhs, scoped_sequence<Rh
     lhs.disable();
     rhs.disable();
     return scoped_sequence{lhs.get_sequence() | rhs.get_sequence(), lhs.get_invoker() | rhs.get_invoker()};
+}
+
+template <typename LhsSequence, typename LhsInvoker, typename U>
+auto operator|(scoped_sequence<LhsSequence, LhsInvoker> &&lhs, U &&rhs)
+{
+    lhs.disable();
+    return scoped_sequence{lhs.get_sequence() | rhs, lhs.get_invoker()};
+}
+
+template <typename LhsSequence, typename LhsInvoker, typename U>
+auto operator|(scoped_sequence<LhsSequence, LhsInvoker> &lhs, U &rhs)
+{
+    lhs.disable();
+    return scoped_sequence{lhs.get_sequence() | rhs`, lhs.get_invoker()};
 }
 
 #endif // SCOPED_SEQUENCE_H

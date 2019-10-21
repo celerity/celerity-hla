@@ -13,6 +13,13 @@
 
 namespace celerity::algorithm
 {
+struct buffer_iterator_placeholder
+{
+};
+struct buffer_placeholder
+{
+};
+
 namespace actions
 {
 namespace detail
@@ -194,6 +201,17 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 		beg, end, out);
 }
 
+template <typename ExecutionPolicy, typename U, int Rank, typename F,
+		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1 && algorithm::detail::get_accessor_type<F, 0>() != access_type::item, int> = 0>
+auto transform(ExecutionPolicy p, buffer_iterator_placeholder, buffer_iterator_placeholder, buffer_iterator<U, Rank> out, const F &f)
+{
+	return [=](auto beg, auto end) {
+		return decorate_transform<algorithm::detail::get_accessor_type<F, 0>()>(
+			task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, typename decltype(beg)::value_type>>(p, beg, end, out, f)),
+			beg, end, out);
+	};
+}
+
 template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
 		  ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
@@ -268,6 +286,13 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 	return scoped_sequence{actions::transform(p, beg, end, out, f), submit_to(p.q)};
 }
 
+template <typename ExecutionPolicy, typename U, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
+auto transform(ExecutionPolicy p, buffer_iterator_placeholder, buffer_iterator_placeholder, buffer_iterator<U, Rank> out, const F &f)
+{
+	return actions::transform(p, {}, {}, out, f);
+}
+
 template <typename KernelName, typename T, typename U, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
 auto transform(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
@@ -282,11 +307,25 @@ auto transform(ExecutionPolicy p, buffer<T, Rank> in, buffer_iterator<U, Rank> o
 	return transform(p, begin(in), end(in), out, f);
 }
 
+template <typename ExecutionPolicy, typename U, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
+auto transform(ExecutionPolicy p, buffer_placeholder in, buffer_iterator<U, Rank> out, const F &f)
+{
+	return transform(p, {}, {}, out, f);
+}
+
 template <typename KernelName, typename T, typename U, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
 auto transform(celerity::distr_queue q, buffer<T, Rank> in, buffer_iterator<U, Rank> out, const F &f)
 {
 	return transform(distr<KernelName>(q), begin(in), end(in), out, f);
+}
+
+template <typename KernelName, typename U, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
+auto transform(celerity::distr_queue q, buffer_placeholder in, buffer_iterator<U, Rank> out, const F &f)
+{
+	return transform(distr<KernelName>(q), {}, {}, out, f);
 }
 
 template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
@@ -296,11 +335,25 @@ auto transform(ExecutionPolicy p, buffer<T, Rank> in, buffer<U, Rank> out, const
 	return transform(p, begin(in), end(in), begin(out), f);
 }
 
+template <typename ExecutionPolicy, typename U, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
+auto transform(ExecutionPolicy p, buffer_placeholder, buffer<U, Rank> out, const F &f)
+{
+	return transform(p, {}, begin(out), f);
+}
+
 template <typename KernelName, typename T, typename U, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
 auto transform(celerity::distr_queue q, buffer<T, Rank> in, buffer<U, Rank> out, const F &f)
 {
 	return transform(distr<KernelName>(q), begin(in), end(in), begin(out), f);
+}
+
+template <typename KernelName, typename U, int Rank, typename F,
+		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
+auto transform(celerity::distr_queue q, buffer_placeholder, buffer<U, Rank> out, const F &f)
+{
+	return transform(distr<KernelName>(q), {}, begin(out), f);
 }
 
 template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, typename F,
