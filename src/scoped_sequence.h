@@ -94,7 +94,7 @@ template <typename LhsSequence, typename LhsInvoker, typename U>
 auto operator|(scoped_sequence<LhsSequence, LhsInvoker> &lhs, U &rhs)
 {
     lhs.disable();
-    return scoped_sequence{lhs.get_sequence() | rhs`, lhs.get_invoker()};
+    return scoped_sequence{lhs.get_sequence() | rhs , lhs.get_invoker()};
 }
 
 #endif // SCOPED_SEQUENCE_H

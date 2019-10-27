@@ -4,6 +4,7 @@
 #include <type_traits>
 
 #include "accessor_proxy.h"
+#include "sequence_traits.h"
 
 namespace celerity::algorithm
 {
@@ -73,10 +74,39 @@ template <typename F>
 constexpr inline bool _is_master_task_v = _is_master_task<F>::value;
 
 template <typename T>
-struct _is_task_decorator : std::bool_constant<std::is_invocable_v<T, celerity::distr_queue&>> {};
+struct _is_task_decorator : std::bool_constant<!is_sequence_v<T> && std::is_invocable_v<T, celerity::distr_queue&>> {};
 
 template <typename F>
 constexpr inline bool _is_task_decorator_v = _is_task_decorator<F>::value;
+
+template <typename F, typename IteratorType>
+struct _is_placeholder_task_impl : std::bool_constant<std::is_invocable_v<F, IteratorType, IteratorType>> {};
+
+template <typename F, typename IteratorType>
+struct _is_placeholder_task : std::conditional_t<is_sequence_v<F>, 
+	std::false_type,  
+	_is_placeholder_task_impl<F, IteratorType>> {};
+
+template <typename F, typename IteratorType>
+constexpr inline bool _is_placeholder_task_v = _is_placeholder_task<F, IteratorType>::value;
+
+template <typename T, size_t...Is>
+constexpr bool is_task_decorator_sequence_dispatch(std::index_sequence<Is...>)
+{
+	return ((_is_task_decorator_v<std::tuple_element_t<Is, typename T::actions_t>>) && ...);
+}
+
+template <typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
+constexpr bool is_task_decorator_sequence()
+{
+	return is_task_decorator_sequence_dispatch<T>(std::make_index_sequence<T::num_actions>{});
+}
+
+template <typename T, std::enable_if_t<!is_sequence_v<T>, int> = 0>
+constexpr bool is_task_decorator_sequence()
+{
+	return false;
+}
 
 } // namespace detail
 

@@ -12,8 +12,31 @@ enum class computation_type
     generate,
     transform,
     reduce,
-    zip
+    zip,
+    none
 };
+
+namespace detail
+{
+template <typename T, std::enable_if_t<detail::_is_task_decorator_v<T>, int> = 0>
+constexpr computation_type get_computation_type()
+{
+    return T::computation_type;
+}
+
+template <typename T, std::enable_if_t<!detail::_is_task_decorator_v<T>, int> = 0>
+constexpr computation_type get_computation_type()
+{
+    return computation_type::none;
+}
+
+template <typename T, computation_type Type>
+struct is_computation_type : std::bool_constant<detail::_is_task_decorator_v<T> && get_computation_type<T>() == Type> {};
+
+template <typename T, computation_type Type>
+constexpr inline bool is_computation_type_v = is_computation_type<T, Type>::value;
+}
+
 
 template <typename TaskType, typename InputValueType, typename OutputValueType, int Rank, access_type InputAccessType>
 class transform_task_decorator
@@ -149,21 +172,46 @@ auto decorate_zip(TaskType task,
         task, in_beg, in_end, second_in_beg, out_beg);
 }
 
-template <typename T, typename U, std::enable_if_t<T::computation_type == computation_type::generate && std::is_invocable_v<U, typename T::output_iterator_type, typename T::output_iterator_type>, int> = 0>
+template <typename T, typename U, std::enable_if_t<
+    detail::_is_task_decorator_v<T> &&
+    detail::_is_placeholder_task_v<U, typename T::output_iterator_type>, int> = 0>
 auto operator|(T lhs, U rhs)
 {
     const auto output_it = lhs.get_out_iterator();
-    const auto task = rhs(begin(output_it.get_buffer()), end(output_it.get_buffer()));
-    return sequence(lhs, task);
+    const auto r = rhs(begin(output_it.get_buffer()), end(output_it.get_buffer()));
+    return sequence(lhs, r);
 }
 
-/*template<typename T, typename U, std::enable_if_t<
-    T::computation_type == computation_type::generate && 
-    T::computation_type == computation_type::transform, int> = 0>
+template <typename T, typename U, std::enable_if_t<
+    detail::_is_task_decorator_v<T> &&
+    detail::_is_task_decorator_v<U> && 
+    !detail::is_computation_type_v<U, computation_type::generate>, int> = 0>
 auto operator|(T lhs, U rhs)
 {
-    return decorate_transform(lhs.get_task() | rhs.get_task(), ;
-}*/
+    return sequence(lhs, rhs);
+}
+
+template <typename T, typename U, std::enable_if_t<
+    detail::is_task_decorator_sequence<T>() && 
+    detail::_is_task_decorator_v<U> && 
+    !detail::is_computation_type_v<U, computation_type::generate>, int> = 0>
+auto operator|(T lhs, U rhs)
+{
+    return lhs | sequence(rhs);
+}
+
+template <typename T, typename U, std::enable_if_t<
+    detail::is_task_decorator_sequence<T>() && 
+    detail::_is_placeholder_task_v<U, last_element_t<T>>, int> = 0>
+auto operator|(T lhs, U rhs)
+{
+    auto last = get_last_element(lhs);
+
+    const auto output_it = last.get_out_iterator();
+    const auto r = rhs(begin(output_it.get_buffer()), end(output_it.get_buffer()));
+
+    return lhs | r;
+}
 
 } // namespace celerity::algorithm
 

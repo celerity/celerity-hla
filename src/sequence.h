@@ -46,9 +46,17 @@ public:
 	{
 	}
 
+	template<typename...Args, size_t...Is>
+	static constexpr bool is_invocable_dispatch(std::index_sequence<Is...>)
+	{
+		return ((std::is_invocable_v<std::tuple_element_t<Is, actions_t>, Args...>) && ...);
+	}
+
 	template <typename... Args>
 	decltype(auto) operator()(Args &&... args) const
 	{
+		static_assert(is_invocable_dispatch<Args...>(std::make_index_sequence<num_actions>{}));
+
 		if constexpr (num_actions == 1 && std::is_void_v<std::invoke_result_t<std::tuple_element_t<0, actions_t>, Args...>>)
 		{
 			invoke(std::get<0>(actions_), std::forward<Args>(args)...);
@@ -135,13 +143,25 @@ struct sequence_traits<algorithm::sequence<Actions...>>
 	using is_sequence_type = std::integral_constant<bool, true>;
 };
 
-template <template <typename...> typename T, template <typename...> typename U,
+template <typename...Ts>
+struct last_element<algorithm::sequence<Ts...>> 
+	: std::tuple_element<algorithm::sequence<Ts...>::num_actions - 1, 
+		typename algorithm::sequence<Ts...>::actions_t> {};
+
+/*template <template <typename...> typename T, template <typename...> typename U,
 		  typename... Ts, typename... Us,
 		  typename = std::enable_if_t<is_sequence_v<T<Ts...>> && is_sequence_v<U<Us...>>>>
-auto operator|(T<Ts...> &&lhs, T<Us...> &&rhs)
+auto operator|(T<Ts...> &&lhs, U<Us...> &&rhs)
 {
 	return sequence<Ts..., Us...>{lhs, rhs};
+}*/
+
+template <typename... Ts, typename... Us>
+auto operator|(sequence<Ts...> lhs, sequence<Us...> rhs)
+{
+	return sequence<Ts..., Us...>{ std::tuple_cat(lhs.actions(), rhs.actions()) };
 }
+
 } // namespace celerity::algorithm
 
 #endif
