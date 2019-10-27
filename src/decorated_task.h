@@ -64,6 +64,7 @@ public:
     }
 
     task_type get_task() const { return task_; }
+    output_iterator_type get_out_iterator() const { return out_beg_; }
 
 private:
     task_type task_;
@@ -214,5 +215,22 @@ auto operator|(T lhs, U rhs)
 }
 
 } // namespace celerity::algorithm
+
+namespace celerity
+{
+    template <typename T, int Rank, typename U, std::enable_if_t<
+        algorithm::detail::_is_placeholder_task_v<U, algorithm::buffer_iterator<T, Rank>>, int> = 0>
+    auto operator|(celerity::buffer<T, Rank>& lhs, U rhs)
+    {
+        return rhs(begin(lhs), end(lhs));
+    }
+
+    template <typename T, int Rank, typename U, std::enable_if_t<
+        algorithm::detail::_is_placeholder_task_v<U, algorithm::buffer_iterator<T, Rank>>, int> = 0>
+    auto operator<<(U lhs, celerity::buffer<T, Rank>& rhs)
+    {
+        return lhs(begin(rhs), end(rhs));
+    }
+}
 
 #endif // DECORATED_TASK_H
