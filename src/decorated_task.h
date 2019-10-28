@@ -180,7 +180,7 @@ auto operator|(T lhs, U rhs)
 {
     const auto output_it = lhs.get_out_iterator();
     const auto r = rhs(begin(output_it.get_buffer()), end(output_it.get_buffer()));
-    return sequence(lhs, r);
+    return lhs | r;
 }
 
 template <typename T, typename U, std::enable_if_t<
@@ -203,7 +203,7 @@ auto operator|(T lhs, U rhs)
 
 template <typename T, typename U, std::enable_if_t<
     detail::is_task_decorator_sequence<T>() && 
-    detail::_is_placeholder_task_v<U, last_element_t<T>>, int> = 0>
+    detail::_is_placeholder_task_v<U, typename last_element_t<T>::output_iterator_type>, int> = 0>
 auto operator|(T lhs, U rhs)
 {
     auto last = get_last_element(lhs);
