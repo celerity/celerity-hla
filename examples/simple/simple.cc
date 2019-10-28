@@ -36,11 +36,12 @@ int main(int argc, char *argv[])
 
 		//algorithm::fill<class produce_a_1>(queue, buf_a, 1.f) |
 		//	algorithm::transform<class compute_b_1>(queue, {}, buf_b, [](float x) { return 2.f * x; });
-
-		algorithm::fill<class produce_a>(queue, buf_a, 1.f) |
-		algorithm::transform<class compute_b>(queue, {}, buf_b, [](float x) { return 2.f * x; }) |
-		algorithm::transform<class compute_c>(queue, buf_a, buf_c, [](float x) { return 2.f - x; }) |
-		algorithm::transform<class compute_d>(queue, buf_b, buf_c, buf_d, std::plus<float>{});
+ 
+		buf_a | 
+		algorithm::fill<class produce_a>(queue, {}, 1.f) |
+		algorithm::transform<class compute_c>(queue, {}, buf_c, [](float x) { return 2.f - x; }) | 
+		algorithm::transform<class compute_b>(queue, buf_a, buf_b, [](float x) { return 2.f * x; }) |
+		algorithm::transform<class compute_d>(queue, {}, {}, buf_d, std::plus<float>{}) << buf_c;
 
 			
 	/*queue.submit([=](celerity::handler& cgh) {
