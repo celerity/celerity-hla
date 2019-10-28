@@ -2,6 +2,10 @@
 #define SCOPED_SEQUENCE_H
 
 #include "sequence.h"
+#include "kernel_traits.h"
+
+namespace celerity::algorithm
+{
 
 template <typename Sequence, typename Invoker>
 class scoped_sequence
@@ -95,6 +99,40 @@ auto operator|(scoped_sequence<LhsSequence, LhsInvoker> &lhs, U &rhs)
 {
     lhs.disable();
     return scoped_sequence{lhs.get_sequence() | rhs , lhs.get_invoker()};
+}
+
+template <typename LhsSequence, typename LhsInvoker, typename U,
+    std::enable_if_t<detail::is_task_decorator_sequence<U>(), int> = 0>
+auto operator|(U &lhs, scoped_sequence<LhsSequence, LhsInvoker> &rhs)
+{
+    rhs.disable();
+    return scoped_sequence{lhs | rhs.get_sequence() , rhs.get_invoker()};
+}
+
+template <typename LhsSequence, typename LhsInvoker, typename U,
+    std::enable_if_t<detail::is_task_decorator_sequence<U>(), int> = 0>
+auto operator|(U &&lhs, scoped_sequence<LhsSequence, LhsInvoker> &rhs)
+{
+    rhs.disable();
+    return scoped_sequence{lhs | rhs.get_sequence() , rhs.get_invoker()};
+}
+
+template <typename LhsSequence, typename LhsInvoker, typename U,
+    std::enable_if_t<detail::_is_task_decorator_v<U> || detail::is_task_decorator_sequence<U>(), int> = 0>
+auto operator|(U &lhs, scoped_sequence<LhsSequence, LhsInvoker> &&rhs)
+{
+    rhs.disable();
+    return scoped_sequence{lhs | rhs.get_sequence() , rhs.get_invoker()};
+}
+
+template <typename LhsSequence, typename LhsInvoker, typename U,
+    std::enable_if_t<detail::_is_task_decorator_v<U> || detail::is_task_decorator_sequence<U>(), int> = 0>
+auto operator|(U &&lhs, scoped_sequence<LhsSequence, LhsInvoker> &&rhs)
+{
+    rhs.disable();
+    return scoped_sequence{lhs | rhs.get_sequence() , rhs.get_invoker()};
+}
+
 }
 
 #endif // SCOPED_SEQUENCE_H
