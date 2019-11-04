@@ -38,7 +38,7 @@ public:
             break;
         }
 
-        assert(false && "invalid rank");
+        //assert(false && "invalid rank");
     }
 
 private:

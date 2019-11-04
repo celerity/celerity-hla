@@ -47,7 +47,7 @@ public:
 
 	slice<T, Dim> &operator=(const T &)
 	{
-		assert(false && "cannot assign slice");
+		//assert(false && "cannot assign slice");
 		return *this;
 	}
 
@@ -89,7 +89,7 @@ public:
 
 	chunk<T, Extents...> &operator=(const T &)
 	{
-		assert(false && "cannot assign chunk");
+		//assert(false && "cannot assign chunk");
 		return *this;
 	}
 
@@ -129,7 +129,7 @@ public:
 
 	all<T, Rank> &operator=(const T &)
 	{
-		assert(false && "cannot assign all");
+		//assert(false && "cannot assign all");
 		return *this;
 	}
 

@@ -28,7 +28,7 @@ public:
     template <int Rank>
     T get(cl::sycl::id<Rank> id) const
     {
-        assert(Rank == rank_);
+        //assert(Rank == rank_);
         return get<Rank>(mode_, target_, id);
     }
 
@@ -65,8 +65,8 @@ private:
             return get<Rank, Mode, target::global_buffer>(id);
         case target::host_buffer:
             return get<Rank, Mode, target::host_buffer>(id);
-        default:
-            assert(false && "unsupported target");
+            //default:
+            //assert(false && "unsupported target");
         }
 
         return T{};
@@ -85,8 +85,8 @@ private:
             return get<Rank, mode::write>(target, id);
         case mode::read_write:
             return get<Rank, mode::read_write>(target, id);
-        default:
-            assert(false && "unsupported mode");
+            //default:
+            //assert(false && "unsupported mode");
         }
 
         return T{};
