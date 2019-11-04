@@ -3,7 +3,7 @@
 #include "../../src/actions.h"
 #include "../../src/buffer_traits.h"
 
-constexpr auto MAT_SIZE = 1024;
+constexpr auto MAT_SIZE = 128;
 
 using namespace celerity;
 using namespace algorithm;
@@ -58,10 +58,44 @@ int main(int argc, char *argv[])
 		MPI_Barrier(MPI_COMM_WORLD);
 		celerity::experimental::bench::begin("main program");
 
+		//auto f = algorithm::transform<class mul_ab>(queue, {}, {}, mat_c_buf, multiply) << mat_b_buf;
+		//f(begin(mat_a_buf), end(mat_a_buf));
+
+		//mat_a_buf |
+		//	algorithm::transform<class mul_ab>(queue, {}, {}, mat_c_buf, multiply) << mat_b_buf |
+		//	algorithm::transform<class mul_bc>(queue, {}, {}, mat_a_buf, multiply) << mat_b_buf;
+
 		transform(algorithm::distr<class mul_ab>(queue), mat_a_buf, mat_b_buf, mat_c_buf, multiply);
 		transform(algorithm::distr<class mul_bc>(queue), mat_b_buf, mat_c_buf, mat_a_buf, multiply);
 
-		for_each(algorithm::master_blocking(queue), mat_a_buf,
+		algorithm::master_task(algorithm::master(queue), [=, &verification_passed](auto &cgh) {
+			auto r_d = mat_a_buf.get_access<cl::sycl::access::mode::read>(cgh, mat_a_buf.get_range());
+
+			return [=, &verification_passed]() {
+				for (size_t i = 0; i < MAT_SIZE; ++i)
+				{
+					for (size_t j = 0; j < MAT_SIZE; ++j)
+					{
+						const float correct_value = i == j;
+
+						if (r_d[{i, j}] == correct_value)
+							continue;
+
+						fprintf(stderr, "VERIFICATION FAILED for element %llu,%llu: %f != %f\n", i, j, r_d[{i, j}], correct_value);
+						verification_passed = false;
+					}
+				}
+
+				if (verification_passed)
+				{
+					printf("VERIFICATION PASSED!\n");
+				}
+			};
+		});
+
+		queue.slow_full_sync();
+
+		/*for_each(algorithm::master_blocking(queue), mat_a_buf,
 				 [&verification_passed](t::item item, float x) {
 					 const float correct_value = item[0] == item[1];
 
@@ -77,7 +111,7 @@ int main(int argc, char *argv[])
 			{
 				printf("VERIFICATION PASSED!\n");
 			}
-		});
+		});*/
 	}
 	catch (std::exception &e)
 	{

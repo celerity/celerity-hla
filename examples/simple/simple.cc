@@ -37,12 +37,11 @@ int main(int argc, char *argv[])
 		//algorithm::fill<class produce_a_1>(queue, buf_a, 1.f) |
 		//	algorithm::transform<class compute_b_1>(queue, {}, buf_b, [](float x) { return 2.f * x; });
  
-		buf_a | 
-		algorithm::fill<class produce_a>(queue, {}, 1.f) |
-		algorithm::transform<class compute_c>(queue, {}, buf_c, [](float x) { return 2.f - x; }) | 
-		algorithm::transform<class compute_b>(queue, buf_a, buf_b, [](float x) { return 2.f * x; }) |
-		algorithm::transform<class compute_d>(queue, {}, {}, buf_d, std::plus<float>{}) << buf_c;
-
+		buf_a |  
+			algorithm::fill<class produce_a>(queue, {}, 1.f) |
+			algorithm::transform<class compute_c>(queue, {}, buf_c,  [](float x) { return 2.f - x; }) | 
+			algorithm::transform<class compute_b>(queue, buf_a, buf_b, [](float x) { return 2.f * x; }) | // parallel 
+			algorithm::transform<class compute_d>(queue, {}, {}, buf_d, std::plus<float>{}) << buf_c;
 			
 	/*queue.submit([=](celerity::handler& cgh) {
 			auto r_a = buf_a.get_access<cl::sycl::access::mode::read>(cgh, [](celerity::chunk<1> chnk) -> celerity::subrange<1> {
