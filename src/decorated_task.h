@@ -154,6 +154,7 @@ public:
     }
 
     task_type get_task() const { return task_; }
+    output_iterator_type get_out_iterator() const { return out_beg_; }
 
 private:
     task_type task_;
