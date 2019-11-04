@@ -35,7 +35,7 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 		auto in_acc = get_access<policy_type, mode::read, InputAccessorType>(cgh, beg, end);
 		auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
 
-		return [=](auto item) { out_acc[item] = f(in_acc[item]); };
+		return [=](cl::sycl::item<Rank> item) { out_acc[item] = f(in_acc[item]); };
 	};
 }
 
@@ -50,7 +50,7 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 		auto in_acc = get_access<policy_type, mode::read, InputAccessorType>(cgh, beg, end);
 		auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
 
-		return [=](auto item) { out_acc[item] = f(item, in_acc[item]); };
+		return [=](cl::sycl::item<Rank> item) { out_acc[item] = f(item, in_acc[item]); };
 	};
 }
 
@@ -70,7 +70,7 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 		auto second_in_acc = get_access<policy_type, mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
 		auto out_acc = get_access<policy_type, mode::write, OutputAccessorType>(cgh, out, out);
 
-		return [=](auto item) { out_acc[item] = f(first_in_acc[item], second_in_acc[item]); };
+		return [=](cl::sycl::item<Rank> item) { out_acc[item] = f(first_in_acc[item], second_in_acc[item]); };
 	};
 }
 
@@ -90,7 +90,7 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 		auto second_in_acc = get_access<policy_type, mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
 		auto out_acc = get_access<policy_type, mode::write, OutputAccessorType>(cgh, out, out);
 
-		return [=](auto item) { out_acc[item] = f(item, first_in_acc[item], second_in_acc[item]); };
+		return [=](cl::sycl::item<Rank> item) { out_acc[item] = f(item, first_in_acc[item], second_in_acc[item]); };
 	};
 }
 
@@ -107,11 +107,11 @@ auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T
 
 		if constexpr (algorithm::detail::get_accessor_type<F, 0>() == access_type::item)
 		{
-			return [=](auto item) { out_acc[item] = f(item); };
+			return [=](cl::sycl::item<Rank> item) { out_acc[item] = f(item); };
 		}
 		else
 		{
-			return [=](auto item) { out_acc[item] = f(); };
+			return [=](cl::sycl::item<Rank> item) { out_acc[item] = f(); };
 		}
 	};
 }
@@ -126,7 +126,7 @@ auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 
 	return [=](celerity::handler &cgh) {
 		auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, beg, end);
-		return [=](auto item) { out_acc[item] = value; };
+		return [=](cl::sycl::item<Rank> item) { out_acc[item] = value; };
 	};
 }
 
@@ -401,7 +401,6 @@ auto transform(ExecutionPolicy p, buffer_iterator_placeholder, buffer_iterator_p
 {
 	return actions::transform(p, {}, {}, {}, out, f);
 }
-
 
 template <typename KernelName, typename T, typename U, typename V, int Rank, typename F,
 		  typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
