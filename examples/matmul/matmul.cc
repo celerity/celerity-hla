@@ -58,15 +58,9 @@ int main(int argc, char *argv[])
 		MPI_Barrier(MPI_COMM_WORLD);
 		celerity::experimental::bench::begin("main program");
 
-		//auto f = algorithm::transform<class mul_ab>(queue, {}, {}, mat_c_buf, multiply) << mat_b_buf;
-		//f(begin(mat_a_buf), end(mat_a_buf));
-
 		mat_a_buf |
 			algorithm::transform<class mul_ab>(queue, {}, {}, mat_c_buf, multiply) << mat_b_buf |
 			algorithm::transform<class mul_bc>(queue, {}, {}, mat_a_buf, multiply) << mat_b_buf;
-
-		//transform(algorithm::distr<class mul_ab>(queue), mat_a_buf, mat_b_buf, mat_c_buf, multiply);
-		//transform(algorithm::distr<class mul_bc>(queue), mat_b_buf, mat_c_buf, mat_a_buf, multiply);
 
 		algorithm::master_task(algorithm::master(queue), [=, &verification_passed](auto &cgh) {
 			auto r_d = mat_a_buf.get_access<cl::sycl::access::mode::read>(cgh, mat_a_buf.get_range());
