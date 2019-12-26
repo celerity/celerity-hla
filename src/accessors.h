@@ -45,9 +45,10 @@ public:
 		});
 	}
 
-	slice<T, Dim> &operator=(const T &)
+	template<typename V>
+	slice<T, Dim> &operator=(const V&)
 	{
-		//assert(false && "cannot assign slice");
+		static_assert(std::is_void_v<V>, "cannot assign slice");
 		return *this;
 	}
 
@@ -87,9 +88,10 @@ public:
 		return accessor_.template get(id);
 	}
 
-	chunk<T, Extents...> &operator=(const T &)
+	template<typename V>
+	chunk<T, Extents...> &operator=(const V&)
 	{
-		//assert(false && "cannot assign chunk");
+		static_assert(std::is_void_v<V>, "cannot assign chunk");
 		return *this;
 	}
 
@@ -127,9 +129,10 @@ public:
 		return accessor_.template get(item.get_id());
 	}
 
-	all<T, Rank> &operator=(const T &)
+	template<typename V>
+	all<T, Rank> &operator=(const V&)
 	{
-		//assert(false && "cannot assign all");
+		static_assert(std::is_void_v<V>, "cannot assign all");
 		return *this;
 	}
 
