@@ -88,24 +88,6 @@ int main(int argc, char *argv[])
 		});
 
 		queue.slow_full_sync();
-
-		/*for_each(algorithm::master_blocking(queue), mat_a_buf,
-				 [&verification_passed](t::item item, float x) {
-					 const float correct_value = item[0] == item[1];
-
-					 if (x == correct_value)
-						 return;
-
-					 fprintf(stderr, "VERIFICATION FAILED for element %llu,%llu: %f != %f\n", item[0], item[1], x, correct_value);
-					 verification_passed = false;
-				 });
-
-		on_master([&]() {
-			if (verification_passed)
-			{
-				printf("VERIFICATION PASSED!\n");
-			}
-		});*/
 	}
 	catch (std::exception &e)
 	{
