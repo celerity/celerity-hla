@@ -34,6 +34,15 @@ struct exception
 #include <CL/sycl.hpp>
 #endif
 
+namespace std
+{
+	template<int Idx, int Rank>
+	auto get(const cl::sycl::range<Rank>& r)
+	{
+		return r[Idx];
+	}
+}
+
 namespace cl::sycl
 {
 template <int Dimensions>
@@ -50,8 +59,8 @@ constexpr size_t dispatch_count(cl::sycl::range<Rank> r, std::index_sequence<Is.
 	return (std::get<Is>(r) * ... * 1);
 }
 
-template <int Rank, size_t... Is>
-constexpr bool dispatch_equals(cl::sycl::id<Rank> lhs, cl::sycl::id<Rank> rhs, std::index_sequence<Is...>)
+template <int Rank, template <int> typename T, size_t... Is>
+constexpr bool dispatch_equals(T<Rank> lhs, T<Rank> rhs, std::index_sequence<Is...>)
 {
 	static_assert(Rank > 0, "Rank must be a postive integer greater than zero");
 	return ((lhs[Is] == rhs[Is]) && ...);
@@ -68,7 +77,7 @@ constexpr void incr(int idx, cl::sycl::id<Rank> &id, cl::sycl::range<Rank> r)
 }
 
 template <int Rank>
-constexpr void decr_n(int idx, cl::sycl::id<Rank> &id, cl::sycl::range<Rank> r)
+constexpr void decr_n(int idx, cl::sycl::id<Rank> &id, cl::sycl::id<Rank> r)
 {
 	while (id[idx + 1] < 0)
 	{
@@ -206,6 +215,12 @@ constexpr bool equals(cl::sycl::id<Rank> lhs, cl::sycl::id<Rank> rhs)
 }
 
 template <int Rank>
+constexpr bool equals(cl::sycl::range<Rank> lhs, cl::sycl::range<Rank> rhs)
+{
+	return detail::dispatch_equals(lhs, rhs, std::make_index_sequence<Rank>{});
+}
+
+template <int Rank>
 constexpr cl::sycl::range<Rank> distance(cl::sycl::id<Rank> from, cl::sycl::id<Rank> to)
 {
 	cl::sycl::range<Rank> dist{};
@@ -219,5 +234,6 @@ constexpr cl::sycl::range<Rank> distance(cl::sycl::id<Rank> from, cl::sycl::id<R
 	return dist;
 }
 } // namespace celerity
+
 
 #endif // SYCL_HELPER_H
