@@ -1,5 +1,5 @@
-#ifndef GENERATE_H
-#define GENERATE_H
+#ifndef COPY_H
+#define COPY_H
 
 #include "../iterator.h"
 #include "../task.h"
