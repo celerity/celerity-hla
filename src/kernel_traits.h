@@ -115,9 +115,6 @@ constexpr bool is_task_decorator_sequence()
 
 } // namespace detail
 
-template <typename F>
-constexpr inline bool is_kernel_v = detail::_is_compute_task_v<F>;
-
 } // namespace celerity::algorithm
 
 #endif

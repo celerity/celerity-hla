@@ -43,14 +43,14 @@ auto operator|(task_t<LhsExecutionPolicy, Ts...> lhs, task_t<RhsExecutionPolicy,
 }
 
 template <typename ExecutionPolicy, typename T, typename U,
-		  std::enable_if_t<is_kernel_v<T> && !is_sequence_v<T>, int> = 0>
+		  std::enable_if_t<detail::_is_compute_task_v<T> && !is_sequence_v<T>, int> = 0>
 auto operator|(T lhs, task_t<ExecutionPolicy, U> rhs)
 {
 	return sequence<task_t<ExecutionPolicy, T>, task_t<ExecutionPolicy, U>>{{lhs}, rhs};
 }
 
 template <typename ExecutionPolicy, typename T, typename U,
-		  std::enable_if_t<!is_kernel_v<T> && !is_sequence_v<T> && !is_task_v<T>, int> = 0>
+		  std::enable_if_t<!detail::_is_compute_task_v<T> && !is_sequence_v<T> && !is_task_v<T>, int> = 0>
 auto operator|(T lhs, task_t<ExecutionPolicy, U> rhs)
 {
 	return sequence<T, task_t<ExecutionPolicy, U>>{{lhs}, rhs};
