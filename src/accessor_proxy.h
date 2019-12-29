@@ -7,6 +7,7 @@
 #include "accessor_traits.h"
 #include "accessor_type.h"
 #include "iterator.h"
+#include "policy.h"
 
 #include <type_traits>
 #include <cmath>
