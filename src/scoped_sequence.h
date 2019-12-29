@@ -30,6 +30,15 @@ public:
         sequence_ | invoker_;
     }
 
+    using invoke_result_type = std::conditional_t<std::is_invocable_v<Sequence, Invoker &>,
+                                                  std::invoke_result_t<Sequence, Invoker &>,
+                                                  void>;
+
+    operator invoke_result_type()
+    {
+        return std::invoke(sequence_, invoker_);
+    }
+
     auto get_invoker() const { return invoker_; }
     auto get_sequence() const { return sequence_; }
 
