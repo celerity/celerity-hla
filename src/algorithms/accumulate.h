@@ -7,7 +7,7 @@
 #include "../accessor_proxy.h"
 #include "../policy.h"
 #include "../scoped_sequence.h"
-#include "../decorated_task.h"
+#include "../decoration.h"
 #include "../placeholder.h"
 
 namespace celerity::algorithm
@@ -19,7 +19,7 @@ namespace detail
 template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank, typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<BinaryOp, 1>() == access_type::one_to_one>>
 auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
 {
-    /*using policy_type = strip_queue_t<ExecutionPolicy>;
+	/*using policy_type = strip_queue_t<ExecutionPolicy>;
 
 	static_assert(!policy_traits<ExecutionPolicy>::is_distributed, "can not be distributed");
 	static_assert(Rank == 1, "Only 1-dimenionsal buffers for now");
@@ -41,7 +41,7 @@ auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator
 template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank>
 auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
 {
-    return task<ExecutionPolicy>(detail::accumulate(p, beg, end, init, op));
+	return task<ExecutionPolicy>(detail::accumulate(p, beg, end, init, op));
 }
 
 } // namespace actions
@@ -49,25 +49,25 @@ auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator
 template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank>
 auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
 {
-    return scoped_sequence{actions::accumulate(p, beg, end, init, op), submit_to(p.q)};
+	return scoped_sequence{actions::accumulate(p, beg, end, init, op), submit_to(p.q)};
 }
 
 template <typename KernelName, typename BinaryOp, typename T, int Rank>
 auto accumulate(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
 {
-    return accumulate(distr<KernelName>(q), beg, end, init, op);
+	return accumulate(distr<KernelName>(q), beg, end, init, op);
 }
 
 template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank>
 auto accumulate(ExecutionPolicy p, buffer<T, Rank> in, T init, const BinaryOp &op)
 {
-    return accumulate(p, begin(in), end(in), init, op);
+	return accumulate(p, begin(in), end(in), init, op);
 }
 
 template <typename KernelName, typename BinaryOp, typename T, int Rank>
 auto accumulate(celerity::distr_queue q, buffer<T, Rank> in, T init, const BinaryOp &op)
 {
-    return accumulate(distr<KernelName>(q), begin(in), end(in), init, op);
+	return accumulate(distr<KernelName>(q), begin(in), end(in), init, op);
 }
 
 } // namespace celerity::algorithm

@@ -7,7 +7,7 @@
 #include "../accessor_proxy.h"
 #include "../policy.h"
 #include "../scoped_sequence.h"
-#include "../decorated_task.h"
+#include "../decoration.h"
 #include "../placeholder.h"
 
 namespace celerity::algorithm

@@ -7,7 +7,7 @@
 #include "../accessor_proxy.h"
 #include "../policy.h"
 #include "../scoped_sequence.h"
-#include "../decorated_task.h"
+#include "../decoration.h"
 #include "../placeholder.h"
 
 namespace celerity::algorithm
@@ -19,7 +19,7 @@ namespace detail
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
 auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
 {
-    /*using policy_type = strip_queue_t<ExecutionPolicy>;
+	/*using policy_type = strip_queue_t<ExecutionPolicy>;
 
 	static_assert(!policy_traits<std::decay_t<ExecutionPolicy>>::is_distributed);
 	static_assert(!is_celerity_iterator_v<IteratorType>);
@@ -45,7 +45,7 @@ auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
 auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
 {
-    return task<ExecutionPolicy>(detail::copy(p, beg, end, out));
+	return task<ExecutionPolicy>(detail::copy(p, beg, end, out));
 }
 
 } // namespace actions
@@ -53,19 +53,19 @@ auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
 auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
 {
-    return scoped_sequence{actions::copy(p, beg, end, out), submit_to(p.q)};
+	return scoped_sequence{actions::copy(p, beg, end, out), submit_to(p.q)};
 }
 
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
 auto copy(ExecutionPolicy p, buffer<T, Rank> in, IteratorType out)
 {
-    return copy(p, begin(in), end(in), out);
+	return copy(p, begin(in), end(in), out);
 }
 
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
 auto copy(ExecutionPolicy p, buffer<T, Rank> in, buffer<T, Rank> out)
 {
-    return copy(p, begin(in), end(in), begin(out));
+	return copy(p, begin(in), end(in), begin(out));
 }
 
 } // namespace celerity::algorithm
