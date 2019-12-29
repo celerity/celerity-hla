@@ -68,7 +68,7 @@ struct is_chunk<chunk<T, Extents...>> : public std::true_type
 };
 
 template <typename T>
-inline constexpr auto is_chunk_v = is_slice<T>::value;
+inline constexpr auto is_chunk_v = is_chunk<T>::value;
 
 template <typename T>
 struct is_item : std::false_type
