@@ -1,5 +1,7 @@
 #include "../src/accessor_proxy.h"
 #include "../src/iterator.h"
+#include "../src/kernel_traits.h"
+#include "../src/sequence.h"
 
 #include <vector>
 #include <stdlib.h>
@@ -71,11 +73,55 @@ void static_assert_call_operator_detection()
     static_assert(!algorithm::detail::has_call_operator_v<hoo_t>, "can not detect call operator templates");
 }
 
+void static_assert_kernel_traits()
+{
+    using namespace celerity::algorithm;
+    using namespace celerity::algorithm::detail;
+
+    auto one_d = [](cl::sycl::item<1>) {};
+    auto two_d = [](cl::sycl::item<1>) {};
+    auto three_d = [](cl::sycl::item<1>) {};
+    auto generic = [](auto) {};
+
+    static_assert(_is_kernel_v<decltype(one_d)>);
+    static_assert(_is_kernel_v<decltype(two_d)>);
+    static_assert(_is_kernel_v<decltype(three_d)>);
+    static_assert(_is_kernel_v<decltype(generic)>);
+
+    auto compute_task = [](celerity::handler &) { return [](cl::sycl::item<1>) {}; };
+    static_assert(_is_compute_task_v<decltype(compute_task)>);
+    static_assert(_is_master_task_v<decltype(compute_task)>);
+
+    auto master_task = [](celerity::handler &) { return []() {}; };
+    static_assert(_is_master_task_v<decltype(master_task)>);
+    static_assert(!_is_compute_task_v<decltype(master_task)>);
+
+    auto task_decorator = [](celerity::distr_queue &) {};
+    static_assert(_is_task_decorator_v<decltype(task_decorator)>);
+    static_assert(!_is_task_decorator_v<decltype(compute_task)>);
+    static_assert(!_is_task_decorator_v<decltype(master_task)>);
+
+    celerity::algorithm::sequence seq{[](celerity::distr_queue &) {}};
+    static_assert(!_is_task_decorator_v<decltype(seq)>);
+    static_assert(!_is_placeholder_task_v<decltype(seq), void>);
+
+    using iterator_t = iterator<1>;
+    auto placeholder = [](iterator_t, iterator_t) {};
+    static_assert(_is_placeholder_task_v<decltype(placeholder), iterator_t>);
+    static_assert(!_is_placeholder_task_v<decltype(placeholder), iterator<2>>);
+
+    sequence decorator_seq{task_decorator, task_decorator};
+    static_assert(is_task_decorator_sequence<decltype(decorator_seq)>());
+    static_assert(!is_task_decorator_sequence<decltype(task_decorator)>());
+    static_assert(!is_task_decorator_sequence<decltype(sequence{placeholder})>());
+}
+
 int main(int, char *[])
 {
     static_assert_accessor_types();
     static_assert_iterator_traits();
     static_assert_call_operator_detection();
+    static_assert_kernel_traits();
 
     return EXIT_SUCCESS;
 }
