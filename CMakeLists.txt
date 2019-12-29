@@ -9,6 +9,10 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(hipSYCL REQUIRED)
 find_package(Celerity REQUIRED)
 
+include(CTest)
+enable_testing(true)
+add_subdirectory(tests)
+
 add_subdirectory(examples/basic)
 add_subdirectory(examples/simple)
 #add_subdirectory(examples/simple_actions)
