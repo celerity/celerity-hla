@@ -12,6 +12,9 @@ public:
     using variant_type = std::variant<
         cl::sycl::item<Ranks>...>;
 
+    static_assert(((Ranks > 0 && Ranks < 4) || ...),
+                  "invalid ranks. Must be either 1, 2 or 3");
+
     template <int Rank>
     explicit variant_item(cl::sycl::item<Rank> item)
         : rank_(Rank), var_(item)
@@ -36,9 +39,9 @@ public:
             if constexpr (((Ranks == 3) || ...))
                 return f(*std::get_if<cl::sycl::item<3>>(&var_));
             break;
+        default:
+            abort();
         }
-
-        //assert(false && "invalid rank");
     }
 
 private:

@@ -65,11 +65,9 @@ private:
             return get<Rank, Mode, target::global_buffer>(id);
         case target::host_buffer:
             return get<Rank, Mode, target::host_buffer>(id);
-            //default:
-            //assert(false && "unsupported target");
+        default:
+            abort();
         }
-
-        return T{};
     }
 
     template <int Rank>
@@ -85,11 +83,9 @@ private:
             return get<Rank, mode::write>(target, id);
         case mode::read_write:
             return get<Rank, mode::read_write>(target, id);
-            //default:
-            //assert(false && "unsupported mode");
+        default:
+            abort();
         }
-
-        return T{};
     }
 
     const int rank_;
