@@ -5,14 +5,15 @@
 
 namespace celerity::algorithm
 {
-	enum class access_type
-	{
-		one_to_one,
-		slice,
-		chunk,
-		item,
-		invalid,
-	};
+enum class access_type
+{
+	one_to_one,
+	slice,
+	chunk,
+	item,
+	all,
+	invalid,
+};
 }
 
 namespace celerity::algorithm::detail
@@ -88,6 +89,10 @@ constexpr access_type get_accessor_type_()
 	else if constexpr (detail::is_item_v<decayed_type>)
 	{
 		return access_type::item;
+	}
+	else if constexpr (detail::is_all_v<decayed_type>)
+	{
+		return access_type::all;
 	}
 	else
 	{
