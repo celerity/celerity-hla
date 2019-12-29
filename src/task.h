@@ -84,25 +84,13 @@ private:
 	algorithm::sequence<F> sequence_;
 };
 
-/*template <typename... Actions>
-auto fuse(kernel_sequence<Actions...> &&seq)
-{
-	return task_t<distributed_execution_policy, Actions...>{std::move(seq)};
-}*/
-
-template <typename T, typename = std::enable_if_t<is_kernel_v<T>>>
-auto task(const T &invocable)
-{
-	return task_t<distributed_execution_policy, T>{invocable};
-}
-
 template <typename ExecutionPolicy, typename T>
 auto task(const task_t<ExecutionPolicy, T> &t)
 {
 	return t;
 }
 
-template <typename ExecutionPolicy, typename T, typename = std::enable_if_t<is_kernel_v<T>>>
+template <typename ExecutionPolicy, typename T, typename = std::enable_if_t<detail::_is_master_task_v<T>>>
 auto task(const T &invocable)
 {
 	return task_t<decay_policy_t<ExecutionPolicy>, T>{invocable};
