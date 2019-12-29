@@ -13,7 +13,6 @@ include(CTest)
 enable_testing(true)
 add_subdirectory(tests)
 
-add_subdirectory(examples/basic)
 add_subdirectory(examples/simple)
 #add_subdirectory(examples/simple_actions)
 add_subdirectory(examples/matmul)
