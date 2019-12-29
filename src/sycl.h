@@ -36,12 +36,12 @@ struct exception
 
 namespace std
 {
-	template<int Idx, int Rank>
-	auto get(const cl::sycl::range<Rank>& r)
-	{
-		return r[Idx];
-	}
+template <int Idx, int Rank>
+auto get(const cl::sycl::range<Rank> &r)
+{
+	return r[Idx];
 }
+} // namespace std
 
 namespace cl::sycl
 {
@@ -225,7 +225,6 @@ constexpr cl::sycl::range<Rank> distance(cl::sycl::id<Rank> from, cl::sycl::id<R
 {
 	cl::sycl::range<Rank> dist{};
 
-	//std::transform(begin(to), end(to), begin(from), begin(dist), std::minus<>{});
 	for (int i = 0; i < Rank; ++i)
 	{
 		dist[i] = to[i] - from[i];
@@ -234,6 +233,5 @@ constexpr cl::sycl::range<Rank> distance(cl::sycl::id<Rank> from, cl::sycl::id<R
 	return dist;
 }
 } // namespace celerity
-
 
 #endif // SYCL_HELPER_H

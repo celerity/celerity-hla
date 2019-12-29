@@ -33,14 +33,6 @@ public:
     auto get_invoker() const { return invoker_; }
     auto get_sequence() const { return sequence_; }
 
-    //using invoke_result = decltype(std::declval<Sequence>() | std::declval<Invoker>());
-
-    /*operator invoke_result()
-    {
-        disable();
-        return sequence_ | invoker_;
-    }*/
-
 private:
     Sequence sequence_;
     Invoker invoker_;
@@ -98,41 +90,41 @@ template <typename LhsSequence, typename LhsInvoker, typename U>
 auto operator|(scoped_sequence<LhsSequence, LhsInvoker> &lhs, U &rhs)
 {
     lhs.disable();
-    return scoped_sequence{lhs.get_sequence() | rhs , lhs.get_invoker()};
+    return scoped_sequence{lhs.get_sequence() | rhs, lhs.get_invoker()};
 }
 
 template <typename LhsSequence, typename LhsInvoker, typename U,
-    std::enable_if_t<detail::is_task_decorator_sequence<U>(), int> = 0>
+          std::enable_if_t<detail::is_task_decorator_sequence<U>(), int> = 0>
 auto operator|(U &lhs, scoped_sequence<LhsSequence, LhsInvoker> &rhs)
 {
     rhs.disable();
-    return scoped_sequence{lhs | rhs.get_sequence() , rhs.get_invoker()};
+    return scoped_sequence{lhs | rhs.get_sequence(), rhs.get_invoker()};
 }
 
 template <typename LhsSequence, typename LhsInvoker, typename U,
-    std::enable_if_t<detail::is_task_decorator_sequence<U>(), int> = 0>
+          std::enable_if_t<detail::is_task_decorator_sequence<U>(), int> = 0>
 auto operator|(U &&lhs, scoped_sequence<LhsSequence, LhsInvoker> &rhs)
 {
     rhs.disable();
-    return scoped_sequence{lhs | rhs.get_sequence() , rhs.get_invoker()};
+    return scoped_sequence{lhs | rhs.get_sequence(), rhs.get_invoker()};
 }
 
 template <typename LhsSequence, typename LhsInvoker, typename U,
-    std::enable_if_t<detail::_is_task_decorator_v<U> || detail::is_task_decorator_sequence<U>(), int> = 0>
+          std::enable_if_t<detail::_is_task_decorator_v<U> || detail::is_task_decorator_sequence<U>(), int> = 0>
 auto operator|(U &lhs, scoped_sequence<LhsSequence, LhsInvoker> &&rhs)
 {
     rhs.disable();
-    return scoped_sequence{lhs | rhs.get_sequence() , rhs.get_invoker()};
+    return scoped_sequence{lhs | rhs.get_sequence(), rhs.get_invoker()};
 }
 
 template <typename LhsSequence, typename LhsInvoker, typename U,
-    std::enable_if_t<detail::_is_task_decorator_v<U> || detail::is_task_decorator_sequence<U>(), int> = 0>
+          std::enable_if_t<detail::_is_task_decorator_v<U> || detail::is_task_decorator_sequence<U>(), int> = 0>
 auto operator|(U &&lhs, scoped_sequence<LhsSequence, LhsInvoker> &&rhs)
 {
     rhs.disable();
-    return scoped_sequence{lhs | rhs.get_sequence() , rhs.get_invoker()};
+    return scoped_sequence{lhs | rhs.get_sequence(), rhs.get_invoker()};
 }
 
-}
+} // namespace celerity::algorithm
 
 #endif // SCOPED_SEQUENCE_H

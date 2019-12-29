@@ -113,9 +113,6 @@ public:
 template <typename ExecutionPolicy, cl::sycl::access::mode Mode, typename AccessorType, typename T, int Rank>
 auto get_access(celerity::handler &cgh, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end)
 {
-	//assert(&beg.buffer() == &end.buffer());
-	//assert(*beg <= *end);
-
 	if constexpr (policy_traits<ExecutionPolicy>::is_distributed)
 	{
 		auto acc = beg.get_buffer().template get_access<Mode>(cgh, detail::accessor_traits<Rank, AccessorType>::range_mapper());

@@ -6,7 +6,6 @@
 
 namespace celerity::algorithm
 {
-
 namespace actions
 {
 namespace detail

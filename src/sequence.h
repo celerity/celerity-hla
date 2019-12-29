@@ -46,10 +46,10 @@ public:
 	{
 	}
 
-	template<typename...Args, size_t...Is>
+	template <typename... Args, size_t... Is>
 	static constexpr bool is_invocable_dispatch(std::index_sequence<Is...>)
 	{
-		return ((std::is_invocable_v<std::tuple_element_t<Is, actions_t>, Args...>) && ...);
+		return ((std::is_invocable_v<std::tuple_element_t<Is, actions_t>, Args...>)&&...);
 	}
 
 	template <typename... Args>
@@ -143,23 +143,17 @@ struct sequence_traits<algorithm::sequence<Actions...>>
 	using is_sequence_type = std::integral_constant<bool, true>;
 };
 
-template <typename...Ts>
-struct last_element<algorithm::sequence<Ts...>> 
-	: std::tuple_element<algorithm::sequence<Ts...>::num_actions - 1, 
-		typename algorithm::sequence<Ts...>::actions_t> {};
-
-/*template <template <typename...> typename T, template <typename...> typename U,
-		  typename... Ts, typename... Us,
-		  typename = std::enable_if_t<is_sequence_v<T<Ts...>> && is_sequence_v<U<Us...>>>>
-auto operator|(T<Ts...> &&lhs, U<Us...> &&rhs)
+template <typename... Ts>
+struct last_element<algorithm::sequence<Ts...>>
+	: std::tuple_element<algorithm::sequence<Ts...>::num_actions - 1,
+						 typename algorithm::sequence<Ts...>::actions_t>
 {
-	return sequence<Ts..., Us...>{lhs, rhs};
-}*/
+};
 
 template <typename... Ts, typename... Us>
 auto operator|(sequence<Ts...> lhs, sequence<Us...> rhs)
 {
-	return sequence<Ts..., Us...>{ std::tuple_cat(lhs.actions(), rhs.actions()) };
+	return sequence<Ts..., Us...>{std::tuple_cat(lhs.actions(), rhs.actions())};
 }
 
 } // namespace celerity::algorithm

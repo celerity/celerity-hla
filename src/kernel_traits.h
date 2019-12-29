@@ -96,7 +96,7 @@ template <typename F, typename IteratorType>
 constexpr inline bool _is_placeholder_task_v = _is_placeholder_task<F, IteratorType>::value;
 
 template <typename T, size_t... Is>
-constexpr bool is_task_decorator_sequence_dispatch(std::index_sequence<Is...>)
+constexpr bool dispatch_is_task_decorator_sequence(std::index_sequence<Is...>)
 {
 	return ((_is_task_decorator_v<std::tuple_element_t<Is, typename T::actions_t>>)&&...);
 }
@@ -104,7 +104,7 @@ constexpr bool is_task_decorator_sequence_dispatch(std::index_sequence<Is...>)
 template <typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
 constexpr bool is_task_decorator_sequence()
 {
-	return is_task_decorator_sequence_dispatch<T>(std::make_index_sequence<T::num_actions>{});
+	return dispatch_is_task_decorator_sequence<T>(std::make_index_sequence<T::num_actions>{});
 }
 
 template <typename T, std::enable_if_t<!is_sequence_v<T>, int> = 0>
@@ -114,6 +114,9 @@ constexpr bool is_task_decorator_sequence()
 }
 
 } // namespace detail
+
+template <typename F>
+constexpr inline bool is_kernel_v = detail::_is_compute_task_v<F>;
 
 } // namespace celerity::algorithm
 
