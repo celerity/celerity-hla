@@ -79,21 +79,11 @@ constexpr void incr(int idx, cl::sycl::id<Rank> &id, cl::sycl::range<Rank> r)
 template <int Rank>
 constexpr void decr_n(int idx, cl::sycl::id<Rank> &id, cl::sycl::id<Rank> r)
 {
-	while (id[idx + 1] < 0)
+	while (id[idx + 1] > r[idx + 1])
 	{
 		id[idx + 1] += r[idx + 1] + 1;
 		--id[idx];
 	}
-}
-
-template <int Rank>
-constexpr void decr(int idx, cl::sycl::id<Rank> &id)
-{
-	if (id[idx + 1] >= 0)
-		return;
-
-	id[idx + 1] += 1;
-	--id[idx];
 }
 
 template <int Rank, size_t... Is>
@@ -108,13 +98,6 @@ constexpr void dispatch_prev_n(cl::sycl::id<Rank> &id, cl::sycl::id<Rank> max_id
 {
 	static_assert(Rank > 0, "Rank must be a postive integer greater than zero");
 	(decr_n(Rank - 2 - Is, id, max_id), ...);
-}
-
-template <int Rank, size_t... Is>
-constexpr void dispatch_prev(cl::sycl::id<Rank> &id, std::index_sequence<Is...>)
-{
-	static_assert(Rank > 0, "Rank must be a postive integer greater than zero");
-	(decr(Rank - 2 - Is, id), ...);
 }
 
 cl::sycl::id<1> linearize(cl::sycl::id<1> idx, cl::sycl::range<1>)
@@ -161,7 +144,18 @@ constexpr cl::sycl::id<Rank> next(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> 
 }
 
 template <int Rank>
-constexpr cl::sycl::id<Rank> prev(cl::sycl::id<Rank> idx, cl::sycl::id<Rank> max_id, int distance = 1)
+constexpr cl::sycl::id<Rank> max_id(cl::sycl::range<Rank> r, cl::sycl::id<Rank> offset = {})
+{
+	for (int i = 0; i < Rank; ++i)
+	{
+		offset[i] += r[i] - 1;
+	}
+
+	return offset;
+}
+
+template <int Rank>
+constexpr cl::sycl::id<Rank> prev(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> r, int distance = 1)
 {
 	cl::sycl::id<Rank> out = idx;
 
@@ -169,22 +163,7 @@ constexpr cl::sycl::id<Rank> prev(cl::sycl::id<Rank> idx, cl::sycl::id<Rank> max
 
 	if constexpr (Rank > 1)
 	{
-		detail::dispatch_prev_n(out, max_id, std::make_index_sequence<Rank - 1>{});
-	}
-
-	return out;
-}
-
-template <int Rank>
-constexpr cl::sycl::id<Rank> prev(cl::sycl::id<Rank> idx)
-{
-	cl::sycl::id<Rank> out = idx;
-
-	out[Rank - 1] -= 1;
-
-	if constexpr (Rank > 1)
-	{
-		detail::dispatch_prev(out, std::make_index_sequence<Rank - 1>{});
+		detail::dispatch_prev_n(out, max_id(r), std::make_index_sequence<Rank - 1>{});
 	}
 
 	return out;
@@ -195,17 +174,6 @@ constexpr std::tuple<cl::sycl::id<Rank>, bool> try_next(cl::sycl::id<Rank> idx, 
 {
 	cl::sycl::id<Rank> out = next(idx, r, distance);
 	return {out, equal(out, idx)};
-}
-
-template <int Rank>
-constexpr cl::sycl::id<Rank> max_id(cl::sycl::range<Rank> r, cl::sycl::id<Rank> offset = {})
-{
-	for (int i = 0; i < Rank; ++i)
-	{
-		offset[i] += r[i] - 1;
-	}
-
-	return offset;
 }
 
 template <int Rank>
