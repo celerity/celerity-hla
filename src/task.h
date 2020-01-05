@@ -84,6 +84,40 @@ private:
 	algorithm::sequence<F> sequence_;
 };
 
+template <typename F>
+class task_t<blocking_master_execution_policy, F>
+{
+public:
+	static_assert(detail::_is_master_task_v<F>, "task can only contain master task functors");
+
+	explicit task_t(F f) : sequence_(std::move(f)) {}
+
+	template <int Rank>
+	void operator()(distr_queue &q, iterator<Rank> beg, iterator<Rank> end) const
+	{
+		const auto d = distance(beg, end);
+
+		q.with_master_access([seq = sequence_, d, beg, end](handler &cgh) {
+			const auto r = std::invoke(seq, cgh);
+			cgh.run([&]() { for_each_index(beg, end, d, *beg, to_kernel(r)); });
+		});
+
+		q.slow_full_sync();
+	}
+
+	void operator()(distr_queue &q) const
+	{
+		q.with_master_access([seq = sequence_](handler &cgh) {
+			cgh.run(std::invoke(seq, cgh));
+		});
+
+		q.slow_full_sync();
+	}
+
+private:
+	algorithm::sequence<F> sequence_;
+};
+
 template <typename ExecutionPolicy, typename T>
 auto task(const task_t<ExecutionPolicy, T> &t)
 {
