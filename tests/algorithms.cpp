@@ -1,22 +1,10 @@
 #define CATCH_CONFIG_MAIN
-#define CELERITY_TEST
-#include "../src/catch/catch.hpp"
-#include "../src/sycl.h"
-#include "../src/algorithm.h"
 
 #include "utils.h"
 
 #include <numeric>
 
 using namespace celerity;
-
-template <int Rank, typename T>
-std::vector<T> copy_to_host(distr_queue &q, celerity::buffer<T, Rank> &src)
-{
-    std::vector<int> dst(src.get_range().size());
-    algorithm::copy(algorithm::master_blocking(q), src, dst.data());
-    return dst;
-}
 
 SCENARIO("filling a buffer", "[celerity::algorithm]")
 {
