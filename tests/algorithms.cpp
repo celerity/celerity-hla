@@ -36,5 +36,16 @@ SCENARIO("filling a buffer", "[celerity::algorithm]")
                 REQUIRE(std::all_of(begin(r), end(r), [](auto x) { return x == 2; }));
             }
         }
+
+        WHEN("filling with numbers 1 to 100")
+        {
+            algorithm::generate<class iota>(q, buf, [](cl::sycl::item<1> i) { return i.get_linear_id() + 1; });
+
+            THEN("the buffer contains numbers 1 to 100")
+            {
+                const auto r = copy_to_host(q, buf);
+                REQUIRE(std::accumulate(begin(r), end(r), 0, std::plus<int>()) == size * (size + 1) / 2);
+            }
+        }
     }
 }
