@@ -52,6 +52,14 @@ struct function_traits<ReturnType (ClassType::*)(Args...) const>
 	};
 };
 
+template <typename T>
+struct arity : std::integral_constant<size_t, function_traits<T>::arity>
+{
+};
+
+template <typename T>
+inline constexpr auto arity_v = arity<T>::value;
+
 template <typename T, int I, bool has_call_operator>
 struct arg_type;
 
