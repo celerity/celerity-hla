@@ -20,15 +20,13 @@ namespace detail
 template <typename ExecutionPolicy, typename F, typename T, int Rank>
 auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
-    assert(beg.get_buffer().get_id() == end.get_buffer().get_id());
-
     using policy_type = strip_queue_t<ExecutionPolicy>;
     using namespace cl::sycl::access;
 
     return [=](celerity::handler &cgh) {
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, beg, end);
 
-        if constexpr (algorithm::detail::get_accessor_type<F, 0>() == access_type::item)
+        if constexpr (algorithm::detail::arity_v<F> == 1)
         {
             return [=](cl::sycl::item<Rank> item) { out_acc[item] = f(item); };
         }
@@ -42,10 +40,25 @@ auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T
 } // namespace detail
 
 template <typename ExecutionPolicy, typename F, typename T, int Rank,
-          typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::item>>
+          std::enable_if_t<algorithm::detail::arity_v<F> == 1, int> = 0>
 auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
-    return task<ExecutionPolicy>(detail::generate(p, beg, end, f));
+    static_assert(algorithm::detail::get_accessor_type<F, 0>() == access_type::item);
+
+    using value_type = std::invoke_result_t<F, cl::sycl::item<Rank>>;
+    return decorate_generate<value_type>(task<ExecutionPolicy>(detail::generate(p, beg, end, f)), beg, end);
+}
+
+// DISABLED
+template <typename ExecutionPolicy, typename F, typename T, int Rank,
+          std::enable_if_t<algorithm::detail::arity_v<F> == 0, int> = 0>
+auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
+{
+    static_assert(std::is_void_v<F>,
+                  "Disabled as there is no real use cases as long as functors are required to be immutable");
+
+    using value_type = std::invoke_result_t<F>;
+    return decorate_generate<value_type>(task<ExecutionPolicy>(detail::generate(p, beg, end, f)), beg, end);
 }
 
 } // namespace actions
