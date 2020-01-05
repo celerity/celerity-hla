@@ -4,22 +4,11 @@
 #include "../src/sycl.h"
 #include "../src/algorithm.h"
 
+#include "utils.h"
+
+#include <numeric>
+
 using namespace celerity;
-
-struct GlobalSetupAndTeardown : Catch::TestEventListenerBase
-{
-    using TestEventListenerBase::TestEventListenerBase;
-    void testRunStarting(const Catch::TestRunInfo &) override { celerity::detail::runtime::enable_test_mode(); }
-    void testCaseEnded(const Catch::TestCaseStats &) override
-    {
-        if (celerity::detail::runtime::is_initialized())
-        {
-            celerity::detail::runtime::teardown();
-        }
-    }
-};
-
-CATCH_REGISTER_LISTENER(GlobalSetupAndTeardown)
 
 template <int Rank, typename T>
 std::vector<T> copy_to_host(distr_queue &q, celerity::buffer<T, Rank> &src)
