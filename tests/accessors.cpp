@@ -7,7 +7,7 @@
 using namespace celerity;
 using namespace celerity::algorithm;
 
-SCENARIO("accessing a slice", "[celerity::algorithm::accessors]")
+SCENARIO("accessing a slice", "[accessors::slice]")
 {
     distr_queue q;
 
@@ -63,7 +63,7 @@ SCENARIO("accessing a slice", "[celerity::algorithm::accessors]")
     }
 }
 
-SCENARIO("accessing a chunk", "[celerity::algorithm::accessors]")
+SCENARIO("accessing a chunk", "[accessors::chunk]")
 {
     distr_queue q;
 
@@ -92,6 +92,56 @@ SCENARIO("accessing a chunk", "[celerity::algorithm::accessors]")
                 REQUIRE(r.front() == 2);
                 REQUIRE(r.back() == 2);
                 REQUIRE(elements_equal_to<3>(next(begin(r)), prev(end(r))));
+            }
+        }
+    }
+}
+
+SCENARIO("accessing the entire buffer", "[accessors::all]")
+{
+    distr_queue q;
+
+    GIVEN("A one-dimensional buffer of one 2 and ninety-nine 1s")
+    {
+        constexpr size_t size = 100;
+
+        std::vector<int> src(size, 1);
+        src.front() = 2;
+
+        buffer<int, 1> buf(src.data(), cl::sycl::range<1>{size});
+
+        WHEN("assigning all elements the value of the first")
+        {
+            buffer<int, 1> buf_out(buf.get_range());
+
+            transform<class set_first>(q, buf, buf_out, [](cl::sycl::item<1> i, all_i x) {
+                return x[{0}];
+            });
+
+            THEN("each element is equal to 2")
+            {
+                const auto r = copy_to_host(q, buf_out);
+                REQUIRE(elements_equal_to<2>(r));
+            }
+        }
+
+        WHEN("assigning the sum of all elements to all elements")
+        {
+            buffer<int, 1> buf_out(buf.get_range());
+
+            transform<class set_sum>(q, buf, buf_out, [r = buf.get_range()](all_i x) {
+                auto sum = 0;
+
+                for (size_t i = 0; i < size; ++i)
+                    sum += x[{i}];
+
+                return sum;
+            });
+
+            THEN("each element is equal to 101")
+            {
+                const auto r = copy_to_host(q, buf_out);
+                REQUIRE(elements_equal_to<101>(r));
             }
         }
     }
