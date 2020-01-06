@@ -42,11 +42,22 @@ public:
         default:
             abort();
         }
+
+        return return_type_t<F>{};
     }
 
 private:
     const int rank_;
     const variant_type var_;
+
+    template <typename F, int Head, int... Tail>
+    struct return_type
+    {
+        using type = std::invoke_result_t<F, cl::sycl::item<Head>>;
+    };
+
+    template <typename F>
+    using return_type_t = typename return_type<F, Ranks...>::type;
 };
 
 #endif
