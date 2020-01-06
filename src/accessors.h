@@ -113,8 +113,9 @@ private:
 	bool dispatch_is_on_boundary(cl::sycl::range<rank> range, std::index_sequence<Is...>)
 	{
 		const auto id = item_.get_id();
-		return ((id[Is] < (std::get<Is>(extents) / 2)) || ...) ||
-			   ((id[Is] > range[Is] - (std::get<Is>(extents) / 2) - 1) || ...);
+
+		return ((id[Is] < (Extents / 2)) || ...) ||
+			   ((id[Is] > range[Is] - (Extents / 2) - 1) || ...);
 	}
 };
 

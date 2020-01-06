@@ -31,7 +31,7 @@ struct accessor_traits<Rank, chunk<T, Extents...>>
 {
     static auto range_mapper()
     {
-        return celerity::access::neighborhood<Rank>(Extents...);
+        return celerity::access::neighborhood<Rank>((Extents / 2)...);
     }
 };
 
