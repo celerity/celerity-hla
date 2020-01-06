@@ -194,5 +194,47 @@ using chunk_3d = chunk<cl::sycl::double3, Extents...>;
 template <size_t... Extents>
 using chunk_3i = chunk<cl::sycl::int3, Extents...>;
 
+using all_f = all<float, 1>;
+
+using all_d = all<double, 1>;
+
+using all_i = all<int, 1>;
+
+using all_2f = all<cl::sycl::float2, 1>;
+
+using all_2d = all<cl::sycl::double2, 1>;
+
+using all_2i = all<cl::sycl::int2, 1>;
+
+using all_3f = all<cl::sycl::float3, 1>;
+
+using all_3d = all<cl::sycl::double3, 1>;
+
+using all_3i = all<cl::sycl::int3, 1>;
+
+using all_2f2 = all<cl::sycl::float2, 2>;
+
+using all_2d2 = all<cl::sycl::double2, 2>;
+
+using all_2i2 = all<cl::sycl::int2, 2>;
+
+using all_3f2 = all<cl::sycl::float3, 2>;
+
+using all_3d2 = all<cl::sycl::double3, 2>;
+
+using all_3i2 = all<cl::sycl::int3, 2>;
+
+using all_2f3 = all<cl::sycl::float2, 3>;
+
+using all_2d3 = all<cl::sycl::double2, 3>;
+
+using all_2i3 = all<cl::sycl::int2, 3>;
+
+using all_3f3 = all<cl::sycl::float3, 3>;
+
+using all_3d3 = all<cl::sycl::double3, 3>;
+
+using all_3i3 = all<cl::sycl::int3, 3>;
+
 } // namespace celerity::algorithm
 #endif // ACCESSORS_H
