@@ -10,6 +10,65 @@ using namespace celerity::algorithm;
 template <auto N>
 constexpr inline auto sum_one_to_n = N *(N + 1) / 2;
 
+SCENARIO("copying a buffer", "[celerity::algorithm]")
+{
+    distr_queue q;
+
+    GIVEN("A one-dimensional buffer of a hundred 1s")
+    {
+        constexpr auto size = 100;
+
+        std::vector<int> src(size, 1);
+        buffer<int, 1> buf(src.data(), {size});
+
+        WHEN("copying to host")
+        {
+            const auto r = copy_to_host(q, buf);
+
+            THEN("host and source buffer are equal")
+            {
+                REQUIRE(std::equal(begin(src), end(src), begin(r)));
+            }
+        }
+    }
+
+    GIVEN("A two-dimensional buffer of 10x10 1s")
+    {
+        constexpr auto rank = 10;
+
+        std::vector<int> src(rank * rank, 1);
+        buffer<int, 2> buf(src.data(), {rank, rank});
+
+        WHEN("copying to host")
+        {
+            const auto r = copy_to_host(q, buf);
+
+            THEN("host and source buffer are equal")
+            {
+                REQUIRE(std::equal(begin(src), end(src), begin(r)));
+            }
+        }
+    }
+
+    GIVEN("A three-dimensional buffer of 10x10x10 1s")
+    {
+        constexpr auto rank = 10;
+
+        std::vector<int> src(rank * rank * rank, 1);
+        buffer<int, 3> buf(src.data(), {rank, rank, rank});
+
+        WHEN("copying to host")
+        {
+            const auto r = copy_to_host(q, buf);
+
+            THEN("host and source buffer are equal")
+            {
+                REQUIRE(std::equal(begin(src), end(src), begin(r)));
+            }
+        }
+    }
+}
+
 SCENARIO("filling a buffer", "[celerity::algorithm]")
 {
     distr_queue q;
