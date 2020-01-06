@@ -9,6 +9,11 @@
 namespace celerity::algorithm
 {
 
+struct sycl_marker
+{
+	cl::sycl::id<0> _;
+};
+
 struct one_to_one
 {
 };
@@ -118,8 +123,8 @@ class all
 {
 public:
 	template <typename AccessorType>
-	all(AccessorType acc, cl::sycl::item<Rank> item)
-		: unused_(item), accessor_(acc)
+	all(AccessorType acc)
+		: accessor_(acc)
 	{
 	}
 
@@ -136,7 +141,7 @@ public:
 	}
 
 private:
-	const cl::sycl::item<Rank> unused_;
+	const sycl_marker _ = {};
 	const celerity::detail::any_accessor<T> accessor_;
 };
 
