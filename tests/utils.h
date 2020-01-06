@@ -32,4 +32,19 @@ std::vector<T> copy_to_host(celerity::distr_queue &q, celerity::buffer<T, Rank> 
     return dst;
 }
 
+template <auto Cmp>
+inline auto is_equal_to = [](const auto &x) { return x == Cmp; };
+
+template <auto Cmp, typename InputIterator>
+bool elements_equal_to(InputIterator beg, InputIterator end)
+{
+    return std::all_of(beg, end, is_equal_to<Cmp>);
+}
+
+template <auto Cmp, typename T>
+bool elements_equal_to(const T &range)
+{
+    return elements_equal_to<Cmp>(begin(range), end(range));
+}
+
 #endif // UTILS_Hcelerity::
