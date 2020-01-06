@@ -59,7 +59,7 @@ SCENARIO("accessing a slice", "[accessors::slice]")
                     }
                 }
             }
-        }
+        } 
     }
 }
 
@@ -72,7 +72,7 @@ SCENARIO("accessing a chunk", "[accessors::chunk]")
         constexpr auto size = 100;
 
         buffer<int, 1> buf(cl::sycl::range<1>{size});
-        fill<class fill_x>(q, buf, 1);
+        fill<class fill_x>(q, buf, 1); 
 
         WHEN("adding chunks of 3")
         {
@@ -95,6 +95,58 @@ SCENARIO("accessing a chunk", "[accessors::chunk]")
             }
         }
     }
+
+    GIVEN("A two-dimensional buffer of 10x10 1s")
+{
+        constexpr auto rank = 10;
+
+        buffer<int, 2> buf({rank, rank});
+        fill<class fill_10x10>(q, buf, 1);
+
+        WHEN("")
+
+        WHEN("summing chunks of 3x3")
+        {
+            constexpr auto chunk_size = 3;
+
+            buffer<int, 2> buf_out(buf.get_range());
+
+            transform<class sum_chunk_3x3>(q, buf, buf_out, [r = buf.get_range()](chunk_i<chunk_size, chunk_size> c) {
+                if (c.is_on_boundary(r))
+                    return 0;
+
+                auto sum = 0;
+
+                for (auto y = -(chunk_size / 2); y <= chunk_size / 2; ++y)
+                {
+                    for (auto x = -(chunk_size / 2); x <= chunk_size / 2; ++x)
+                    {
+                        sum += c[{y, x}];
+                    }
+                }
+
+                return sum;
+            });
+
+            THEN("border elements are 0, the others are 9")
+            {
+                const auto r = copy_to_host(q, buf_out);
+
+                for (size_t y = 0; y < rank; ++y)
+                {
+                    for (size_t x = 0; x < rank; ++x)
+                    {
+                        const auto correct_value = (x == 0 || x == rank - 1 ||
+                                                    y == 0 || y == rank - 1)
+                                                       ? 0
+                                                       : 9;
+
+                        REQUIRE(r[y * rank + x] == correct_value);
+                    }
+                }
+            }
+        }
+    }
 }
 
 SCENARIO("accessing the entire buffer", "[accessors::all]")
@@ -114,7 +166,7 @@ SCENARIO("accessing the entire buffer", "[accessors::all]")
         {
             buffer<int, 1> buf_out(buf.get_range());
 
-            transform<class set_first>(q, buf, buf_out, [](cl::sycl::item<1> i, all_i x) {
+            transform<class set_first>(q, buf, buf_out, [](all_i x) {
                 return x[{0}];
             });
 
@@ -125,6 +177,12 @@ SCENARIO("accessing the entire buffer", "[accessors::all]")
             }
         }
 
+        /*constexpr auto any_acc_size = sizeof(celerity::detail::any_accessor<int>);
+        constexpr auto slice_size = sizeof(slice_i<0>);
+        constexpr auto chunk_size = sizeof(chunk_i<3>);
+        constexpr auto all_size = sizeof(all_i);
+        constexpr auto acc_size = sizeof(celerity::detail::device_accessor<double, 3, cl::sycl::access::mode::read, cl::sycl::access::target::global_buffer>);
+*/
         WHEN("assigning the sum of all elements to all elements")
         {
             buffer<int, 1> buf_out(buf.get_range());
