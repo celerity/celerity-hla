@@ -63,9 +63,9 @@ public:
 	explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank>)
 		: base(acc) {} //, range_(range) {}
 
-	all<T, Rank> operator[](const cl::sycl::item<Rank>) const
+	all<T, Rank> operator[](const cl::sycl::item<Rank> item) const
 	{
-		return {/*range_, */ base::get_accessor()};
+		return {/*range_, */ base::get_accessor(), item};
 	}
 
 	//private:

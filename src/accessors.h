@@ -118,8 +118,8 @@ class all
 {
 public:
 	template <typename AccessorType>
-	all(AccessorType acc)
-		: accessor_(acc)
+	all(AccessorType acc, cl::sycl::item<Rank> item)
+		: unused_(item), accessor_(acc)
 	{
 	}
 
@@ -136,6 +136,7 @@ public:
 	}
 
 private:
+	const cl::sycl::item<Rank> unused_;
 	const celerity::detail::any_accessor<T> accessor_;
 };
 
