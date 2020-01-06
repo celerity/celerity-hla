@@ -60,16 +60,16 @@ class accessor_proxy<T, Rank, AccessorType, all<T, Rank>>
 public:
 	using base = accessor_proxy_base<AccessorType>;
 
-	explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank> range)
-		: base(acc), range_(range) {}
+	explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank>)
+		: base(acc) {} //, range_(range) {}
 
 	all<T, Rank> operator[](const cl::sycl::item<Rank>) const
 	{
-		return {range_, base::get_accessor()};
+		return {/*range_, */ base::get_accessor()};
 	}
 
-private:
-	cl::sycl::range<Rank> range_;
+	//private:
+	//cl::sycl::range<Rank> range_;
 };
 
 template <typename T, int Rank, typename AccessorType, size_t Dim>
@@ -121,6 +121,7 @@ auto get_access(celerity::handler &cgh, buffer_iterator<T, Rank> beg, buffer_ite
 	else
 	{
 		static_assert(std::is_same_v<one_to_one, AccessorType>, "range mappers not supported for host access");
+
 		auto acc = beg.get_buffer().template get_access<Mode>(cgh, beg.get_buffer().get_range());
 		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{acc, beg.get_buffer().get_range()};
 	}

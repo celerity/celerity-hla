@@ -2,8 +2,10 @@
 #define ANY_ACCESSOR
 
 #include "sycl.h"
+#include "celerity_accessor_traits.h"
 
-#include <type_traits>
+namespace celerity::detail
+{
 
 template <typename T>
 class any_accessor
@@ -11,47 +13,40 @@ class any_accessor
 public:
     using storage_type = std::aligned_storage_t<128>;
 
-    template <int Rank, cl::sycl::access::mode Mode>
-    explicit any_accessor(cl::sycl::accessor<T, Rank, Mode, cl::sycl::access::target::host_buffer> acc)
-        : rank_(Rank), mode_(Mode), target_(cl::sycl::access::target::host_buffer)
-    {
-        init(acc);
-    }
-
-    template <int Rank, cl::sycl::access::mode Mode>
-    explicit any_accessor(cl::sycl::accessor<T, Rank, Mode, cl::sycl::access::target::global_buffer, cl::sycl::access::placeholder::true_t> acc)
-        : rank_(Rank), mode_(Mode), target_(cl::sycl::access::target::global_buffer)
-    {
-        init(acc);
-    }
-
-    template <int Rank>
-    T get(cl::sycl::id<Rank> id) const
-    {
-        //assert(Rank == rank_);
-        return get<Rank>(mode_, target_, id);
-    }
-
-private:
-    template <typename AccessorType>
-    void init(AccessorType acc)
+    template <typename AccessorType,
+              std::enable_if_t<std::is_same_v<T, accessor_value_type_t<AccessorType>>, int> = 0>
+    explicit any_accessor(const AccessorType &acc) : rank_(accessor_rank_v<AccessorType>),
+                                                     mode_(accessor_mode_v<AccessorType>),
+                                                     target_(accessor_target_v<AccessorType>)
     {
         static_assert(sizeof(AccessorType) <= sizeof(storage_type));
         new (&storage_) AccessorType(acc);
     }
 
-    template <int Rank, cl::sycl::access::mode Mode, cl::sycl::access::target Target,
-              std::enable_if_t<Target == cl::sycl::access::target::host_buffer, int> = 0>
+    template <int Rank>
     T get(cl::sycl::id<Rank> id) const
     {
-        return (*reinterpret_cast<const cl::sycl::accessor<T, Rank, Mode, Target> *>(&storage_))[id];
+        return get<Rank>(mode_, target_, id);
     }
 
-    template <int Rank, cl::sycl::access::mode Mode, cl::sycl::access::target Target,
-              std::enable_if_t<Target == cl::sycl::access::target::global_buffer, int> = 0>
+    void print() const
+    {
+        printf("mode %i\ntarget %i\nrank %i\n", (int)mode_, (int)target_, (int)rank_);
+    }
+
+private:
+    template <typename AccessorType, int Rank>
     T get(cl::sycl::id<Rank> id) const
     {
-        return (*reinterpret_cast<const cl::sycl::accessor<T, Rank, Mode, Target, cl::sycl::access::placeholder::true_t> *>(&storage_))[id];
+        const auto &acc = (*reinterpret_cast<const AccessorType *>(&storage_));
+
+        printf("casted\nid %i \n", (int)id[0]);
+
+        const auto r = acc[id];
+
+        printf("exit 4 global\n");
+
+        return r;
     }
 
     template <int Rank, cl::sycl::access::mode Mode>
@@ -62,11 +57,13 @@ private:
         switch (target)
         {
         case target::global_buffer:
-            return get<Rank, Mode, target::global_buffer>(id);
+            return get<device_accessor<T, Rank, Mode, target::global_buffer>>(id);
         case target::host_buffer:
-            return get<Rank, Mode, target::host_buffer>(id);
+            return get<host_accessor<T, Rank, Mode>>(id);
+
         default:
             abort();
+            return T{};
         }
     }
 
@@ -83,8 +80,10 @@ private:
             return get<Rank, mode::write>(target, id);
         case mode::read_write:
             return get<Rank, mode::read_write>(target, id);
+
         default:
             abort();
+            return T{};
         }
     }
 
@@ -93,5 +92,7 @@ private:
     const cl::sycl::access::target target_;
     storage_type storage_;
 };
+
+} // namespace celerity::detail
 
 #endif

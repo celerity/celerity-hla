@@ -45,8 +45,8 @@ public:
 		});
 	}
 
-	template<typename V>
-	slice<T, Dim> &operator=(const V&)
+	template <typename V>
+	slice<T, Dim> &operator=(const V &)
 	{
 		static_assert(std::is_void_v<V>, "cannot assign slice");
 		return *this;
@@ -55,7 +55,7 @@ public:
 private:
 	const int idx_;
 	const variant_item<2, 3> item_;
-	const any_accessor<T> accessor_;
+	const celerity::detail::any_accessor<T> accessor_;
 };
 
 template <typename T, size_t... Extents>
@@ -88,8 +88,8 @@ public:
 		return accessor_.template get(id);
 	}
 
-	template<typename V>
-	chunk<T, Extents...> &operator=(const V&)
+	template <typename V>
+	chunk<T, Extents...> &operator=(const V &)
 	{
 		static_assert(std::is_void_v<V>, "cannot assign chunk");
 		return *this;
@@ -102,7 +102,7 @@ public:
 
 private:
 	const cl::sycl::item<rank> item_;
-	const any_accessor<T> accessor_;
+	const celerity::detail::any_accessor<T> accessor_;
 
 	template <size_t... Is>
 	bool dispatch_is_on_boundary(cl::sycl::range<rank> range, std::index_sequence<Is...>)
@@ -118,27 +118,25 @@ class all
 {
 public:
 	template <typename AccessorType>
-	all(const cl::sycl::range<Rank> range, AccessorType acc)
-		: range_(range), accessor_(acc)
+	all(AccessorType acc)
+		: accessor_(acc)
 	{
 	}
 
 	T operator[](cl::sycl::id<Rank> id) const
 	{
-		const auto item = cl::sycl::detail::make_item(id, range_);
-		return accessor_.template get(item.get_id());
+		return accessor_.template get(id);
 	}
 
-	template<typename V>
-	all<T, Rank> &operator=(const V&)
+	template <typename V>
+	all<T, Rank> &operator=(const V &)
 	{
 		static_assert(std::is_void_v<V>, "cannot assign all");
 		return *this;
 	}
 
 private:
-	const cl::sycl::range<Rank> range_;
-	const any_accessor<T> accessor_;
+	const celerity::detail::any_accessor<T> accessor_;
 };
 
 template <int Dim>
