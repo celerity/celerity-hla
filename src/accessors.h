@@ -206,6 +206,18 @@ using all_d = all<double, 1>;
 
 using all_i = all<int, 1>;
 
+using all_f2 = all<float, 2>;
+
+using all_d2 = all<double, 2>;
+
+using all_i2 = all<int, 2>;
+
+using all_f3 = all<float, 3>;
+
+using all_d3 = all<double, 3>;
+
+using all_i3 = all<int, 3>;
+
 using all_2f = all<cl::sycl::float2, 1>;
 
 using all_2d = all<cl::sycl::double2, 1>;
