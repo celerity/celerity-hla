@@ -29,24 +29,12 @@ public:
         return get<Rank>(mode_, target_, id);
     }
 
-    void print() const
-    {
-        printf("mode %i\ntarget %i\nrank %i\n", (int)mode_, (int)target_, (int)rank_);
-    }
-
 private:
     template <typename AccessorType, int Rank>
     T get(cl::sycl::id<Rank> id) const
     {
         const auto &acc = (*reinterpret_cast<const AccessorType *>(&storage_));
-
-        printf("casted\nid %i \n", (int)id[0]);
-
-        const auto r = acc[id];
-
-        printf("exit 4 global\n");
-
-        return r;
+        return acc[id];
     }
 
     template <int Rank, cl::sycl::access::mode Mode>
