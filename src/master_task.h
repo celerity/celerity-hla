@@ -16,7 +16,7 @@ namespace detail
 template <typename F>
 auto master_task(const F &f)
 {
-    static_assert(algorithm::detail::_is_master_task_v<F>, "not a compute task");
+    static_assert(algorithm::detail::is_master_task_v<F>, "not a master task");
     return task<non_blocking_master_execution_policy>(f);
 }
 

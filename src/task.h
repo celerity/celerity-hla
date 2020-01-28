@@ -12,13 +12,13 @@
 namespace celerity::algorithm
 {
 
-template <typename T, std::enable_if_t<!detail::_is_kernel_v<T>, int> = 0>
+template <typename T, std::enable_if_t<!detail::is_kernel_v<T>, int> = 0>
 auto to_kernel(T t)
 {
 	return sequence(t);
 }
 
-template <typename T, std::enable_if_t<detail::_is_kernel_v<T>, int> = 0>
+template <typename T, std::enable_if_t<detail::is_kernel_v<T>, int> = 0>
 auto to_kernel(T t)
 {
 	return t;
@@ -31,7 +31,7 @@ template <typename KernelName, typename... Actions>
 class task_t<named_distributed_execution_policy<KernelName>, Actions...>
 {
 public:
-	static_assert(((detail::_is_compute_task_v<Actions>)&&...), "task can only contain compute task functors");
+	static_assert(((detail::is_compute_task_v<Actions>)&&...), "task can only contain compute task functors");
 
 	explicit task_t(algorithm::sequence<Actions...> &&s)
 		: sequence_(std::move(s)) {}
@@ -58,7 +58,7 @@ template <typename F>
 class task_t<non_blocking_master_execution_policy, F>
 {
 public:
-	static_assert(detail::_is_master_task_v<F>, "task can only contain master task functors");
+	static_assert(detail::is_master_task_v<F>, "task can only contain master task functors");
 
 	explicit task_t(F f) : sequence_(std::move(f)) {}
 
@@ -88,7 +88,7 @@ template <typename F>
 class task_t<blocking_master_execution_policy, F>
 {
 public:
-	static_assert(detail::_is_master_task_v<F>, "task can only contain master task functors");
+	static_assert(detail::is_master_task_v<F>, "task can only contain master task functors");
 
 	explicit task_t(F f) : sequence_(std::move(f)) {}
 
@@ -124,7 +124,7 @@ auto task(const task_t<ExecutionPolicy, T> &t)
 	return t;
 }
 
-template <typename ExecutionPolicy, typename T, typename = std::enable_if_t<detail::_is_master_task_v<T>>>
+template <typename ExecutionPolicy, typename T, typename = std::enable_if_t<detail::is_master_task_v<T>>>
 auto task(const T &invocable)
 {
 	return task_t<decay_policy_t<ExecutionPolicy>, T>{invocable};

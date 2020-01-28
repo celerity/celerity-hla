@@ -119,7 +119,7 @@ auto operator|(U &&lhs, scoped_sequence<LhsSequence, LhsInvoker> &rhs)
 }
 
 template <typename LhsSequence, typename LhsInvoker, typename U,
-          std::enable_if_t<detail::_is_task_decorator_v<U> || detail::is_task_decorator_sequence<U>(), int> = 0>
+          std::enable_if_t<detail::is_task_decorator_v<U> || detail::is_task_decorator_sequence<U>(), int> = 0>
 auto operator|(U &lhs, scoped_sequence<LhsSequence, LhsInvoker> &&rhs)
 {
     rhs.disable();
@@ -127,7 +127,7 @@ auto operator|(U &lhs, scoped_sequence<LhsSequence, LhsInvoker> &&rhs)
 }
 
 template <typename LhsSequence, typename LhsInvoker, typename U,
-          std::enable_if_t<detail::_is_task_decorator_v<U> || detail::is_task_decorator_sequence<U>(), int> = 0>
+          std::enable_if_t<detail::is_task_decorator_v<U> || detail::is_task_decorator_sequence<U>(), int> = 0>
 auto operator|(U &&lhs, scoped_sequence<LhsSequence, LhsInvoker> &&rhs)
 {
     rhs.disable();

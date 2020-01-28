@@ -42,63 +42,63 @@ template <typename F, int Rank>
 constexpr inline bool is_nd_kernel_v = is_nd_kernel<F, Rank>::value;
 
 template <typename F>
-struct _is_kernel : std::bool_constant<
-						is_nd_kernel_v<F, 1> ||
-						is_nd_kernel_v<F, 2> ||
-						is_nd_kernel_v<F, 3>>
+struct is_kernel : std::bool_constant<
+					   is_nd_kernel_v<F, 1> ||
+					   is_nd_kernel_v<F, 2> ||
+					   is_nd_kernel_v<F, 3>>
 {
 };
 
 template <typename F>
-constexpr inline bool _is_kernel_v = _is_kernel<F>::value;
+constexpr inline bool is_kernel_v = is_kernel<F>::value;
 
 template <typename F>
-struct _is_compute_task : std::bool_constant<
-							  std::is_invocable_v<F, task_arg_t> &&
-							  _is_kernel_v<task_invoke_result_t<F>>>
-{
-};
-
-template <typename F>
-constexpr inline bool _is_compute_task_v = _is_compute_task<F>::value;
-
-template <typename F>
-struct _is_master_task : std::bool_constant<
+struct is_compute_task : std::bool_constant<
 							 std::is_invocable_v<F, task_arg_t> &&
-							 (_is_kernel_v<task_invoke_result_t<F>> || function_traits<task_invoke_result_t<F>>::arity == 0)>
+							 is_kernel_v<task_invoke_result_t<F>>>
 {
 };
 
 template <typename F>
-constexpr inline bool _is_master_task_v = _is_master_task<F>::value;
+constexpr inline bool is_compute_task_v = is_compute_task<F>::value;
+
+template <typename F>
+struct is_master_task : std::bool_constant<
+							std::is_invocable_v<F, task_arg_t> &&
+							(is_kernel_v<task_invoke_result_t<F>> || function_traits<task_invoke_result_t<F>>::arity == 0)>
+{
+};
+
+template <typename F>
+constexpr inline bool is_master_task_v = is_master_task<F>::value;
 
 template <typename T>
-struct _is_task_decorator : std::bool_constant<!is_sequence_v<T> && std::is_invocable_v<T, celerity::distr_queue &>>
+struct is_task_decorator : std::bool_constant<!is_sequence_v<T> && std::is_invocable_v<T, celerity::distr_queue &>>
 {
 };
 
 template <typename F>
-constexpr inline bool _is_task_decorator_v = _is_task_decorator<F>::value;
+constexpr inline bool is_task_decorator_v = is_task_decorator<F>::value;
 
 template <typename F, typename IteratorType>
-struct _is_placeholder_task_impl : std::bool_constant<std::is_invocable_v<F, IteratorType, IteratorType>>
+struct is_placeholder_task_impl : std::bool_constant<std::is_invocable_v<F, IteratorType, IteratorType>>
 {
 };
 
 template <typename F, typename IteratorType>
-struct _is_placeholder_task : std::conditional_t<is_sequence_v<F>,
-												 std::false_type,
-												 _is_placeholder_task_impl<F, IteratorType>>
+struct is_placeholder_task : std::conditional_t<is_sequence_v<F>,
+												std::false_type,
+												is_placeholder_task_impl<F, IteratorType>>
 {
 };
 
 template <typename F, typename IteratorType>
-constexpr inline bool _is_placeholder_task_v = _is_placeholder_task<F, IteratorType>::value;
+constexpr inline bool is_placeholder_task_v = is_placeholder_task<F, IteratorType>::value;
 
 template <typename T, size_t... Is>
 constexpr bool dispatch_is_task_decorator_sequence(std::index_sequence<Is...>)
 {
-	return ((_is_task_decorator_v<std::tuple_element_t<Is, typename T::actions_t>>)&&...);
+	return ((is_task_decorator_v<std::tuple_element_t<Is, typename T::actions_t>>)&&...);
 }
 
 template <typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
