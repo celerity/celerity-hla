@@ -43,19 +43,20 @@ public:
 
 	T operator[](int pos) const
 	{
-		return item_.apply([pos, acc = accessor_](const auto &item) {
+		return item_.apply([pos, this](const auto &item) {
 			auto id = item.get_id();
 			id[Dim] = pos;
-			return acc.template get(id);
+			return accessor_.template get(id);
 		});
 	}
 
+	slice(const slice<T, Dim> &) = delete;
+	slice(slice<T, Dim> &&) = delete;
+	slice<T, Dim> &operator=(const slice<T, Dim> &) = delete;
+	slice<T, Dim> &operator=(slice<T, Dim> &&) = delete;
+
 	template <typename V>
-	slice<T, Dim> &operator=(const V &)
-	{
-		static_assert(std::is_void_v<V>, "cannot assign slice");
-		return *this;
-	}
+	slice<T, Dim> &operator=(const V &) = delete;
 
 private:
 	const int idx_;
@@ -68,7 +69,6 @@ class chunk
 {
 public:
 	static constexpr auto rank = sizeof...(Extents);
-	static constexpr std::array<size_t, rank> extents = {Extents...};
 
 	template <typename AccessorType>
 	chunk(cl::sycl::item<rank> item, AccessorType acc)
@@ -88,19 +88,22 @@ public:
 		auto id = item_.get_id();
 
 		for (auto i = 0u; i < rank; ++i)
+		{
 			id[i] = static_cast<size_t>(static_cast<long>(id[i]) + rel_id[i]);
+		}
 
 		return accessor_.template get(id);
 	}
 
-	template <typename V>
-	chunk<T, Extents...> &operator=(const V &)
-	{
-		static_assert(std::is_void_v<V>, "cannot assign chunk");
-		return *this;
-	}
+	chunk(const chunk<T, Extents...> &) = delete;
+	chunk(chunk<T, Extents...> &&) = delete;
+	chunk<T, Extents...> &operator=(const chunk<T, Extents...> &) = delete;
+	chunk<T, Extents...> &operator=(chunk<T, Extents...> &&) = delete;
 
-	bool is_on_boundary(cl::sycl::range<rank> range)
+	template <typename V>
+	chunk<T, Extents...> &operator=(const V &) = delete;
+
+	bool is_on_boundary(cl::sycl::range<rank> range) const
 	{
 		return dispatch_is_on_boundary(range, std::make_index_sequence<rank>());
 	}
@@ -110,7 +113,7 @@ private:
 	const celerity::detail::any_accessor<T> accessor_;
 
 	template <size_t... Is>
-	bool dispatch_is_on_boundary(cl::sycl::range<rank> range, std::index_sequence<Is...>)
+	bool dispatch_is_on_boundary(cl::sycl::range<rank> range, std::index_sequence<Is...>) const
 	{
 		const auto id = item_.get_id();
 
@@ -134,12 +137,13 @@ public:
 		return accessor_.template get(id);
 	}
 
+	all(const all<T, Rank> &) = delete;
+	all(all<T, Rank> &&) = delete;
+	all<T, Rank> &operator=(const all<T, Rank> &) = delete;
+	all<T, Rank> &operator=(all<T, Rank> &&) = delete;
+
 	template <typename V>
-	all<T, Rank> &operator=(const V &)
-	{
-		static_assert(std::is_void_v<V>, "cannot assign all");
-		return *this;
-	}
+	all<T, Rank> &operator=(const V &) = delete;
 
 private:
 	const sycl_marker _ = {};
