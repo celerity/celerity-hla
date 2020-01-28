@@ -13,19 +13,19 @@ void setup_wave(celerity::distr_queue &queue, celerity::buffer<float, 2> &u, cl:
 {
 	using namespace celerity::algorithm;
 
-	generate(distr<class setup>(queue), u,
-			 [c = center, a = amplitude, s = sigma](cl::sycl::item<2> item) {
-				 const auto dx = item[1] - c.x();
-				 const auto dy = item[0] - c.y();
-				 return a * cl::sycl::exp(-(dx * dx / (2.f * s.x() * s.x()) + dy * dy / (2.f * s.y() * s.y())));
-			 });
+	generate<class setup>(queue, u,
+						  [c = center, a = amplitude, s = sigma](cl::sycl::item<2> item) {
+							  const auto dx = item[1] - c.x();
+							  const auto dy = item[0] - c.y();
+							  return a * cl::sycl::exp(-(dx * dx / (2.f * s.x() * s.x()) + dy * dy / (2.f * s.y() * s.y())));
+						  });
 }
 
 void zero(celerity::distr_queue &queue, celerity::buffer<float, 2> &buf)
 {
 	using namespace celerity::algorithm;
 
-	fill(distr<class zero>(queue), buf, 0.f);
+	fill<class zero>(queue, buf, 0.f);
 }
 
 struct init_config
@@ -47,12 +47,12 @@ void step(celerity::distr_queue &queue, celerity::buffer<T, 2> &up, celerity::bu
 {
 	using namespace celerity::algorithm;
 
-	transform(distr<KernelName>(queue), up, u, up,
-			  [=](T v_up, chunk<T, 1, 1> v_u) {
-				  const float lap = (dt / delta.y()) * (dt / delta.y()) * ((v_u[{1, 0}] - *v_u) - (*v_u - v_u[{-1, 0}])) + (dt / delta.x()) * (dt / delta.x()) * ((v_u[{0, 1}] - *v_u) - (*v_u - v_u[{0, -1}]));
+	transform<KernelName>(queue, up, u, up,
+						  [=](T v_up, const chunk<T, 1, 1> &v_u) {
+							  const float lap = (dt / delta.y()) * (dt / delta.y()) * ((v_u[{1, 0}] - *v_u) - (*v_u - v_u[{-1, 0}])) + (dt / delta.x()) * (dt / delta.x()) * ((v_u[{0, 1}] - *v_u) - (*v_u - v_u[{0, -1}]));
 
-				  return Config::a * 2 * *v_u - Config::b * v_up + Config::c * lap;
-			  });
+							  return Config::a * 2 * *v_u - Config::b * v_up + Config::c * lap;
+						  });
 }
 
 void initialize(celerity::distr_queue &queue, celerity::buffer<float, 2> &up, celerity::buffer<float, 2> &u, float dt, cl::sycl::float2 delta)
@@ -73,7 +73,7 @@ void store(celerity::distr_queue &queue, celerity::buffer<T, 2> &up, std::vector
 	const auto range = up.get_range();
 	std::vector<float> v(range.size());
 
-	copy(master(queue), up, v.data());
+	copy(master_blocking(queue), up, v.data());
 
 	result_frames.emplace_back(std::move(v));
 }

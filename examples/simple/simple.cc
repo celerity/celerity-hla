@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 		buf_a |
 			algorithm::fill<class produce_a>(queue, {}, 1.f) |
 			algorithm::transform<class compute_c>(queue, {}, buf_c, [](float x) { return 2.f - x; }) |
-			algorithm::transform<class compute_b>(queue, buf_a, buf_b, [](float x) { return 2.f * x; }) | // parallel
+			algorithm::transform<class compute_b>(queue, buf_a, buf_b, [](float x) { return 2.f * x; }) |
 			algorithm::transform<class compute_d>(queue, {}, {}, buf_d, std::plus<float>{}) << buf_c;
 
 		transform(algorithm::master(queue), begin(buf_a), end(buf_a), begin(buf_c), [](float x) { return 2.f - x; });

@@ -3,7 +3,7 @@
 #include "../../src/actions.h"
 #include "../../src/buffer_traits.h"
 
-constexpr auto MAT_SIZE = 128;
+constexpr auto MAT_SIZE = 4;
 
 using namespace celerity;
 using namespace algorithm;
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 		for (size_t j = 0; j < MAT_SIZE; ++j)
 		{
 			mat_a[i * MAT_SIZE + j] = i == j;
-			mat_b[i * MAT_SIZE + j] = i == j;
+			mat_b[i * MAT_SIZE + j] = (i == j) * 2;
 		}
 	}
 
@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 		buffer_type mat_b_buf(mat_b.data(), cl::sycl::range<2>{MAT_SIZE, MAT_SIZE});
 		buffer_type mat_c_buf(cl::sycl::range<2>{MAT_SIZE, MAT_SIZE});
 
-		auto multiply = [](t::slice<1> a, t::slice<0> b) {
+		auto multiply = [](const t::slice<1> &a, const t::slice<0> &b) {
 			auto sum = 0.f;
 
 			for (auto k = 0; k < MAT_SIZE; ++k)
@@ -58,9 +58,11 @@ int main(int argc, char *argv[])
 		MPI_Barrier(MPI_COMM_WORLD);
 		celerity::experimental::bench::begin("main program");
 
-		mat_a_buf |
-			algorithm::transform<class mul_ab>(queue, {}, {}, mat_c_buf, multiply) << mat_b_buf |
-			algorithm::transform<class mul_bc>(queue, {}, {}, mat_a_buf, multiply) << mat_b_buf;
+		auto seq = mat_a_buf |
+				   algorithm::transform<class mul_ab>(queue, {}, {}, mat_c_buf, multiply) << mat_b_buf |
+				   algorithm::transform<class mul_bc>(queue, {}, {}, mat_a_buf, multiply) << mat_b_buf;
+
+		seq(queue);
 
 		algorithm::master_task(algorithm::master(queue), [=, &verification_passed](auto &cgh) {
 			auto r_d = mat_a_buf.get_access<cl::sycl::access::mode::read>(cgh, mat_a_buf.get_range());
@@ -70,7 +72,7 @@ int main(int argc, char *argv[])
 				{
 					for (size_t j = 0; j < MAT_SIZE; ++j)
 					{
-						const float correct_value = i == j;
+						const float correct_value = (i == j) * 4;
 
 						if (r_d[{i, j}] == correct_value)
 							continue;
@@ -89,14 +91,14 @@ int main(int argc, char *argv[])
 
 		queue.slow_full_sync();
 	}
-	catch (std::exception &e)
-	{
-		std::cerr << "Exception: " << e.what() << std::endl;
-		return EXIT_FAILURE;
-	}
 	catch (cl::sycl::exception &e)
 	{
 		std::cerr << "SYCL Exception: " << e.what() << std::endl;
+		return EXIT_FAILURE;
+	}
+	catch (std::exception &e)
+	{
+		std::cerr << "Exception: " << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
 
