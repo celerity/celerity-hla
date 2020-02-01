@@ -13,6 +13,8 @@
 #include "decorators/zip_decorator.h"
 
 #include "computation_type_traits.h"
+#include "fusion.h"
+
 namespace celerity::algorithm
 {
 
@@ -24,11 +26,13 @@ auto operator|(T lhs, U rhs)
     return lhs | r;
 }
 
-template <typename T, typename U, std::enable_if_t<detail::is_task_decorator_v<T> && detail::is_task_decorator_v<U> && !detail::is_computation_type_v<U, computation_type::generate>, int> = 0>
-auto operator|(T lhs, U rhs)
-{
-    return sequence(lhs, rhs);
-}
+// template <typename T, typename U,
+//     std::enable_if_t<detail::is_task_decorator_v<T> &&
+//     detail::is_task_decorator_v<U> && !detail::is_computation_type_v<U, computation_type::generate>, int> = 0>
+// auto operator|(T lhs, U rhs)
+// {
+//     return sequence(lhs, rhs);
+// }
 
 template <typename T, typename U, std::enable_if_t<detail::is_task_decorator_sequence<T>() && detail::is_task_decorator_v<U> && !detail::is_computation_type_v<U, computation_type::generate>, int> = 0>
 auto operator|(T lhs, U rhs)

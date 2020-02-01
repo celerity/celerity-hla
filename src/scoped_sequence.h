@@ -3,6 +3,7 @@
 
 #include "sequence.h"
 #include "kernel_traits.h"
+#include "decoration.h"
 
 namespace celerity::algorithm
 {
@@ -27,7 +28,7 @@ public:
         if (!invoke)
             return;
 
-        sequence_ | invoker_;
+        this->operator()();
     }
 
     using invoke_result_type = std::conditional_t<std::is_invocable_v<Sequence, Invoker &>,
@@ -36,6 +37,12 @@ public:
 
     operator invoke_result_type()
     {
+        return std::invoke(sequence_, invoker_);
+    }
+
+    auto operator()()
+    {
+        disable();
         return std::invoke(sequence_, invoker_);
     }
 

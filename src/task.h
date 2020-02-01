@@ -31,6 +31,8 @@ template <typename KernelName, typename... Actions>
 class task_t<named_distributed_execution_policy<KernelName>, Actions...>
 {
 public:
+	using execution_policy_type = named_distributed_execution_policy<KernelName>;
+
 	static_assert(((detail::is_compute_task_v<Actions>)&&...), "task can only contain compute task functors");
 
 	explicit task_t(algorithm::sequence<Actions...> &&s)
@@ -49,6 +51,8 @@ public:
 			cgh.template parallel_for<KernelName>(d, *beg, to_kernel(r));
 		});
 	}
+
+	auto get_sequence() const { return sequence_; }
 
 private:
 	algorithm::sequence<Actions...> sequence_;
@@ -79,6 +83,8 @@ public:
 			cgh.run(std::invoke(seq, cgh));
 		});
 	}
+
+	auto get_sequence() const { return sequence_; }
 
 private:
 	algorithm::sequence<F> sequence_;
@@ -113,6 +119,8 @@ public:
 
 		q.slow_full_sync();
 	}
+
+	auto get_sequence() const { return sequence_; }
 
 private:
 	algorithm::sequence<F> sequence_;

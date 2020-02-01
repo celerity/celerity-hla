@@ -3,6 +3,7 @@
 
 #include "celerity_helper.h"
 #include "task.h"
+#include "decoration.h"
 
 namespace celerity::algorithm
 {
@@ -10,6 +11,18 @@ namespace celerity::algorithm
 inline auto submit_to(celerity::distr_queue q)
 {
 	return q;
+}
+
+template <typename F>
+decltype(auto) operator|(task_t<non_blocking_master_execution_policy, F> lhs, celerity::distr_queue queue)
+{
+	return std::invoke(lhs, queue);
+}
+
+template <typename F>
+decltype(auto) operator|(task_t<blocking_master_execution_policy, F> lhs, celerity::distr_queue queue)
+{
+	return std::invoke(lhs, queue);
 }
 
 template <typename T, std::enable_if_t<detail::is_task_decorator_v<T>, int> = 0>

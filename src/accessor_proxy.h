@@ -107,8 +107,8 @@ public:
 	}
 };
 
-template <typename ExecutionPolicy, cl::sycl::access::mode Mode, typename AccessorType, typename T, int Rank>
-auto get_access(celerity::handler &cgh, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end)
+template <typename ExecutionPolicy, cl::sycl::access::mode Mode, typename AccessorType, template <typename, int> typename Iterator, typename T, int Rank>
+auto get_access(celerity::handler &cgh, Iterator<T, Rank> beg, Iterator<T, Rank> end)
 {
 	if constexpr (policy_traits<ExecutionPolicy>::is_distributed)
 	{
@@ -123,6 +123,7 @@ auto get_access(celerity::handler &cgh, buffer_iterator<T, Rank> beg, buffer_ite
 		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{acc, beg.get_buffer().get_range()};
 	}
 }
+
 } // namespace celerity::algorithm
 
 #endif // ACCESSOR_PROXY_H
