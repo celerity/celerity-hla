@@ -65,6 +65,14 @@ auto decorate_zip(TaskType task,
         task, in_beg, in_end, second_in_beg, out_beg);
 }
 
+namespace detail
+{
+template <typename... Args>
+struct is_task_decorator<zip_task_decorator<Args...>> : std::bool_constant<true>
+{
+};
+} // namespace detail
+
 } // namespace celerity::algorithm
 
 #endif // ZIP_DECORATOR_H

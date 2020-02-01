@@ -48,6 +48,16 @@ auto decorate_generate(TaskType task, buffer_iterator<OutputValueType, Rank> out
     return generate_task_decorator<TaskType, InputValueType, OutputValueType, Rank>(task, out_beg, out_end);
 }
 
+namespace detail
+{
+
+template <typename... Args>
+struct is_task_decorator<generate_task_decorator<Args...>> : std::bool_constant<true>
+{
+};
+
+} // namespace detail
+
 } // namespace celerity::algorithm
 
 #endif // GENERATE_DECORATOR_H

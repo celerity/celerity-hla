@@ -50,6 +50,17 @@ auto decorate_transform(TaskType task, buffer_iterator<InputValueType, Rank> in_
     return transform_task_decorator<TaskType, InputValueType, OutputValueType, Rank, InputAccessType>(task, in_beg, in_end, out_beg);
 }
 
+namespace detail
+{
+
+template <typename ComputationFunctor, typename InputValueType, typename OutputValueType, int Rank, access_type InputAccessType>
+struct is_task_decorator<transform_task_decorator<ComputationFunctor, InputValueType, OutputValueType, Rank, InputAccessType>>
+    : std::bool_constant<true>
+{
+};
+
+} // namespace detail
+
 } // namespace celerity::algorithm
 
 #endif // TRANSFORM_DECORATOR_H
