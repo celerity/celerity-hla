@@ -25,7 +25,9 @@ using nd_kernel_arg_t = cl::sycl::item<Rank>;
 using task_arg_t = handler &;
 
 template <typename F>
-using task_invoke_result_t = std::invoke_result_t<F, task_arg_t>;
+using task_invoke_result_t = std::conditional_t<std::is_invocable_v<F, task_arg_t>,
+												std::invoke_result_t<F, task_arg_t>,
+												void>;
 
 template <typename F>
 using task_first_invoke_result_t = std::tuple_element_t<0, std::invoke_result_t<F, task_arg_t>>;
@@ -72,14 +74,6 @@ struct is_master_task : std::bool_constant<
 template <typename F>
 constexpr inline bool is_master_task_v = is_master_task<F>::value;
 
-template <typename T>
-struct is_task_decorator : std::bool_constant<!is_sequence_v<T> && std::is_invocable_v<T, celerity::distr_queue &>>
-{
-};
-
-template <typename F>
-constexpr inline bool is_task_decorator_v = is_task_decorator<F>::value;
-
 template <typename F, typename IteratorType>
 struct is_placeholder_task_impl : std::bool_constant<std::is_invocable_v<F, IteratorType, IteratorType>>
 {
@@ -94,24 +88,6 @@ struct is_placeholder_task : std::conditional_t<is_sequence_v<F>,
 
 template <typename F, typename IteratorType>
 constexpr inline bool is_placeholder_task_v = is_placeholder_task<F, IteratorType>::value;
-
-template <typename T, size_t... Is>
-constexpr bool dispatch_is_task_decorator_sequence(std::index_sequence<Is...>)
-{
-	return ((is_task_decorator_v<std::tuple_element_t<Is, typename T::actions_t>>)&&...);
-}
-
-template <typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
-constexpr bool is_task_decorator_sequence()
-{
-	return dispatch_is_task_decorator_sequence<T>(std::make_index_sequence<T::num_actions>{});
-}
-
-template <typename T, std::enable_if_t<!is_sequence_v<T>, int> = 0>
-constexpr bool is_task_decorator_sequence()
-{
-	return false;
-}
 
 } // namespace detail
 

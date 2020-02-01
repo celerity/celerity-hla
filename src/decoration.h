@@ -6,10 +6,13 @@
 
 #include "computation_type.h"
 
+#include "decorator_traits.h"
+
 #include "decorators/transform_decorator.h"
 #include "decorators/generate_decorator.h"
 #include "decorators/zip_decorator.h"
 
+#include "computation_type_traits.h"
 namespace celerity::algorithm
 {
 
