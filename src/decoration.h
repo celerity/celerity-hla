@@ -18,9 +18,33 @@
 namespace celerity::algorithm
 {
 
-template <typename T, typename U, std::enable_if_t<detail::is_task_decorator_v<T> && detail::is_placeholder_task_v<U, typename T::output_iterator_type>, int> = 0>
+template <typename Placeholder, typename Iterator>
+inline constexpr auto is_compatible_placeholder_v = detail::is_placeholder_task_v<Placeholder, Iterator>;
+
+template <typename Placeholder, typename Iterator>
+using substitution_result_t = std::invocation_result_t<Placeholder, Iterator>;
+
+template <typename T, typename U, std::enable_if_t<detail::is_task_decorator_v<T> && is_compatible_placeholder_v<U, typename T::output_iterator_type> && detail::is_task_decorator_v<substitution_result_t<U, typename T::output_iterator_type>>, int> = 0>
 auto operator|(T lhs, U rhs)
 {
+    const auto output_it = lhs.get_out_iterator();
+    const auto r = rhs(begin(output_it.get_buffer()), end(output_it.get_buffer()));
+    return lhs | r;
+}
+
+// TODO
+//
+// placholder substitution results in another placholder -> for transform tasks this is okay
+// output buffer will be created on the fly
+//
+// zip tasks need distinction between missing second operand and missing output buffer
+//
+// creating output buffers requires additional type information from the result of the
+// kernel functor -> create partially packaged tasks class
+template <typename T, typename U, std::enable_if_t<detail::is_task_decorator_v<T> && is_compatible_placeholder_v<U, typename T::output_iterator_type> && !detail::is_task_decorator_v<substitution_result_t<U, typename T::output_iterator_type>>, int> = 0>
+auto operator|(T lhs, U rhs)
+{
+
     const auto output_it = lhs.get_out_iterator();
     const auto r = rhs(begin(output_it.get_buffer()), end(output_it.get_buffer()));
     return lhs | r;

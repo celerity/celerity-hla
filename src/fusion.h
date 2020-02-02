@@ -20,12 +20,15 @@ constexpr auto is_simple_transform_decorator_v = detail::is_computation_type_v<T
 // Does not work like that.
 //
 // move buffer identification to compile time using some kind of indexing
-// and only do sanity checks at runtime. Needs to be done at runtime, otherwise
+// and only do sanity checks at runtime. Needs to be done at compile time , otherwise
 // we can not fuse kernels as invoking function pointers (to fused, type-erased kernels)
 // is not permitted in device code.
 //
 // Idea is to tag buffers with ids before computation to tell them apart. Then do the same
 // distinction of fusion cases as below.
+//
+// Another idea would be to restrain fusion to cases where there is only one input buffer and one explicit or implicit output buffer
+//
 //
 template <typename T, typename U, std::enable_if_t<is_simple_transform_decorator_v<T> && is_simple_transform_decorator_v<U>, int> = 0>
 auto operator|(T lhs, U rhs)
