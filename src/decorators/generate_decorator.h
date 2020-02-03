@@ -10,7 +10,7 @@ namespace celerity::algorithm
 {
 
 template <typename TaskType, typename InputValueType, typename OutputValueType, int Rank>
-class generate_task_decorator
+class packaged_generate
 {
 public:
     static constexpr auto computation_type = computation_type::generate;
@@ -22,7 +22,7 @@ public:
 
     static_assert(std::is_convertible_v<input_value_type, output_value_type>);
 
-    generate_task_decorator(task_type task, output_iterator_type out_beg, output_iterator_type out_end)
+    packaged_generate(task_type task, output_iterator_type out_beg, output_iterator_type out_end)
         : task_(task), out_beg_(out_beg), out_end_(out_end)
     {
         assert(out_beg_.get_buffer().get_id() == out_end_.get_buffer().get_id());
@@ -43,16 +43,17 @@ private:
 };
 
 template <typename InputValueType, typename TaskType, typename OutputValueType, int Rank>
-auto decorate_generate(TaskType task, buffer_iterator<OutputValueType, Rank> out_beg, buffer_iterator<OutputValueType, Rank> out_end)
+auto package_generate(TaskType task, buffer_iterator<OutputValueType, Rank> out_beg, buffer_iterator<OutputValueType, Rank> out_end)
 {
-    return generate_task_decorator<TaskType, InputValueType, OutputValueType, Rank>(task, out_beg, out_end);
+    return packaged_generate<TaskType, InputValueType, OutputValueType, Rank>(task, out_beg, out_end);
 }
 
 namespace detail
 {
 
-template <typename... Args>
-struct is_task_decorator<generate_task_decorator<Args...>> : std::bool_constant<true>
+template <typename TaskType, typename InputValueType, typename OutputValueType, int Rank>
+struct is_packaged_task<packaged_generate<TaskType, InputValueType, OutputValueType, Rank>>
+    : std::bool_constant<true>
 {
 };
 

@@ -36,14 +36,14 @@ auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 template <typename ExecutionPolicy, typename T, int Rank>
 auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
 {
-    return decorate_generate<T>(task<ExecutionPolicy>(detail::fill(p, beg, end, value)), beg, end);
+    return package_generate<T>(task<ExecutionPolicy>(detail::fill(p, beg, end, value)), beg, end);
 }
 
 template <typename ExecutionPolicy, typename T>
 auto fill(ExecutionPolicy p, buffer_iterator_placeholder, buffer_iterator_placeholder, const T &value)
 {
     return [=](auto beg, auto end) {
-        return decorate_generate<T>(task<ExecutionPolicy>(detail::fill(p, beg, end, value)), beg, end);
+        return package_generate<T>(task<ExecutionPolicy>(detail::fill(p, beg, end, value)), beg, end);
     };
 }
 

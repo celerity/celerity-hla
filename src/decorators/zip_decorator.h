@@ -10,7 +10,7 @@ namespace celerity::algorithm
 {
 
 template <typename TaskType, typename FirstInputValueType, typename SecondInputValueType, typename OutputValueType, int Rank, access_type FirstInputAccessType, access_type SecondInputAccessType>
-class zip_task_decorator
+class packaged_zip
 {
 public:
     static constexpr auto computation_type = computation_type::transform;
@@ -26,11 +26,11 @@ public:
     using second_input_iterator_type = buffer_iterator<second_input_value_type, Rank>;
     using output_iterator_type = buffer_iterator<output_value_type, Rank>;
 
-    zip_task_decorator(task_type task,
-                       first_input_iterator_type in_beg,
-                       first_input_iterator_type in_end,
-                       second_input_iterator_type second_in_beg,
-                       output_iterator_type out_beg)
+    packaged_zip(task_type task,
+                 first_input_iterator_type in_beg,
+                 first_input_iterator_type in_end,
+                 second_input_iterator_type second_in_beg,
+                 output_iterator_type out_beg)
         : task_(task), in_beg_(in_beg), in_end_(in_end), second_in_beg_(second_in_beg), out_beg_(out_beg)
     {
         assert(in_beg_.get_buffer().get_id() == in_end_.get_buffer().get_id());
@@ -55,22 +55,25 @@ private:
 };
 
 template <access_type FirstInputAccessType, access_type SecondInputAccessType, typename TaskType, typename FirstInputValueType, typename SecondInputValueType, typename OutputValueType, int Rank>
-auto decorate_zip(TaskType task,
-                  buffer_iterator<FirstInputValueType, Rank> in_beg,
-                  buffer_iterator<FirstInputValueType, Rank> in_end,
-                  buffer_iterator<SecondInputValueType, Rank> second_in_beg,
-                  buffer_iterator<OutputValueType, Rank> out_beg)
+auto package_zip(TaskType task,
+                 buffer_iterator<FirstInputValueType, Rank> in_beg,
+                 buffer_iterator<FirstInputValueType, Rank> in_end,
+                 buffer_iterator<SecondInputValueType, Rank> second_in_beg,
+                 buffer_iterator<OutputValueType, Rank> out_beg)
 {
-    return zip_task_decorator<TaskType, FirstInputValueType, SecondInputValueType, OutputValueType, Rank, FirstInputAccessType, SecondInputAccessType>(
+    return packaged_zip<TaskType, FirstInputValueType, SecondInputValueType, OutputValueType, Rank, FirstInputAccessType, SecondInputAccessType>(
         task, in_beg, in_end, second_in_beg, out_beg);
 }
 
 namespace detail
 {
-template <typename... Args>
-struct is_task_decorator<zip_task_decorator<Args...>> : std::bool_constant<true>
+
+template <typename TaskType, typename FirstInputValueType, typename SecondInputValueType, typename OutputValueType, int Rank, access_type FirstInputAccessType, access_type SecondInputAccessType>
+struct is_packaged_task<packaged_zip<TaskType, FirstInputValueType, SecondInputValueType, OutputValueType, Rank, FirstInputAccessType, SecondInputAccessType>>
+    : std::bool_constant<true>
 {
 };
+
 } // namespace detail
 
 } // namespace celerity::algorithm

@@ -86,7 +86,7 @@ template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F
           ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
-    return decorate_transform<algorithm::detail::get_accessor_type<F, 0>()>(
+    return package_transform<algorithm::detail::get_accessor_type<F, 0>()>(
         [p, f](auto _beg, auto _end, auto _out) { return task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>>(p, _beg, _end, _out, f)); },
         beg, end, out);
 }
@@ -96,7 +96,7 @@ template <typename ExecutionPolicy, typename U, int Rank, typename F,
 auto transform(ExecutionPolicy p, buffer_iterator_placeholder, buffer_iterator_placeholder, buffer_iterator<U, Rank> out, const F &f)
 {
     return [=](auto beg, auto end) {
-        return decorate_transform<algorithm::detail::get_accessor_type<F, 0>()>(
+        return package_transform<algorithm::detail::get_accessor_type<F, 0>()>(
             task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, typename decltype(beg)::value_type>>(p, beg, end, out, f)),
             beg, end, out);
     };
@@ -106,7 +106,7 @@ template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F
           ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
-    return decorate_transform<algorithm::detail::get_accessor_type<F, 0>()>(
+    return package_transform<algorithm::detail::get_accessor_type<F, 0>()>(
         task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 1, T>>(p, beg, end, out, f)),
         beg, end, out);
 }
@@ -115,7 +115,7 @@ template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F
           ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
-    return decorate_zip<algorithm::detail::get_accessor_type<F, 0>(), algorithm::detail::get_accessor_type<F, 1>()>(
+    return package_zip<algorithm::detail::get_accessor_type<F, 0>(), algorithm::detail::get_accessor_type<F, 1>()>(
         task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>, algorithm::detail::accessor_type_t<F, 1, U>, one_to_one>(p, beg, end, beg2, out, f)),
         beg, end, beg2, out);
 }
@@ -125,7 +125,7 @@ template <typename ExecutionPolicy, typename U, typename V, int Rank, typename F
 auto transform(ExecutionPolicy p, buffer_iterator_placeholder, buffer_iterator_placeholder, buffer_iterator<U, Rank> beg2, buffer_iterator<V, Rank> out, const F &f)
 {
     return [=](auto beg, auto end) {
-        return decorate_zip<algorithm::detail::get_accessor_type<F, 0>(), algorithm::detail::get_accessor_type<F, 1>()>(
+        return package_zip<algorithm::detail::get_accessor_type<F, 0>(), algorithm::detail::get_accessor_type<F, 1>()>(
             task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, typename decltype(beg)::value_type>, algorithm::detail::accessor_type_t<F, 1, U>, one_to_one>(p, beg, end, beg2, out, f)),
             beg, end, beg2, out);
     };
@@ -144,7 +144,7 @@ template <typename ExecutionPolicy, typename T, int Rank, typename F, typename U
           ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 3, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
-    return decorate_zip<algorithm::detail::get_accessor_type<F, 1>(), algorithm::detail::get_accessor_type<F, 2>()>(
+    return package_zip<algorithm::detail::get_accessor_type<F, 1>(), algorithm::detail::get_accessor_type<F, 2>()>(
         task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 1, T>, algorithm::detail::accessor_type_t<F, 2, U>, one_to_one>(p, beg, end, beg2, out, f)),
         beg, end, beg2, out);
 }

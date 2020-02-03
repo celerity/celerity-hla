@@ -25,26 +25,26 @@ decltype(auto) operator|(task_t<blocking_master_execution_policy, F> lhs, celeri
 	return std::invoke(lhs, queue);
 }
 
-template <typename T, std::enable_if_t<detail::is_task_decorator_v<T>, int> = 0>
-decltype(auto) operator|(T &&lhs, celerity::distr_queue &&queue)
+template <typename T, std::enable_if_t<detail::is_packaged_task_v<T>, int> = 0>
+decltype(auto) operator|(T &&lhs, distr_queue &&queue)
 {
 	return std::invoke(lhs, queue);
 }
 
-template <typename T, std::enable_if_t<detail::is_task_decorator_v<T>, int> = 0>
-decltype(auto) operator|(T &&lhs, celerity::distr_queue &queue)
+template <typename T, std::enable_if_t<detail::is_packaged_task_v<T>, int> = 0>
+decltype(auto) operator|(T &&lhs, distr_queue &queue)
 {
 	return std::invoke(lhs, queue);
 }
 
-template <typename T, std::enable_if_t<detail::is_task_decorator_v<T>, int> = 0>
-decltype(auto) operator|(T &lhs, celerity::distr_queue &&queue)
+template <typename T, std::enable_if_t<detail::is_packaged_task_v<T>, int> = 0>
+decltype(auto) operator|(T &lhs, distr_queue &&queue)
 {
 	return std::invoke(lhs, queue);
 }
 
-template <typename T, std::enable_if_t<detail::is_task_decorator_v<T>, int> = 0>
-decltype(auto) operator|(T &lhs, celerity::distr_queue &queue)
+template <typename T, std::enable_if_t<detail::is_packaged_task_v<T>, int> = 0>
+decltype(auto) operator|(T &lhs, distr_queue &queue)
 {
 	return std::invoke(lhs, queue);
 }

@@ -46,7 +46,7 @@ auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T
     static_assert(algorithm::detail::get_accessor_type<F, 0>() == access_type::item);
 
     using value_type = std::invoke_result_t<F, cl::sycl::item<Rank>>;
-    return decorate_generate<value_type>(task<ExecutionPolicy>(detail::generate(p, beg, end, f)), beg, end);
+    return package_generate<value_type>(task<ExecutionPolicy>(detail::generate(p, beg, end, f)), beg, end);
 }
 
 // DISABLED
@@ -58,7 +58,7 @@ auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T
                   "Disabled as there is no real use cases as long as functors are required to be immutable");
 
     using value_type = std::invoke_result_t<F>;
-    return decorate_generate<value_type>(task<ExecutionPolicy>(detail::generate(p, beg, end, f)), beg, end);
+    return package_generate<value_type>(task<ExecutionPolicy>(detail::generate(p, beg, end, f)), beg, end);
 }
 
 } // namespace actions

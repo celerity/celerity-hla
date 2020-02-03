@@ -2,6 +2,8 @@
 #include "../src/iterator.h"
 #include "../src/kernel_traits.h"
 #include "../src/sequence.h"
+#include "../src/decorator_traits.h"
+#include "../src/decorators/generate_decorator.h"
 
 #include <vector>
 #include <stdlib.h>

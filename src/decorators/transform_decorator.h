@@ -10,8 +10,8 @@
 namespace celerity::algorithm
 {
 
-template <typename ComputationFunctor, typename InputValueType, typename OutputValueType, int Rank, access_type InputAccessType>
-class transform_task_decorator
+template <int Rank, access_type InputAccessType, typename ComputationFunctor, typename InputValueType, typename OutputValueType>
+class packaged_transform
 {
 public:
     static constexpr auto computation_type = computation_type::transform;
@@ -23,7 +23,7 @@ public:
     using input_iterator_type = buffer_iterator<input_value_type, Rank>;
     using output_iterator_type = buffer_iterator<output_value_type, Rank>;
 
-    transform_task_decorator(ComputationFunctor functor, input_iterator_type in_beg, input_iterator_type in_end, output_iterator_type out_beg)
+    packaged_transform(ComputationFunctor functor, input_iterator_type in_beg, input_iterator_type in_end, output_iterator_type out_beg)
         : functor_(functor), in_beg_(in_beg), in_end_(in_end), out_beg_(out_beg)
     {
         assert(in_beg_.get_buffer().get_id() == in_end_.get_buffer().get_id());
@@ -57,16 +57,16 @@ private:
 };
 
 template <access_type InputAccessType, typename TaskType, typename InputValueType, typename OutputValueType, int Rank>
-auto decorate_transform(TaskType task, buffer_iterator<InputValueType, Rank> in_beg, buffer_iterator<InputValueType, Rank> in_end, buffer_iterator<OutputValueType, Rank> out_beg)
+auto package_transform(TaskType task, buffer_iterator<InputValueType, Rank> in_beg, buffer_iterator<InputValueType, Rank> in_end, buffer_iterator<OutputValueType, Rank> out_beg)
 {
-    return transform_task_decorator<TaskType, InputValueType, OutputValueType, Rank, InputAccessType>(task, in_beg, in_end, out_beg);
+    return packaged_transform<Rank, InputAccessType, TaskType, InputValueType, OutputValueType>(task, in_beg, in_end, out_beg);
 }
 
 namespace detail
 {
 
-template <typename ComputationFunctor, typename InputValueType, typename OutputValueType, int Rank, access_type InputAccessType>
-struct is_task_decorator<transform_task_decorator<ComputationFunctor, InputValueType, OutputValueType, Rank, InputAccessType>>
+template <int Rank, access_type InputAccessType, typename ComputationFunctor, typename InputValueType, typename OutputValueType>
+struct is_packaged_task<packaged_transform<Rank, InputAccessType, ComputationFunctor, InputValueType, OutputValueType>>
     : std::bool_constant<true>
 {
 };
