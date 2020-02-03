@@ -4,7 +4,7 @@
 #include <type_traits>
 
 #include "computation_type.h"
-#include "decorator_traits.h"
+#include "packaged_task_traits.h"
 
 namespace celerity::algorithm::detail
 {

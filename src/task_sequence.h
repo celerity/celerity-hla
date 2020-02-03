@@ -3,7 +3,7 @@
 
 #include "celerity_helper.h"
 #include "task.h"
-#include "decoration.h"
+#include "packaged_task.h"
 
 namespace celerity::algorithm
 {

@@ -2,8 +2,8 @@
 #include "../src/iterator.h"
 #include "../src/kernel_traits.h"
 #include "../src/sequence.h"
-#include "../src/decorator_traits.h"
-#include "../src/decorators/generate_decorator.h"
+#include "../src/packaged_task_traits.h"
+#include "../src/packaged_tasks/packaged_generate.h"
 
 #include <vector>
 #include <stdlib.h>
@@ -98,13 +98,8 @@ void static_assert_kernel_traits()
     static_assert(is_master_task_v<decltype(master_task)>);
     static_assert(!is_compute_task_v<decltype(master_task)>);
 
-    auto task_decorator = [](celerity::distr_queue &) {};
-    static_assert(is_task_decorator_v<decltype(task_decorator)>);
-    static_assert(!is_task_decorator_v<decltype(compute_task)>);
-    static_assert(!is_task_decorator_v<decltype(master_task)>);
-
     celerity::algorithm::sequence seq{[](celerity::distr_queue &) {}};
-    static_assert(!is_task_decorator_v<decltype(seq)>);
+    static_assert(!is_packaged_task_v<decltype(seq)>);
     static_assert(!is_placeholder_task_v<decltype(seq), void>);
 
     using iterator_t = iterator<1>;
@@ -112,10 +107,12 @@ void static_assert_kernel_traits()
     static_assert(is_placeholder_task_v<decltype(placeholder), iterator_t>);
     static_assert(!is_placeholder_task_v<decltype(placeholder), iterator<2>>);
 
-    sequence decorator_seq{task_decorator, task_decorator};
-    static_assert(is_task_decorator_sequence<decltype(decorator_seq)>());
-    static_assert(!is_task_decorator_sequence<decltype(task_decorator)>());
-    static_assert(!is_task_decorator_sequence<decltype(sequence{placeholder})>());
+    auto t = [](celerity::distr_queue &, auto, auto) {};
+    using packaged_task_type = packaged_generate<decltype(t), int, int, 1>;
+
+    static_assert(is_packaged_task_sequence<sequence<packaged_task_type, packaged_task_type>>());
+    static_assert(!is_packaged_task_sequence<packaged_task_type>());
+    static_assert(!is_packaged_task_sequence<decltype(sequence{placeholder})>());
 }
 
 int main(int, char *[])

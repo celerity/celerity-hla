@@ -1,5 +1,5 @@
-#ifndef DECORATOR_TRAITS_H
-#define DECORATOR_TRAITS_H
+#ifndef PACKAGED_TASK_TRAITS_H
+#define PACKAGED_TASK_TRAITS_H
 
 namespace celerity::algorithm::detail
 {
@@ -35,4 +35,4 @@ constexpr inline bool is_packaged_task_sequence_v = is_packaged_task_sequence<F>
 
 } // namespace celerity::algorithm::detail
 
-#endif // DECORATOR_TRAITS_H
+#endif // PACKAGED_TASK_TRAITS_H

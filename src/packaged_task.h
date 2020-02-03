@@ -1,16 +1,16 @@
-#ifndef DECORATED_TASK_H
-#define DECORATED_TASK_H
+#ifndef PACKAGED_TASK_H
+#define PACKAGED_TASK_H
 
 #include "iterator.h"
 #include "celerity_helper.h"
 
 #include "computation_type.h"
 
-#include "decorator_traits.h"
+#include "packaged_task_traits.h"
 
-#include "decorators/transform_decorator.h"
-#include "decorators/generate_decorator.h"
-#include "decorators/zip_decorator.h"
+#include "packaged_tasks/packaged_transform.h"
+#include "packaged_tasks/packaged_generate.h"
+#include "packaged_tasks/packaged_zip.h"
 
 #include "computation_type_traits.h"
 
@@ -91,4 +91,4 @@ auto operator<<(U lhs, celerity::buffer<T, Rank> &rhs)
 }
 } // namespace celerity
 
-#endif // DECORATED_TASK_H
+#endif // PACKAGED_TASK_H

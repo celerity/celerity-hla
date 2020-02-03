@@ -1,10 +1,11 @@
-#ifndef GENERATE_DECORATOR_H
-#define GENERATE_DECORATOR_H
+#ifndef PACKAGED_GENERATE_H
+#define PACKAGED_GENERATE_H
 
 #include "../iterator.h"
 #include "../celerity_helper.h"
 #include "../accessor_type.h"
 #include "../computation_type.h"
+#include "../packaged_task_traits.h"
 
 namespace celerity::algorithm
 {
@@ -61,4 +62,4 @@ struct is_packaged_task<packaged_generate<TaskType, InputValueType, OutputValueT
 
 } // namespace celerity::algorithm
 
-#endif // GENERATE_DECORATOR_H
+#endif // PACKAGED_GENERATE_H

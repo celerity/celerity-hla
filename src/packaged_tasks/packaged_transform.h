@@ -5,7 +5,7 @@
 #include "../celerity_helper.h"
 #include "../accessor_type.h"
 #include "../computation_type.h"
-#include "../decorator_traits.h"
+#include "../packaged_task_traits.h"
 
 namespace celerity::algorithm
 {

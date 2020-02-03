@@ -3,7 +3,7 @@
 
 #include "sequence.h"
 #include "kernel_traits.h"
-#include "decoration.h"
+#include "packaged_task.h"
 
 namespace celerity::algorithm
 {
