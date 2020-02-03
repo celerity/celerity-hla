@@ -58,7 +58,7 @@ private:
 template <typename Sequence, typename Invoker>
 scoped_sequence(Sequence s, Invoker i)->scoped_sequence<Sequence, Invoker>;
 
-auto operator|(celerity::distr_queue &&lhs, celerity::distr_queue &&)
+auto operator|(celerity::distr_queue &&lhs, ::celerity::distr_queue &&)
 {
     return std::move(lhs);
 }
@@ -110,7 +110,7 @@ auto operator|(scoped_sequence<LhsSequence, LhsInvoker> &lhs, U &rhs)
 }
 
 template <typename LhsSequence, typename LhsInvoker, typename U,
-          std::enable_if_t<detail::is_task_decorator_sequence<U>(), int> = 0>
+          std::enable_if_t<detail::is_packaged_task_sequence<U>(), int> = 0>
 auto operator|(U &lhs, scoped_sequence<LhsSequence, LhsInvoker> &rhs)
 {
     rhs.disable();
@@ -118,7 +118,7 @@ auto operator|(U &lhs, scoped_sequence<LhsSequence, LhsInvoker> &rhs)
 }
 
 template <typename LhsSequence, typename LhsInvoker, typename U,
-          std::enable_if_t<detail::is_task_decorator_sequence<U>(), int> = 0>
+          std::enable_if_t<detail::is_packaged_task_sequence<U>(), int> = 0>
 auto operator|(U &&lhs, scoped_sequence<LhsSequence, LhsInvoker> &rhs)
 {
     rhs.disable();
@@ -126,7 +126,7 @@ auto operator|(U &&lhs, scoped_sequence<LhsSequence, LhsInvoker> &rhs)
 }
 
 template <typename LhsSequence, typename LhsInvoker, typename U,
-          std::enable_if_t<detail::is_task_decorator_v<U> || detail::is_task_decorator_sequence<U>(), int> = 0>
+          std::enable_if_t<detail::is_packaged_task_v<U> || detail::is_packaged_task_sequence_v<U>, int> = 0>
 auto operator|(U &lhs, scoped_sequence<LhsSequence, LhsInvoker> &&rhs)
 {
     rhs.disable();
@@ -134,7 +134,7 @@ auto operator|(U &lhs, scoped_sequence<LhsSequence, LhsInvoker> &&rhs)
 }
 
 template <typename LhsSequence, typename LhsInvoker, typename U,
-          std::enable_if_t<detail::is_task_decorator_v<U> || detail::is_task_decorator_sequence<U>(), int> = 0>
+          std::enable_if_t<detail::is_packaged_task_v<U> || detail::is_packaged_task_sequence_v<U>, int> = 0>
 auto operator|(U &&lhs, scoped_sequence<LhsSequence, LhsInvoker> &&rhs)
 {
     rhs.disable();
