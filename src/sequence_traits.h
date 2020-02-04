@@ -7,13 +7,12 @@ namespace celerity::algorithm
 {
 
 template <typename T>
-struct sequence_traits
+struct sequence_traits : std::integral_constant<bool, false>
 {
-	using is_sequence_type = std::integral_constant<bool, false>;
 };
 
 template <typename T>
-constexpr inline bool is_sequence_v = sequence_traits<T>::is_sequence_type::value;
+constexpr inline bool is_sequence_v = sequence_traits<T>::value;
 
 template <typename T>
 struct last_element;

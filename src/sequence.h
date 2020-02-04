@@ -139,8 +139,8 @@ sequence(std::tuple<Actions...> actions)->sequence<Actions...>;
 
 template <typename... Actions>
 struct sequence_traits<algorithm::sequence<Actions...>>
+	: std::integral_constant<bool, true>
 {
-	using is_sequence_type = std::integral_constant<bool, true>;
 };
 
 template <typename... Ts>
