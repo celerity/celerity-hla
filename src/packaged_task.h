@@ -81,6 +81,15 @@ auto operator|(T lhs, U rhs)
     return sequence(lhs, rhs);
 }
 
+template <typename T, std::enable_if_t<detail::is_packaged_task_v<T> || detail::is_packaged_task_sequence_v<T>, int> = 0>
+auto operator|(T lhs, distr_queue q)
+{
+    if constexpr (detail::is_packaged_task_v<T>)
+        return std::invoke(lhs, q);
+    else
+        return std::get<size_v<T> - 1>(std::invoke(lhs, q));
+}
+
 // template <typename T, typename U,
 //     std::enable_if_t<detail::is_packaged_task_v<T> &&
 //     detail::is_packaged_task_v<U> && !detail::computation_type_of_v<U, computation_type::generate>, int> = 0>

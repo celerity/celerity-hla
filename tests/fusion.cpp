@@ -9,6 +9,8 @@ using namespace celerity::algorithm;
 
 #include "../src/actions.h"
 
+//#include "../src/fusion.h"
+
 SCENARIO("Fusing two tasks", "[fusion::simple]")
 {
     celerity::distr_queue q{};
@@ -19,32 +21,22 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         auto mul_3 = [](int x) { return x * 3; };
 
         constexpr auto size = 100;
-        std::vector<int> src(1, size);
+        std::vector<int> src(size, 1);
         celerity::buffer<int, 1> buf_in(src.data(), {size});
 
         WHEN("chaining calls targeting same input/output buffers")
         {
-            celerity::buffer<int, 1> buf_out(buf_in.get_range());
+            //celerity::buffer<int, 1> buf_out(buf_in.get_range());
 
-            auto t = transform<class add>(q, begin(buf_in), end(buf_in), begin(buf_out), add_5);
+            auto seq = buf_in |
+                       transform<class add>(q, {}, {}, {}, add_5) |
+                       transform<class mul>(q, {}, {}, {}, mul_3);
 
-            using decorator_t = decltype(t.get_sequence());
-
-            static_assert(is_simple_transform_decorator_v<decorator_t>);
-
-            static_assert(algorithm::detail::is_task_decorator_v<decorator_t>);
-            static_assert(algorithm::detail::is_computation_type_v<decorator_t, computation_type::transform>);
-            static_assert(algorithm::detail::get_access_type<decorator_t>() == access_type::one_to_one);
-
-            auto seq = transform<class add>(q, begin(buf_in), end(buf_in), begin(buf_out), add_5) |
-                       transform<class mul>(q, begin(buf_in), end(buf_in), begin(buf_out), mul_3);
-
-            seq();
+            auto buf_out = seq | submit_to(q);
 
             THEN("kernels get fused and the result is 18")
             {
-                constexpr auto num_actions = decltype(seq.get_sequence())::num_actions;
-                static_assert(num_actions == 1);
+                static_assert(size_v<decltype(seq)> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
                 REQUIRE(elements_equal_to<18>(next(begin(r)), prev(end(r))));
