@@ -67,7 +67,7 @@ constexpr inline bool is_compute_task_v = is_compute_task<F>::value;
 template <typename F>
 struct is_master_task : std::bool_constant<
 							std::is_invocable_v<F, task_arg_t> &&
-							(is_kernel_v<task_invoke_result_t<F>> || function_traits<task_invoke_result_t<F>>::arity == 0)>
+							(is_kernel_v<task_invoke_result_t<F>> || std::is_invocable_v<task_invoke_result_t<F>>)>
 {
 };
 
