@@ -1,6 +1,8 @@
 #ifndef PACKAGED_TASK_TRAITS_H
 #define PACKAGED_TASK_TRAITS_H
 
+#include "packaged_tasks/partially_packaged_task.h"
+
 namespace celerity::algorithm::detail
 {
 
@@ -11,6 +13,26 @@ struct is_packaged_task : std::bool_constant<std::is_void_v<T>>
 
 template <typename F>
 constexpr inline bool is_packaged_task_v = is_packaged_task<F>::value;
+
+template <typename T>
+struct is_partially_packaged_task : std::bool_constant<std::is_void_v<T>>
+{
+};
+
+template <typename F>
+constexpr inline bool is_partially_packaged_task_v = is_partially_packaged_task<F>::value;
+
+template <typename F>
+constexpr algorithm::stage_requirement get_stage_requirement()
+{
+    if constexpr (is_partially_packaged_task_v<F>)
+        return F::requirement;
+    else
+        return algorithm::stage_requirement::invalid;
+};
+
+template <typename F>
+constexpr inline auto stage_requirement_v = get_stage_requirement<F>();
 
 template <typename T, size_t... Is>
 constexpr bool dispatch_is_packaged_task_sequence(std::index_sequence<Is...>)

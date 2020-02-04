@@ -72,6 +72,18 @@ struct arg_type<T, I, true>
 template <typename T, int I>
 using arg_type_t = typename arg_type<T, I, has_call_operator_v<T>>::type;
 
+template <typename T, bool has_call_operator>
+struct result_type;
+
+template <typename T>
+struct result_type<T, true>
+{
+	using type = typename function_traits<decltype(&T::operator())>::return_type;
+};
+
+template <typename T>
+using result_type_t = typename result_type<T, has_call_operator_v<T>>::type;
+
 template <typename ArgType, typename ElementType>
 struct accessor_type
 {
@@ -126,6 +138,17 @@ constexpr std::enable_if_t<!has_call_operator_v<F>, access_type> get_accessor_ty
 	static_assert(std::is_void_v<F>, "invalid functor");
 	return access_type::invalid;
 }
+
+template <typename F, typename ValueType, size_t... Is>
+constexpr auto dispatch_kernel_result(std::index_sequence<Is...>) -> std::invoke_result_t<F, arg_type_t<F, Is>...>
+{
+	return {};
+}
+
+template <typename F, typename ValueType>
+using kernel_result_t = std::conditional_t<has_call_operator_v<F>,
+										   result_type_t<F>,
+										   void>;
 
 } // namespace celerity::algorithm::detail
 

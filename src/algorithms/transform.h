@@ -18,15 +18,17 @@ namespace actions
 namespace detail
 {
 
-template <typename InputAccessorType, template <typename, int> typename InIterator, template <typename, int> typename OutIterator, typename U, typename ExecutionPolicy, typename F, typename T, int Rank,
+template <template <typename, int> typename InIterator, template <typename, int> typename OutIterator, typename U, typename ExecutionPolicy, typename F, typename T, int Rank,
           ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1, int> = 0>
 auto transform(ExecutionPolicy p, InIterator<T, Rank> beg, InIterator<T, Rank> end, OutIterator<U, Rank> out, const F &f)
 {
-    using policy_type = strip_queue_t<ExecutionPolicy>;
     using namespace cl::sycl::access;
 
+    using policy_type = strip_queue_t<ExecutionPolicy>;
+    using accessor_type = algorithm::detail::accessor_type_t<F, 0, T>;
+
     return [=](celerity::handler &cgh) {
-        auto in_acc = get_access<policy_type, mode::read, InputAccessorType>(cgh, beg, end);
+        auto in_acc = get_access<policy_type, mode::read, accessor_type>(cgh, beg, end);
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
 
         return [=](cl::sycl::item<Rank> item) { out_acc[item] = f(in_acc[item]); };
@@ -86,20 +88,21 @@ template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F
           ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
-    return package_transform<algorithm::detail::get_accessor_type<F, 0>()>(
-        [p, f](auto _beg, auto _end, auto _out) { return task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>>(p, _beg, _end, _out, f)); },
+    constexpr auto access_type = algorithm::detail::get_accessor_type<F, 0>();
+
+    return package_transform<access_type>(
+        [p, f](auto _beg, auto _end, auto _out) { return task<ExecutionPolicy>(detail::transform(p, _beg, _end, _out, f)); },
         beg, end, out);
 }
 
-template <typename ExecutionPolicy, typename U, int Rank, typename F,
+template <typename ExecutionPolicy, typename F,
           ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 1 && algorithm::detail::get_accessor_type<F, 0>() != access_type::item, int> = 0>
-auto transform(ExecutionPolicy p, buffer_iterator_placeholder, buffer_iterator_placeholder, buffer_iterator<U, Rank> out, const F &f)
+auto transform(ExecutionPolicy p, buffer_iterator_placeholder, buffer_iterator_placeholder, buffer_iterator_placeholder, const F &f)
 {
-    return [=](auto beg, auto end) {
-        return package_transform<algorithm::detail::get_accessor_type<F, 0>()>(
-            task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, typename decltype(beg)::value_type>>(p, beg, end, out, f)),
-            beg, end, out);
-    };
+    constexpr auto access_type = algorithm::detail::get_accessor_type<F, 0>();
+
+    return package_transform<access_type, F>(
+        [p, f](auto beg, auto end, auto out) { return task<ExecutionPolicy>(detail::transform(p, beg, end, out, f)); });
 }
 
 template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
@@ -158,11 +161,11 @@ auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
     return scoped_sequence{actions::transform(p, beg, end, out, f), submit_to(p.q)};
 }
 
-template <typename ExecutionPolicy, typename U, int Rank, typename F,
+template <typename KernelName, typename F,
           typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
-auto transform(ExecutionPolicy p, buffer_iterator_placeholder, buffer_iterator_placeholder, buffer_iterator<U, Rank> out, const F &f)
+auto transform(celerity::distr_queue q, buffer_iterator_placeholder, buffer_iterator_placeholder, buffer_iterator_placeholder, const F &f)
 {
-    return actions::transform(p, {}, {}, out, f);
+    return actions::transform(distr<KernelName>(q), {}, {}, {}, f);
 }
 
 template <typename KernelName, typename T, typename U, int Rank, typename F,
