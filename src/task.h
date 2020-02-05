@@ -6,6 +6,7 @@
 #include "policy.h"
 #include "kernel_traits.h"
 #include "iterator.h"
+#include "accessor_type.h"
 
 #include <future>
 
@@ -150,11 +151,25 @@ auto task(const sequence<Ts...> &seq)
 template <typename ExecutionPolicyA, typename KernelA, typename ExecutionPolicyB, typename KernelB>
 auto fuse(task_t<ExecutionPolicyA, KernelA> a, task_t<ExecutionPolicyB, KernelB> b)
 {
-	using new_execution_policy = named_distributed_execution_policy<class Hello>;
-	// using new_execution_policy = named_distributed_execution_policy<
-	// 	indexed_kernel_name_t<fused<ExecutionPolicyA, ExecutionPolicyB>>>;
+	using new_execution_policy = named_distributed_execution_policy<
+	 	indexed_kernel_name_t<fused<ExecutionPolicyA, ExecutionPolicyB>>>;
 
-	return task<new_execution_policy>(a.get_sequence() | b.get_sequence());
+	using kernel_type = std::invoke_result_t<decltype(a.get_sequence()), handler&>;
+	using item_type = detail::arg_type_t<kernel_type, 0>;
+
+    auto seq = a.get_sequence() | b.get_sequence();
+
+    auto f = [=](handler& cgh)
+    {
+        auto kernels = sequence(std::invoke(seq, cgh));
+
+        return [=](item_type item)
+        {
+            kernels(item);
+        };
+    };
+
+	return task<new_execution_policy>(f);
 }
 
 template <typename F>

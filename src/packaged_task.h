@@ -82,28 +82,7 @@ auto operator|(T lhs, U rhs)
     buffer<value_type, T::rank> out_buf{rhs.get_in_beg().get_buffer().get_range()};
     auto t = rhs.complete(begin(out_buf), end(out_buf));
 
-    auto t1 = lhs.get_task();
-    auto t2 = t.get_task();
-
-    auto seq = t1.get_sequence() | t2.get_sequence();
-
-    auto f = [=](handler& cgh)
-    {
-        auto kernels = sequence(seq(cgh));
-
-        return [=](cl::sycl::item<1> item)
-        {
-            kernels(item);
-        };
-    };
-
-    using ExecutionPolicyA = typename decltype(t1)::execution_policy_type;
-    using ExecutionPolicyB = typename decltype(t2)::execution_policy_type;
-
-	using new_execution_policy = named_distributed_execution_policy<
-	 	indexed_kernel_name_t<fused<ExecutionPolicyA, ExecutionPolicyB>>>;
-
-    return package_transform<access_type::one_to_one, true>(task<new_execution_policy>(f),
+    return package_transform<access_type::one_to_one, true>(fuse(lhs.get_task(), t.get_task()),
                                                             lhs.get_in_beg(),
                                                             lhs.get_in_end(),
                                                             t.get_out_iterator());
