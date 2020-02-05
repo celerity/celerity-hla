@@ -13,6 +13,7 @@
 #include "packaged_tasks/packaged_zip.h"
 
 #include "computation_type_traits.h"
+#include "fusion.h"
 
 namespace celerity::algorithm
 {
@@ -55,12 +56,21 @@ auto operator|(T lhs, U rhs)
     using value_type = typename T::output_value_type;
 
     // TODO: should honor the actual computation range
-    buffer<value_type, T::rank> out_buf{lhs.get_in_beg().get_buffer().get_range()};
+    // use transient buffer
+    transient_buffer<value_type, T::rank> out_buf{lhs.get_in_beg().get_buffer().get_range()};
 
     auto t_left = lhs.complete(begin(out_buf), end(out_buf));
     auto t_right = rhs.complete(begin(out_buf), end(out_buf));
 
     return t_left | t_right;
+}
+
+template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && detail::is_partially_packaged_task_v<U> && detail::stage_requirement_v<U> == stage_requirement::input, int> = 0>
+auto operator|(T lhs, U rhs)
+{
+    auto t_right = rhs.complete(lhs.get_out_iterator(), lhs.get_out_iterator());
+
+    return lhs | t_right;
 }
 
 template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && detail::is_partially_packaged_task_v<U> && detail::stage_requirement_v<U> == stage_requirement::output, int> = 0>
@@ -72,7 +82,38 @@ auto operator|(T lhs, U rhs)
     buffer<value_type, T::rank> out_buf{rhs.get_in_beg().get_buffer().get_range()};
     auto t = rhs.complete(begin(out_buf), end(out_buf));
 
-    return lhs | t;
+    auto t1 = lhs.get_task();
+    auto t2 = t.get_task();
+
+    auto seq = t1.get_sequence() | t2.get_sequence();
+
+    auto f = [=](handler& cgh)
+    {
+        auto kernels = sequence(seq(cgh));
+
+        return [=](cl::sycl::item<1> item)
+        {
+            kernels(item);
+        };
+    };
+
+    using ExecutionPolicyA = typename decltype(t1)::execution_policy_type;
+    using ExecutionPolicyB = typename decltype(t2)::execution_policy_type;
+
+	using new_execution_policy = named_distributed_execution_policy<
+	 	indexed_kernel_name_t<fused<ExecutionPolicyA, ExecutionPolicyB>>>;
+
+    return package_transform<access_type::one_to_one, true>(task<new_execution_policy>(f),
+                                                            lhs.get_in_beg(),
+                                                            lhs.get_in_end(),
+                                                            t.get_out_iterator());
+
+    // Results in a linker error. Not sure why -> need further clarification from philip/peter
+    //
+    // return package_transform<access_type::one_to_one, true>(task<new_execution_policy>(seq),
+    //                                                     lhs.get_in_beg(),
+    //                                                     lhs.get_in_end(),
+    //                                                     t.get_out_iterator());
 }
 
 template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && detail::is_packaged_task_v<U>, int> = 0>

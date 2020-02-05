@@ -110,4 +110,50 @@ inline auto master_blocking(celerity::distr_queue q) { return blocking_master_ex
 
 } // namespace celerity::algorithm
 
+template <typename T, size_t Id>
+struct index_kernel_name_terminator
+{
+	using kernel_name = typename celerity::algorithm::policy_traits<T>::kernel_name;
+};
+
+template <typename T, size_t Id = 0>
+struct indexed_kernel_name
+{
+	using type = index_kernel_name_terminator<T, Id + 1>;
+};
+
+template <typename T, size_t Id>
+struct indexed_kernel_name<indexed_kernel_name<T, Id>, Id>
+{
+	using type = indexed_kernel_name<T, Id + 1>;
+};
+
+namespace celerity::algorithm
+{
+
+template <typename T, size_t Id>
+struct policy_traits<index_kernel_name_terminator<T, Id>>
+{
+	using kernel_name = typename index_kernel_name_terminator<T, Id>::kernel_name;
+};
+}
+
+
+template <typename Policy>
+using indexed_kernel_name_t = typename celerity::algorithm::policy_traits<typename indexed_kernel_name<Policy>::type>::kernel_name;
+
+template <typename FirstKernel, typename SecondKernel>
+struct fused
+{
+};
+
+namespace celerity::algorithm
+{
+template <typename FirstKernel, typename SecondKernel>
+struct policy_traits<fused<FirstKernel, SecondKernel>>
+{
+	using kernel_name = fused<FirstKernel, SecondKernel>;
+};
+}
+
 #endif // POLICY_H
