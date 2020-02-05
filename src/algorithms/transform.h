@@ -35,15 +35,17 @@ auto transform(ExecutionPolicy p, InIterator<T, Rank> beg, InIterator<T, Rank> e
     };
 }
 
-template <typename InputAccessorType, template <typename, int> typename InIterator, template <typename, int> typename OutIterator, typename U, typename ExecutionPolicy, typename F, typename T, int Rank,
+template <template <typename, int> typename InIterator, template <typename, int> typename OutIterator, typename U, typename ExecutionPolicy, typename F, typename T, int Rank,
           ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, InIterator<T, Rank> beg, InIterator<T, Rank> end, OutIterator<U, Rank> out, const F &f)
 {
     using policy_type = strip_queue_t<ExecutionPolicy>;
     using namespace cl::sycl::access;
 
+    using accessor_type = algorithm::detail::accessor_type_t<F, 1, T>;
+
     return [=](celerity::handler &cgh) {
-        auto in_acc = get_access<policy_type, mode::read, InputAccessorType>(cgh, beg, end);
+        auto in_acc = get_access<policy_type, mode::read, accessor_type>(cgh, beg, end);
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
 
         return [=](cl::sycl::item<Rank> item) { out_acc[item] = f(item, in_acc[item]); };
@@ -109,9 +111,21 @@ template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F
           ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
-    return package_transform<algorithm::detail::get_accessor_type<F, 0>()>(
-        task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 1, T>>(p, beg, end, out, f)),
+    constexpr auto access_type = algorithm::detail::get_accessor_type<F, 1>();
+
+    return package_transform<access_type>(
+        [p, f](auto _beg, auto _end, auto _out) { return task<ExecutionPolicy>(detail::transform(p, _beg, _end, _out, f)); },
         beg, end, out);
+}
+
+template <typename ExecutionPolicy, typename F,
+          ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
+auto transform(ExecutionPolicy p, buffer_iterator_placeholder, buffer_iterator_placeholder, buffer_iterator_placeholder, const F &f)
+{
+    constexpr auto access_type = algorithm::detail::get_accessor_type<F, 1>();
+
+    return package_transform<access_type, F>(
+        [p, f](auto beg, auto end, auto out) { return task<ExecutionPolicy>(detail::transform(p, beg, end, out, f)); });
 }
 
 template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
