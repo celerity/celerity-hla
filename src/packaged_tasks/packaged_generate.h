@@ -18,11 +18,10 @@ public:
     static constexpr auto computation_type = computation_type::generate;
 
     using functor_type = FunctorType;
-    using input_value_type = InputValueType;
-    using output_value_type = typename std::iterator_traits<OutputIteratorType>::value_type;
+    using output_value_type = InputValueType;
     using output_iterator_type = OutputIteratorType;
 
-    static_assert(std::is_convertible_v<input_value_type, output_value_type>);
+    // static_assert(std::is_convertible_v<input_value_type, output_value_type>);
 
     packaged_generate(functor_type functor, output_iterator_type out_beg, output_iterator_type out_end)
         : functor_(functor), out_beg_(out_beg), out_end_(out_end)
@@ -35,7 +34,8 @@ public:
         std::invoke(get_task(), queue, out_beg_, out_end_);
     }
 
-    output_iterator_type get_out_iterator() const { return out_beg_; }
+    output_iterator_type get_out_beg() const { return out_beg_; }
+    output_iterator_type get_out_end() const { return out_end_; }
 
     auto get_task() const 
     { 

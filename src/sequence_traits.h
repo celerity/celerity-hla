@@ -28,6 +28,12 @@ template <typename T>
 constexpr inline auto size_v = size<T, is_sequence_v<T>>::value;
 ;
 
+template<typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
+constexpr auto get_last_element(const T& s)
+{
+    return std::get<size_v<T> - 1>(s);
+}
+
 template <typename T>
 struct last_element;
 
