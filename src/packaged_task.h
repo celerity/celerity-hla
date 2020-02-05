@@ -50,14 +50,17 @@ auto operator|(T lhs, U rhs)
     return lhs | r;
 }
 
-template <typename T, typename U, std::enable_if_t<detail::is_partially_packaged_task_v<T> && detail::stage_requirement_v<T> == stage_requirement::output && detail::is_partially_packaged_task_v<U> && detail::stage_requirement_v<U> == stage_requirement::input, int> = 0>
+template <typename T, typename U, std::enable_if_t<detail::is_partially_packaged_task_v<T> && 
+                                                   detail::stage_requirement_v<T> == stage_requirement::output && 
+                                                   detail::is_partially_packaged_task_v<U> && 
+                                                   detail::stage_requirement_v<U> == stage_requirement::input, int> = 0>
 auto operator|(T lhs, U rhs)
 {
     using value_type = typename T::output_value_type;
 
     // TODO: should honor the actual computation range
     // use transient buffer
-    transient_buffer<value_type, T::rank> out_buf{lhs.get_in_beg().get_buffer().get_range()};
+    transient_buffer<value_type, T::rank> out_buf{lhs.get_range()};
 
     auto t_left = lhs.complete(begin(out_buf), end(out_buf));
     auto t_right = rhs.complete(begin(out_buf), end(out_buf));
@@ -73,13 +76,18 @@ auto operator|(T lhs, U rhs)
     return lhs | t_right;
 }
 
-template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && detail::is_partially_packaged_task_v<U> && detail::stage_requirement_v<U> == stage_requirement::output, int> = 0>
+template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && 
+                                                   detail::computation_type_of_v<T, computation_type::transform> &&
+                                                   detail::is_partially_packaged_task_v<U> && 
+                                                   detail::stage_requirement_v<U> == stage_requirement::output && 
+                                                   detail::computation_type_of_v<U, computation_type::transform>, int> = 0>
 auto operator|(T lhs, U rhs)
 {
     using value_type = typename T::output_value_type;
 
     // TODO: should honor the actual computation range
-    buffer<value_type, T::rank> out_buf{rhs.get_in_beg().get_buffer().get_range()};
+    buffer<value_type, T::rank> out_buf{rhs.get_range()};
+    
     auto t = rhs.complete(begin(out_buf), end(out_buf));
 
     return package_transform<access_type::one_to_one, true>(fuse(lhs.get_task(), t.get_task()),

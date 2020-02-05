@@ -120,6 +120,8 @@ public:
     input_iterator_type get_in_beg() const { return in_beg_; }
     input_iterator_type get_in_end() const { return in_end_; }
 
+    cl::sycl::range<rank> get_range() const { return distance (in_beg_, in_end_); } 
+
 private:
     functor_type f_;
     input_iterator_type in_beg_;
