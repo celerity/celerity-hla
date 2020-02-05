@@ -38,8 +38,10 @@ public:
 	explicit task_t(algorithm::sequence<Actions...> &&s)
 		: sequence_(std::move(s)) {}
 
-	template <typename F, std::enable_if_t<sizeof...(Actions) == 1, int> = 0>
-	task_t(F f) : sequence_(std::move(f)) {}
+	explicit task_t(const algorithm::sequence<Actions...> &s)
+		: sequence_(s) {}
+
+	task_t(Actions... f) : sequence_(std::move(f)...) {}
 
 	template <int Rank>
 	void operator()(distr_queue &q, iterator<Rank> beg, iterator<Rank> end) const
@@ -132,10 +134,27 @@ auto task(const task_t<ExecutionPolicy, T> &t)
 	return t;
 }
 
-template <typename ExecutionPolicy, typename T, typename = std::enable_if_t<detail::is_master_task_v<T>>>
+template <typename ExecutionPolicy, typename T, std::enable_if_t<!is_sequence_v<T> && detail::is_master_task_v<T>, int> = 0>
 auto task(const T &invocable)
 {
-	return task_t<decay_policy_t<ExecutionPolicy>, T>{invocable};
+	return task_t<strip_queue_t<ExecutionPolicy>, T>{invocable};
+}
+
+template <typename ExecutionPolicy, typename... Ts>
+auto task(const sequence<Ts...> &seq)
+{
+	using policy_type = strip_queue_t<ExecutionPolicy>;
+	return task_t<policy_type, Ts...>{seq};
+}
+
+template <typename ExecutionPolicyA, typename KernelA, typename ExecutionPolicyB, typename KernelB>
+auto fuse(task_t<ExecutionPolicyA, KernelA> a, task_t<ExecutionPolicyB, KernelB> b)
+{
+	using new_execution_policy = named_distributed_execution_policy<class Hello>;
+	// using new_execution_policy = named_distributed_execution_policy<
+	// 	indexed_kernel_name_t<fused<ExecutionPolicyA, ExecutionPolicyB>>>;
+
+	return task<new_execution_policy>(a.get_sequence() | b.get_sequence());
 }
 
 template <typename F>
