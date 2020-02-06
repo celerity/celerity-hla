@@ -69,10 +69,10 @@ template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T>
                                                    detail::computation_type_of_v<U, computation_type::transform>, int> = 0>
 auto operator|(T lhs, U rhs)
 {
-    return package_transform<access_type::one_to_one, true>(fuse(lhs.get_task(), rhs.get_task()),
+    return sequence(package_transform<access_type::one_to_one, true>(fuse(lhs.get_task(), rhs.get_task()),
                                                             lhs.get_in_beg(),
                                                             lhs.get_in_end(),
-                                                            rhs.get_out_iterator());
+                                                            rhs.get_out_iterator()));
 
     // Results in a linker error. Not sure why -> need further clarification from philip/peter
     //
@@ -82,37 +82,62 @@ auto operator|(T lhs, U rhs)
     //                                                     t.get_out_iterator());
 }
 
+template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_sequence_v<T> &&
+                                                   detail::computation_type_of_v<last_element_t<T>, computation_type::transform> &&
+                                                   detail::computation_type_of_v<U, computation_type::transform>, int> = 0>
+auto operator|(T lhs, U rhs)
+{
+    return remove_last_element(lhs) | (get_last_element(lhs) | rhs);                                           
+}
+
 template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && 
                                                    detail::computation_type_of_v<T, computation_type::generate> &&
                                                    detail::is_packaged_task_v<U> && 
                                                    detail::computation_type_of_v<U, computation_type::transform>, int> = 0>
 auto operator|(T lhs, U rhs)
 {
-    return package_generate<access_type::one_to_one, true>(fuse(lhs.get_task(), rhs.get_task()), rhs.get_out_beg(), rhs.get_out_end());                                           
+    using iterator_type = typename U::output_iterator_type;
+    static_assert(!std::is_same_v<iterator_type, transient_iterator<typename U::output_value_type, U::rank>>);
+
+    auto out_beg = rhs.get_out_iterator();
+    auto out_end = end(out_beg.get_buffer());
+
+    return sequence(package_generate<typename U::output_value_type, true>(fuse(lhs.get_task(), rhs.get_task()), out_beg, out_end));                                           
 }
 
-// template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && detail::is_packaged_task_v<U>, int> = 0>
-// auto operator|(T lhs, U rhs)
-// {
-//     return sequence(lhs, rhs);
-// }
+template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_sequence_v<T> &&
+                                                   detail::computation_type_of_v<last_element_t<T>, computation_type::generate> &&
+                                                   detail::computation_type_of_v<U, computation_type::transform>, int> = 0>
+auto operator|(T lhs, U rhs)
+{
+    return remove_last_element(lhs) | (get_last_element(lhs) | rhs);                                           
+}
 
 template<typename...Actions, size_t...Is>
 auto fuse(const sequence<Actions...>& s, std::index_sequence<Is...>)
 {
     const auto& actions = s.actions();
-    return sequence( (... | (std::get<Is>(actions))) );
+    return (... | (std::get<Is>(actions)));
+}
+
+template<typename...Actions>
+auto fuse(const sequence<Actions...>& s)
+{
+    return fuse(s, std::make_index_sequence<sizeof...(Actions)>{});
 }
 
 template <typename T, std::enable_if_t<detail::is_packaged_task_v<T> || detail::is_packaged_task_sequence_v<T>, int> = 0>
 auto operator|(T lhs, distr_queue q)
 {
-    fuse(lhs, std::make_index_sequence<size_v<T> - 1>{});
-
-    if constexpr (detail::is_packaged_task_v<T>)
+    if constexpr (detail::is_packaged_task_v<T> || (detail::is_packaged_task_sequence_v<T> && size_v<T> == 1))
+    {
         return std::invoke(lhs, q);
-    else
-        return std::get<size_v<T> - 1>(std::invoke(lhs, q));
+    }
+    else 
+    {
+        auto r = std::invoke(lhs, q);
+        return std::get<std::tuple_size_v<decltype(r)> - 1>(r);
+    }
 }
 
 template <typename T, std::enable_if_t<detail::is_partially_packaged_task_v<T> &&
@@ -133,7 +158,7 @@ template <typename T, std::enable_if_t<is_sequence_v<T> &&
                                        detail::stage_requirement_v<last_element_t<T>> == stage_requirement::output, int> = 0>
 auto operator|(T lhs, distr_queue q)
 {
-    return remove_last_element(lhs) | (get_last_element(lhs) | q) | q;
+    return fuse(remove_last_element(lhs) | (get_last_element(lhs) | q)) | q;
 }
 
 } // namespace celerity::algorithm

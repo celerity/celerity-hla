@@ -25,24 +25,6 @@ decltype(auto) operator|(task_t<blocking_master_execution_policy, F> lhs, celeri
 	return std::invoke(lhs, queue);
 }
 
-template <typename T, std::enable_if_t<detail::is_packaged_task_v<T>, int> = 0>
-decltype(auto) operator|(T &&lhs, distr_queue &&queue)
-{
-	return std::invoke(lhs, queue);
-}
-
-template <typename T, std::enable_if_t<detail::is_packaged_task_v<T>, int> = 0>
-decltype(auto) operator|(T &&lhs, distr_queue &queue)
-{
-	return std::invoke(lhs, queue);
-}
-
-template <typename T, std::enable_if_t<detail::is_packaged_task_v<T>, int> = 0>
-decltype(auto) operator|(T &lhs, distr_queue &queue)
-{
-	return std::invoke(lhs, queue);
-}
-
 template <typename LhsExecutionPolicy, typename RhsExecutionPolicy, typename... Ts, typename... Us>
 auto operator|(task_t<LhsExecutionPolicy, Ts...> lhs, task_t<RhsExecutionPolicy, Us...> rhs)
 {

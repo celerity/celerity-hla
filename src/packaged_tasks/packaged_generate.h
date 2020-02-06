@@ -90,7 +90,7 @@ public:
         return package_generate<output_value_type>(functor_, beg, end);
     }
 
-    cl::sycl::range<rank> get_range();
+    cl::sycl::range<rank> get_range() { return range_; }
 
 private:
     functor_type functor_;

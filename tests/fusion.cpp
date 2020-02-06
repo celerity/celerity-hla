@@ -96,8 +96,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
         WHEN("chaining calls")
         {
-            auto t1 = generate<class add>(q, cl::sycl::range<1>{ 100 }, gen_i);
-            auto t2 = transform<class mul>(q, {}, {}, {}, mul_3);
+            auto t1 = generate<class gen_item_id>(q, cl::sycl::range<1>{ 100 }, gen_i);
+            auto t2 = transform<class mul_3_f>(q, {}, {}, {}, mul_3); 
  
             auto seq = t1 | t2; 
             auto buf_out = seq | submit_to(q);

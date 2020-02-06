@@ -144,11 +144,17 @@ struct sequence_traits<algorithm::sequence<Actions...>>
 {
 };
 
-template <typename... Ts>
-struct last_element<algorithm::sequence<Ts...>>
-	: std::tuple_element<algorithm::sequence<Ts...>::num_actions - 1,
-						 typename algorithm::sequence<Ts...>::actions_t>
+template <typename T, typename... Ts>
+struct last_element<algorithm::sequence<T, Ts...>>
+	: std::tuple_element<algorithm::sequence<T, Ts...>::num_actions - 1,
+						 typename algorithm::sequence<T, Ts...>::actions_t>
 {
+};
+
+template <>
+struct last_element<algorithm::sequence<>>
+{
+	using type = void;
 };
 
 template <typename... Ts, typename... Us>
