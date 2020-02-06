@@ -29,9 +29,10 @@ public:
         assert(out_beg_.get_buffer().get_id() == out_end_.get_buffer().get_id());
     }
 
-    void operator()(celerity::distr_queue &queue) const
+    auto operator()(celerity::distr_queue &queue) const
     {
         std::invoke(get_task(), queue, out_beg_, out_end_);
+        return out_beg_.get_buffer();
     }
 
     output_iterator_type get_out_beg() const { return out_beg_; }

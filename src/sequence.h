@@ -69,6 +69,7 @@ public:
 	}
 
 	constexpr actions_t &actions() { return actions_; }
+	constexpr const actions_t &actions() const { return actions_; }
 
 private:
 	actions_t actions_;
@@ -154,6 +155,24 @@ template <typename... Ts, typename... Us>
 auto operator|(sequence<Ts...> lhs, sequence<Us...> rhs)
 {
 	return sequence<Ts..., Us...>{std::tuple_cat(lhs.actions(), rhs.actions())};
+}
+
+template<typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
+constexpr auto get_last_element(const T& s)
+{
+    return std::get<size_v<T> - 1>(s.actions());
+}
+
+template<typename T, size_t...Is>
+constexpr auto dispatch_remove_last_element(const T& s, std::index_sequence<Is...>)
+{
+    return sequence(std::get<Is>(s.actions())...);
+}
+
+template<typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
+constexpr auto remove_last_element(const T& s)
+{
+    return dispatch_remove_last_element(s, std::make_index_sequence<size_v<T> - 1>{});
 }
 
 } // namespace celerity::algorithm

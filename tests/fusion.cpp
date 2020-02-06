@@ -87,7 +87,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
     GIVEN("A generate and a transform kernel")
     {
-        auto gen_i = [](cl::sycl::item<1> i) { return i.get_linear_id(); };
+        auto gen_i = [](cl::sycl::item<1> i) { return (int)i.get_linear_id(); };
         auto mul_3 = [](int x) { return x * 3; };
 
         constexpr auto size = 100; 
@@ -111,7 +111,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             THEN("kernels are fused and the result is 3")
             {
                 using seq_t = decltype(seq);
-                static_assert(algorithm::detail::is_packaged_task_v<seq_t>);
+                static_assert(algorithm::detail::is_packaged_task_v<seq_t> || (algorithm::detail::is_packaged_task_sequence_v<seq_t> && size_v<seq_t> == 1));
 
                 const auto r = copy_to_host(q, buf_out);
                 REQUIRE(elements_equal_to<3>(next(begin(r)), prev(end(r))));

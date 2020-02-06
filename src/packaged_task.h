@@ -41,7 +41,7 @@ template <typename T, typename U, std::enable_if_t<is_sequence_v<T> &&
                                                    detail::stage_requirement_v<U> == stage_requirement::input, int> = 0>
 auto operator|(T lhs, U rhs)
 {
-    return lhs | (get_last_element(lhs) | rhs);
+    return remove_last_element(lhs) | (get_last_element(lhs) | rhs);
 }
 
 template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && 
@@ -52,6 +52,15 @@ auto operator|(T lhs, U rhs)
     auto t_right = rhs.complete(lhs.get_out_iterator(), lhs.get_out_iterator());
 
     return sequence(lhs, t_right);
+}
+
+template <typename T, typename U, std::enable_if_t<is_sequence_v<T> && 
+                                                   detail::is_packaged_task_v<last_element_t<T>> &&
+                                                   detail::is_partially_packaged_task_v<U> && 
+                                                   detail::stage_requirement_v<U> == stage_requirement::input, int> = 0>
+auto operator|(T lhs, U rhs)
+{
+    return remove_last_element(lhs) | (get_last_element(lhs) | rhs);
 }
 
 template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && 
@@ -82,17 +91,17 @@ auto operator|(T lhs, U rhs)
     return package_generate<access_type::one_to_one, true>(fuse(lhs.get_task(), rhs.get_task()), rhs.get_out_beg(), rhs.get_out_end());                                           
 }
 
-template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && detail::is_packaged_task_v<U>, int> = 0>
-auto operator|(T lhs, U rhs)
-{
-    return sequence(lhs, rhs);
-}
+// template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && detail::is_packaged_task_v<U>, int> = 0>
+// auto operator|(T lhs, U rhs)
+// {
+//     return sequence(lhs, rhs);
+// }
 
 template<typename...Actions, size_t...Is>
 auto fuse(const sequence<Actions...>& s, std::index_sequence<Is...>)
 {
-    const auto& actions = s.get_actions();
-    return sequence( (... | (std::get<Is>(s))) );
+    const auto& actions = s.actions();
+    return sequence( (... | (std::get<Is>(actions))) );
 }
 
 template <typename T, std::enable_if_t<detail::is_packaged_task_v<T> || detail::is_packaged_task_sequence_v<T>, int> = 0>
@@ -116,7 +125,7 @@ auto operator|(T lhs, distr_queue q)
     
     auto t = lhs.complete(begin(out_buf), end(out_buf));
 
-    return sequence(lhs, q);
+    return sequence(t);
 }
 
 template <typename T, std::enable_if_t<is_sequence_v<T> && 
@@ -124,7 +133,7 @@ template <typename T, std::enable_if_t<is_sequence_v<T> &&
                                        detail::stage_requirement_v<last_element_t<T>> == stage_requirement::output, int> = 0>
 auto operator|(T lhs, distr_queue q)
 {
-    return lhs | (get_last_element(lhs) | q);
+    return remove_last_element(lhs) | (get_last_element(lhs) | q) | q;
 }
 
 } // namespace celerity::algorithm
