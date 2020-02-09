@@ -29,18 +29,11 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             auto t1 = transform<class add>(q, {}, {}, {}, add_5);
             auto t2 = transform<class mul>(q, {}, {}, {}, mul_3);
 
-            auto seq = buf_in | t1 | t2;
-            auto buf_out = seq | submit_to(q);
-
-            // short
-            //
-            // auto buf_out = transform<class add>(q, {}, {}, {}, add_5) |
-            //                transform<class mul>(q, {}, {}, {}, mul_3) |
-            //                submit_to(q)
+            auto buf_out = buf_in | t1 | t2 | submit_to(q);
 
             THEN("kernels are fused and the result is 18")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
+                using terminated_sequence_type = decltype(terminate(buf_in | t1 | t2));
                 using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
 
                 static_assert(size_v<terminated_sequence_type> == 2);
@@ -66,18 +59,11 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             auto t1 = transform<class add_w_item>(q, {}, {}, {}, add_5);
             auto t2 = transform<class mul_w_item>(q, {}, {}, {}, mul_3);
 
-            auto seq = buf_in | t1 | t2;
-            auto buf_out = seq | submit_to(q);
-
-            // short
-            //
-            // auto buf_out = transform<class add>(q, {}, {}, {}, add_5) |
-            //                transform<class mul>(q, {}, {}, {}, mul_3) |
-            //                submit_to(q)
+            auto buf_out = buf_in | t1 | t2 | submit_to(q);
 
             THEN("kernels are fused and the result is 18")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
+                using terminated_sequence_type = decltype(terminate(buf_in | t1 | t2));
                 using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
 
                 static_assert(size_v<terminated_sequence_type> == 2);
@@ -101,19 +87,11 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             auto t1 = generate<class gen_item_id>(q, cl::sycl::range<1>{size}, gen_i);
             auto t2 = transform<class mul_3_f>(q, {}, {}, {}, mul_3);
 
-            auto seq = t1 | t2;
-            auto buf_out = seq | submit_to(q);
-
-            // short
-            //
-            // auto buf_out = transform<class add>(q, {}, {}, {}, add_5) |
-            //                transform<class mul>(q, {}, {}, {}, mul_3) |
-            //                submit_to(q)
+            auto buf_out = t1 | t2 | submit_to(q);
 
             THEN("kernels are fused and the result is 3")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+                using terminated_sequence_type = decltype(terminate(t1 | t2)) using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
 
                 static_assert(size_v<terminated_sequence_type> == 2);
                 static_assert(size_v<fused_sequence_type> == 1);
@@ -140,12 +118,11 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             auto t1 = fill<class fill_1>(q, cl::sycl::range<1>{size}, init);
             auto t2 = transform<class mul_3_f_>(q, {}, {}, {}, mul_3);
 
-            auto seq = t1 | t2;
-            auto buf_out = seq | submit_to(q);
+            auto buf_out = t1 | t2 | submit_to(q);
 
             THEN("kernels are fused and the result is 3")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
+                using terminated_sequence_type = decltype(terminate(t1 | t2));
                 using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
 
                 static_assert(size_v<terminated_sequence_type> == 2);
