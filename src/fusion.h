@@ -1,25 +1,62 @@
 #ifndef FUSION_H
 #define FUSION_H
 
-#include "packaged_task.h"
-#include "algorithm.h"
+#include "celerity_helper.h"
 
 namespace celerity::algorithm
 {
 
-template <typename AccessorType, typename T, int Rank, cl::sycl::access::mode Mode>
+template<typename T>
+struct is_item_context : std::bool_constant<false>
+{
+
+};
+
+template<int Rank, typename ContextType>
+class item_context
+{
+public:
+    using item_type = cl::sycl::item<Rank>;
+
+    explicit item_context(cl::sycl::item<Rank> item)
+        : item_(item) {}
+
+    operator cl::sycl::item<Rank> ()
+    {
+        return item_;
+    }
+
+    operator cl::sycl::id<Rank> ()
+    {
+        return item_.get_id();
+    }
+
+    ContextType& get() { return context_; }
+
+private:
+    cl::sycl::item<Rank> item_;
+    ContextType context_;
+};
+
+template<int Rank, typename ContextType>
+struct is_item_context<item_context<Rank, ContextType>> : std::bool_constant<true>
+{
+
+};
+
+template<typename T>
+inline constexpr bool is_item_context_v = is_item_context<T>::value;
+
+template <typename T, int Rank, cl::sycl::access::mode Mode>
 struct transient_accessor
 {
 public:
-    explicit transient_accessor(AccessorType x) : x_(x) {}
+    transient_accessor() {}
 
-    auto operator[](cl::sycl::item<Rank>) const -> std::conditional_t<Mode == cl::sycl::access::mode::read, T, T &>
+    auto operator[](item_context<Rank, T>& ctx) const -> std::conditional_t<Mode == cl::sycl::access::mode::read, T, T &>
     {
-        return x_[cl::sycl::id<1>(0)];
+        return ctx.get();
     }
-
-private:
-    AccessorType x_;
 };
 
 template <typename T, int Rank>
@@ -27,20 +64,20 @@ struct transient_buffer
 {
 public:
     explicit transient_buffer(cl::sycl::range<Rank> range)
-        : buffer_(cl::sycl::range<1>(1)), range_(range) {}
+        : range_(range) {}
 
     template <cl::sycl::access::mode Mode, typename RangeMapper>
     auto get_access(handler& cgh, RangeMapper)
     {
-        auto acc = buffer_.template get_access<Mode>(cgh, celerity::access::fixed<Rank, 1>(celerity::subrange<1>{{0}, {1}}));
-        return transient_accessor<decltype(acc), T, Rank, Mode>{ acc };
+        //auto acc = buffer_.template get_access<Mode>(cgh, celerity::access::fixed<Rank, 1>(celerity::subrange<1>{{0}, {1}}));
+        //auto acc = buffer_.template get_access<cl::sycl::access::mode::discard_read_write, cl::sycl::access::target::local>();
+        return transient_accessor<T, Rank, Mode>{ };
     }
 
     cl::sycl::range<Rank> get_range() const { return range_; }
-    size_t get_id() const { return buffer_.get_id(); }
+    size_t get_id() const { return -1; }
 
 private:
-    buffer<T, Rank> buffer_;
     cl::sycl::range<Rank> range_;
 };
 
@@ -57,12 +94,6 @@ public:
     transient_iterator(cl::sycl::id<Rank> pos, transient_buffer<T, Rank> buffer)
         : iterator<Rank>(pos, buffer.get_range()), buffer_(buffer)
     {
-    }
-
-    transient_iterator &operator++()
-    {
-        iterator<Rank>::operator++();
-        return *this;
     }
 
     [[nodiscard]] transient_buffer<T, Rank> get_buffer() const { return buffer_; }
@@ -82,9 +113,9 @@ transient_iterator<T, Rank> end(transient_buffer<T, Rank> buffer)
     return algorithm::transient_iterator<T, Rank>(buffer.get_range(), buffer);
 }
 
-template <typename T>
-constexpr auto is_simple_transform_task_v = detail::computation_type_of_v<T, computation_type::transform> &&
-                                            detail::get_access_type<T>() == access_type::one_to_one;
+// template <typename T>
+// constexpr auto is_simple_transform_task_v = detail::computation_type_of_v<T, computation_type::transform> &&
+//                                             detail::get_access_type<T>() == access_type::one_to_one;
 
 // TODO:
 //

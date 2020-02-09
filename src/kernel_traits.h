@@ -35,19 +35,16 @@ using task_first_invoke_result_t = std::tuple_element_t<0, std::invoke_result_t<
 template <typename F>
 using task_second_invoke_result_t = std::tuple_element_t<1, std::invoke_result_t<F, task_arg_t>>;
 
-template <typename F, int Rank>
-struct is_nd_kernel : std::bool_constant<std::is_invocable_v<F, nd_kernel_arg_t<Rank>>>
+template <typename F>
+struct is_nd_kernel : std::bool_constant<detail::arity_v<F> == 1 && is_item_context_v<std::decay_t<detail::arg_type_t<F, 0>>>>
 {
 };
 
-template <typename F, int Rank>
-constexpr inline bool is_nd_kernel_v = is_nd_kernel<F, Rank>::value;
+template <typename F>
+constexpr inline bool is_nd_kernel_v = is_nd_kernel<F>::value;
 
 template <typename F>
-struct is_kernel : std::bool_constant<
-					   is_nd_kernel_v<F, 1> ||
-					   is_nd_kernel_v<F, 2> ||
-					   is_nd_kernel_v<F, 3>>
+struct is_kernel : std::bool_constant<is_nd_kernel_v<F>>
 {
 };
 

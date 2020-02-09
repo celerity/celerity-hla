@@ -51,7 +51,11 @@ public:
 
 		q.submit([seq = sequence_, d, beg](handler &cgh) {
 			const auto r = std::invoke(seq, cgh);
-			cgh.template parallel_for<KernelName>(d, *beg, to_kernel(r));
+			cgh.template parallel_for<KernelName>(d, *beg, [=](cl::sycl::item<1> item){
+				
+				item_context<1, int> ctx{item};
+				std::invoke(to_kernel(r), ctx); 
+			});
 		});
 	}
 

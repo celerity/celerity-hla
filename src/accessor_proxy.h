@@ -8,6 +8,7 @@
 #include "accessor_type.h"
 #include "iterator.h"
 #include "policy.h"
+#include "fusion.h"
 
 #include <type_traits>
 #include <cmath>
@@ -48,6 +49,16 @@ public:
 	}
 
 	decltype(auto) operator[](const cl::sycl::item<Rank> item)
+	{
+		return base::get_accessor()[item];
+	}
+
+	decltype(auto) operator[](item_context<Rank, T>& item) const
+	{
+		return base::get_accessor()[item];
+	}
+
+	decltype(auto) operator[](item_context<Rank, T>& item)
 	{
 		return base::get_accessor()[item];
 	}

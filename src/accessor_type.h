@@ -45,11 +45,23 @@ struct function_traits<ReturnType (ClassType::*)(Args...) const>
 
 	using return_type = ReturnType;
 
+	template <size_t I, bool OutOfBounds>
+	struct arg;
+	
 	template <size_t I>
-	struct arg
+	struct arg<I, true>
+	{
+		using type = void;
+	};
+
+	template <size_t I>
+	struct arg<I, false>
 	{
 		using type = typename std::tuple_element<I, std::tuple<Args...>>::type;
 	};
+
+	template<size_t I>
+	using arg_t = typename arg<I, I < 0 || I >= arity>::type;
 };
 
 template <typename T>
@@ -66,7 +78,7 @@ struct arg_type;
 template <typename T, int I>
 struct arg_type<T, I, true>
 {
-	using type = typename function_traits<decltype(&T::operator())>::template arg<I>::type;
+	using type = typename function_traits<decltype(&T::operator())>::template arg_t<I>;
 };
 
 template <typename T, int I>

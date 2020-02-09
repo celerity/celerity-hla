@@ -9,6 +9,7 @@
 #include "../scoped_sequence.h"
 #include "../packaged_task.h"
 #include "../placeholder.h"
+#include "../fusion.h"
 
 namespace celerity::algorithm
 {
@@ -31,7 +32,7 @@ auto transform(ExecutionPolicy p, InIterator<T, Rank> beg, InIterator<T, Rank> e
         auto in_acc = get_access<policy_type, mode::read, accessor_type>(cgh, beg, end);
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
 
-        return [=](cl::sycl::item<Rank> item) { out_acc[item] = f(in_acc[item]); };
+        return [=](item_context<Rank, T>& item) { out_acc[item] = f(in_acc[item]); };
     };
 }
 
@@ -48,7 +49,7 @@ auto transform(ExecutionPolicy p, InIterator<T, Rank> beg, InIterator<T, Rank> e
         auto in_acc = get_access<policy_type, mode::read, accessor_type>(cgh, beg, end);
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
 
-        return [=](cl::sycl::item<Rank> item) { out_acc[item] = f(item, in_acc[item]); };
+        return [=](item_context<Rank, T>& item) { out_acc[item] = f(item, in_acc[item]); };
     };
 }
 

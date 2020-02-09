@@ -9,6 +9,7 @@
 #include "../scoped_sequence.h"
 #include "../packaged_task.h"
 #include "../placeholder.h"
+#include "../fusion.h"
 
 namespace celerity::algorithm
 {
@@ -28,11 +29,11 @@ auto generate(ExecutionPolicy p, IteratorType<T, Rank> beg, IteratorType<T, Rank
 
         if constexpr (algorithm::detail::arity_v<F> == 1)
         {
-            return [=](cl::sycl::item<Rank> item) { out_acc[item] = f(item); };
+            return [=](item_context<Rank, T>& ctx) { out_acc[ctx] = f(ctx); };
         }
         else
         {
-            return [=](cl::sycl::item<Rank> item) { out_acc[item] = f(); };
+            return [=](item_context<Rank, T>& ctx) { out_acc[ctx] = f(); };
         }
     };
 }
