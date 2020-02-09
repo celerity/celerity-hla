@@ -11,8 +11,6 @@ using namespace celerity::algorithm;
 
 #include "../src/actions.h"
 
-//#include "../src/fusion.h"
-
 SCENARIO("Fusing two tasks", "[fusion::simple]")
 {
     celerity::distr_queue q{};
@@ -42,10 +40,11 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is 18")
             {
-                /*using seq_t = decltype(seq);
-                static_assert(algorithm::detail::is_packaged_task_v<seq_t> ||
-                              (algorithm::detail::is_packaged_task_sequence_v<seq_t> && size_v<seq_t> == 1));
-                */
+                using terminated_sequence_type = decltype(terminate(seq));
+                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+
+                static_assert(size_v<terminated_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
                 REQUIRE(elements_equal_to<18>(begin(r), end(r)));
@@ -78,6 +77,12 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is 18")
             {
+                using terminated_sequence_type = decltype(terminate(seq));
+                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+
+                static_assert(size_v<terminated_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 1);
+
                 const auto r = copy_to_host(q, buf_out);
                 REQUIRE(elements_equal_to<18>(begin(r), end(r)));
             }
@@ -93,21 +98,11 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
         WHEN("chaining calls")
         {
-            auto t1 = generate<class gen_item_id>(q, cl::sycl::range<1>{100}, gen_i);
+            auto t1 = generate<class gen_item_id>(q, cl::sycl::range<1>{size}, gen_i);
             auto t2 = transform<class mul_3_f>(q, {}, {}, {}, mul_3);
 
             auto seq = t1 | t2;
             auto buf_out = seq | submit_to(q);
-
-            static_assert(is_transiently_linkable_source_v<decltype(t1)>);
-            static_assert(is_source_v<decltype(t1)>);
-            static_assert(is_linkable_source_v<decltype(t1)>);
-            static_assert(algorithm::detail::is_partially_packaged_task_v<decltype(t1)>);
-            static_assert(algorithm::detail::stage_requirement_v<decltype(t1)> == stage_requirement::output);
-
-            static_assert(is_transiently_linkable_sink_v<decltype(t2)>);
-
-            //auto buf_out = sequence(t1) | submit_to(q);
 
             // short
             //
@@ -115,21 +110,13 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             //                transform<class mul>(q, {}, {}, {}, mul_3) |
             //                submit_to(q)
 
-            /*static_assert(size_v<decltype(remove_last_element(seq) | (get_last_element(seq) | q))> == 2);
-
-            using completed_sequence = decltype(get_last_element(get_last_element(seq) | q));
-
-            static_assert(algorithm::detail::is_packaged_task_v<completed_sequence>);
-            static_assert(std::is_same_v<typename completed_sequence::output_iterator_type, buffer_iterator<int, 1>>);
-            static_assert(std::is_same_v<decltype(std::declval<completed_sequence>() | q), buffer<int, 1>>);
-            
-            using fused_seq = decltype(fuse(remove_last_element(seq) | get_last_element(get_last_element(seq) | q)));
-            static_assert(std::is_same_v<decltype(std::declval<fused_seq>() | q), buffer<int, 1>>);*/
-
             THEN("kernels are fused and the result is 3")
             {
-                //using seq_t = decltype(fuse(seq));
-                //static_assert(algorithm::detail::is_packaged_task_v<seq_t> || (algorithm::detail::is_packaged_task_sequence_v<seq_t> && size_v<seq_t> == 1));
+                using terminated_sequence_type = decltype(terminate(seq));
+                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+
+                static_assert(size_v<terminated_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -150,43 +137,19 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
         WHEN("chaining calls")
         {
-            auto t1 = fill<class fill_1>(q, cl::sycl::range<1>{100}, init);
+            auto t1 = fill<class fill_1>(q, cl::sycl::range<1>{size}, init);
             auto t2 = transform<class mul_3_f_>(q, {}, {}, {}, mul_3);
 
             auto seq = t1 | t2;
             auto buf_out = seq | submit_to(q);
 
-            static_assert(is_transiently_linkable_source_v<decltype(t1)>);
-            static_assert(is_source_v<decltype(t1)>);
-            static_assert(is_linkable_source_v<decltype(t1)>);
-            static_assert(algorithm::detail::is_partially_packaged_task_v<decltype(t1)>);
-            static_assert(algorithm::detail::stage_requirement_v<decltype(t1)> == stage_requirement::output);
-
-            static_assert(is_transiently_linkable_sink_v<decltype(t2)>);
-
-            //auto buf_out = sequence(t1) | submit_to(q);
-
-            // short
-            //
-            // auto buf_out = transform<class add>(q, {}, {}, {}, add_5) |
-            //                transform<class mul>(q, {}, {}, {}, mul_3) |
-            //                submit_to(q)
-
-            /*static_assert(size_v<decltype(remove_last_element(seq) | (get_last_element(seq) | q))> == 2);
-
-            using completed_sequence = decltype(get_last_element(get_last_element(seq) | q));
-
-            static_assert(algorithm::detail::is_packaged_task_v<completed_sequence>);
-            static_assert(std::is_same_v<typename completed_sequence::output_iterator_type, buffer_iterator<int, 1>>);
-            static_assert(std::is_same_v<decltype(std::declval<completed_sequence>() | q), buffer<int, 1>>);
-            
-            using fused_seq = decltype(fuse(remove_last_element(seq) | get_last_element(get_last_element(seq) | q)));
-            static_assert(std::is_same_v<decltype(std::declval<fused_seq>() | q), buffer<int, 1>>);*/
-
             THEN("kernels are fused and the result is 3")
             {
-                //using seq_t = decltype(fuse(seq));
-                //static_assert(algorithm::detail::is_packaged_task_v<seq_t> || (algorithm::detail::is_packaged_task_sequence_v<seq_t> && size_v<seq_t> == 1));
+                using terminated_sequence_type = decltype(terminate(seq));
+                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+
+                static_assert(size_v<terminated_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
                 REQUIRE(elements_equal_to<3 * init>(begin(r), end(r)));

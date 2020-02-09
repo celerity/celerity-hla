@@ -138,6 +138,15 @@ private:
 template <class... Actions>
 sequence(std::tuple<Actions...> actions)->sequence<Actions...>;
 
+template <class... Actions, class T>
+sequence<Actions..., T> append(const sequence<Actions...> &seq, const T &a)
+{
+	const auto actions = std::tuple_cat(seq.actions(), std::make_tuple(a));
+
+	return std::apply([](auto &&... args) { return sequence{std::forward<decltype(args)>(args)...}; },
+					  actions);
+}
+
 template <typename... Actions>
 struct sequence_traits<algorithm::sequence<Actions...>>
 	: std::integral_constant<bool, true>
@@ -163,22 +172,22 @@ auto operator|(sequence<Ts...> lhs, sequence<Us...> rhs)
 	return sequence<Ts..., Us...>{std::tuple_cat(lhs.actions(), rhs.actions())};
 }
 
-template<typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
-constexpr auto get_last_element(const T& s)
+template <typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
+constexpr auto get_last_element(const T &s)
 {
-    return std::get<size_v<T> - 1>(s.actions());
+	return std::get<size_v<T> - 1>(s.actions());
 }
 
-template<typename T, size_t...Is>
-constexpr auto dispatch_remove_last_element(const T& s, std::index_sequence<Is...>)
+template <typename T, size_t... Is>
+constexpr auto dispatch_remove_last_element(const T &s, std::index_sequence<Is...>)
 {
-    return sequence(std::get<Is>(s.actions())...);
+	return sequence(std::get<Is>(s.actions())...);
 }
 
-template<typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
-constexpr auto remove_last_element(const T& s)
+template <typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
+constexpr auto remove_last_element(const T &s)
 {
-    return dispatch_remove_last_element(s, std::make_index_sequence<size_v<T> - 1>{});
+	return dispatch_remove_last_element(s, std::make_index_sequence<size_v<T> - 1>{});
 }
 
 } // namespace celerity::algorithm
