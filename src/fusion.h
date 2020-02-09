@@ -63,6 +63,8 @@ template <typename T, int Rank>
 struct transient_buffer
 {
 public:
+    static_assert(!std::is_void_v<T>);
+
     explicit transient_buffer(cl::sycl::range<Rank> range)
         : range_(range) {}
 
@@ -80,6 +82,9 @@ public:
 private:
     cl::sycl::range<Rank> range_;
 };
+
+template<typename T>
+struct is_transient : std::false_type { };
 
 template <typename T, int Rank>
 struct transient_iterator : iterator<Rank>
@@ -100,6 +105,12 @@ public:
 
     private : transient_buffer<T, Rank> buffer_;
 };
+
+template <typename T, int Rank>
+struct is_transient<transient_iterator<T, Rank>> : std::true_type {};
+
+template<typename T>
+inline constexpr bool is_transient_v = is_transient<T>::value;
 
 template <typename T, int Rank>
 transient_iterator<T, Rank> begin(transient_buffer<T, Rank> buffer)

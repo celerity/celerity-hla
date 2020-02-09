@@ -7,7 +7,7 @@ namespace celerity::algorithm::detail
 {
 
 template <typename T>
-struct is_packaged_task : std::bool_constant<false>
+struct is_packaged_task : std::false_type
 {
 };
 
@@ -15,24 +15,37 @@ template <typename F>
 constexpr inline bool is_packaged_task_v = is_packaged_task<F>::value;
 
 template <typename T>
-struct is_partially_packaged_task : std::bool_constant<false>
+struct is_partially_packaged_task : std::false_type
 {
 };
 
 template <typename F>
 constexpr inline bool is_partially_packaged_task_v = is_partially_packaged_task<F>::value;
 
-template <typename F>
-constexpr algorithm::stage_requirement get_stage_requirement()
+template <typename T>
+struct packaged_task_traits
 {
-    if constexpr (is_partially_packaged_task_v<F>)
-        return F::requirement;
-    else
-        return algorithm::stage_requirement::invalid;
+    static constexpr auto rank = 0;
+    static constexpr auto computation_type = computation_type::none;
+    static constexpr auto access_type = access_type::invalid;
+
+    using input_value_type = void;
+    using input_iterator_type = void;
+    using output_value_type = void;
+    using output_iterator_type = void;
+};
+
+template <typename T, computation_type Computation>
+struct extended_packaged_task_traits;
+
+template <typename T>
+struct partially_packaged_task_traits : packaged_task_traits<T>
+{
+    static constexpr auto requirement = stage_requirement::invalid;
 };
 
 template <typename F>
-constexpr inline auto stage_requirement_v = get_stage_requirement<F>();
+constexpr inline auto stage_requirement_v = partially_packaged_task_traits<F>::requirement;
 
 template <typename T, size_t... Is>
 constexpr bool dispatch_is_packaged_task_sequence(std::index_sequence<Is...>)

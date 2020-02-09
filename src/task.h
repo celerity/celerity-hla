@@ -52,8 +52,8 @@ public:
 		q.submit([seq = sequence_, d, beg](handler &cgh) {
 			const auto r = std::invoke(seq, cgh);
 			
-			using first_kernel = first_result_t<decltype(r)>;
-			using item_context_type = std::decay_t<detail::arg_type_t<first_kernel, 0>>;
+			using first_kernel_type = first_result_t<decltype(r)>;
+			using item_context_type = std::decay_t<detail::arg_type_t<first_kernel_type, 0>>;
 			
 			cgh.template parallel_for<KernelName>(d, *beg, [=](cl::sycl::item<Rank> item){
 				item_context_type ctx{item};

@@ -18,15 +18,48 @@
 namespace celerity::algorithm
 {
 
-template <typename T, typename U, std::enable_if_t<detail::is_partially_packaged_task_v<T> && 
-                                                   detail::stage_requirement_v<T> == stage_requirement::output && 
-                                                   detail::is_partially_packaged_task_v<U> && 
-                                                   detail::stage_requirement_v<U> == stage_requirement::input, int> = 0>
+template <typename T>
+inline constexpr bool is_source_v = detail::computation_type_of_v<T, computation_type::generate>;
+
+template <typename T>
+inline constexpr bool single_element_access_v = (detail::computation_type_of_v<T, computation_type::transform> && 
+                                            detail::access_type_v<T> == access_type::one_to_one);
+
+template <typename T>
+inline constexpr bool is_linkable_source_v = detail::is_partially_packaged_task_v<T> && 
+                                        detail::stage_requirement_v<T> == stage_requirement::output;
+
+template <typename T>
+inline constexpr bool is_linkable_sink_v = detail::is_partially_packaged_task_v<T> && 
+                                      detail::stage_requirement_v<T> == stage_requirement::input;
+
+template <typename T>
+inline constexpr bool is_transiently_linkable_source_v = is_linkable_source_v<T> &&
+                                                (is_source_v<T> || single_element_access_v<T>);
+
+template <typename T>
+inline constexpr bool is_transiently_linkable_sink_v = is_linkable_sink_v<T> && single_element_access_v<T>;
+
+template <typename T>
+inline constexpr bool has_transient_output_v = is_transient_v<typename detail::packaged_task_traits<T>::output_iterator_type>;
+
+template <typename T>
+inline constexpr bool has_transient_input_v = is_transient_v<typename detail::packaged_task_traits<T>::input_iterator_type>;
+
+template <typename T>
+inline constexpr bool is_fusable_source_v = detail::is_packaged_task_v<T> && has_transient_output_v<T>;
+
+template <typename T>
+inline constexpr bool is_fusable_sink_v = detail::is_packaged_task_v<T> && has_transient_input_v<T>;
+
+template <typename T, typename U, std::enable_if_t<is_transiently_linkable_source_v<T> &&
+                                                   is_transiently_linkable_sink_v<U>, int> = 0>
 auto operator|(T lhs, U rhs)
 {
-    using value_type = typename T::output_value_type;
+    using value_type = typename detail::packaged_task_traits<T>::output_value_type;
+    constexpr auto rank = detail::packaged_task_traits<T>::rank;
 
-    transient_buffer<value_type, T::rank> out_buf{lhs.get_range()};
+    transient_buffer<value_type, rank> out_buf{lhs.get_range()};
 
     auto t_left = lhs.complete(begin(out_buf), end(out_buf));
     auto t_right = rhs.complete(begin(out_buf), end(out_buf));
@@ -34,11 +67,23 @@ auto operator|(T lhs, U rhs)
     return sequence(t_left, t_right);
 }
 
+// template <typename T, typename U, std::enable_if_t<is_linkable_source_v<T> && is_linkable_sink_v<U> && 
+//                                                   !(is_transiently_linkable_source_v<T> && is_transiently_linkable_sink_v<U>), int> = 0>
+// auto operator|(T lhs, U rhs)
+// {
+//     using value_type = typename T::output_value_type;
+
+//     buffer<value_type, T::rank> out_buf{lhs.get_range()};
+
+//     auto t_left = lhs.complete(begin(out_buf), end(out_buf));
+//     auto t_right = rhs.complete(begin(out_buf), end(out_buf));
+
+//     return sequence(t_left, t_right);
+// }
+
 template <typename T, typename U, std::enable_if_t<is_sequence_v<T> && 
-                                                   detail::is_partially_packaged_task_v<last_element_t<T>> &&
-                                                   detail::stage_requirement_v<last_element_t<T>> == stage_requirement::output && 
-                                                   detail::is_partially_packaged_task_v<U> && 
-                                                   detail::stage_requirement_v<U> == stage_requirement::input, int> = 0>
+                                                   is_linkable_source_v<last_element_t<T>> &&
+                                                   is_linkable_sink_v<U>, int> = 0>
 auto operator|(T lhs, U rhs)
 {
     return remove_last_element(lhs) | (get_last_element(lhs) | rhs);
@@ -63,9 +108,9 @@ auto operator|(T lhs, U rhs)
     return remove_last_element(lhs) | (get_last_element(lhs) | rhs);
 }
 
-template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && 
+template <typename T, typename U, std::enable_if_t<is_fusable_source_v<T> && 
                                                    detail::computation_type_of_v<T, computation_type::transform> &&
-                                                   detail::is_packaged_task_v<U>  && 
+                                                   is_fusable_sink_v<U>  && 
                                                    detail::computation_type_of_v<U, computation_type::transform>, int> = 0>
 auto operator|(T lhs, U rhs)
 {
@@ -90,19 +135,18 @@ auto operator|(T lhs, U rhs)
     return remove_last_element(lhs) | (get_last_element(lhs) | rhs);                                           
 }
 
-template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && 
+template <typename T, typename U, std::enable_if_t<is_fusable_source_v<T> && 
                                                    detail::computation_type_of_v<T, computation_type::generate> &&
-                                                   detail::is_packaged_task_v<U> && 
+                                                   is_fusable_sink_v<U> && 
                                                    detail::computation_type_of_v<U, computation_type::transform>, int> = 0>
 auto operator|(T lhs, U rhs)
 {
-    using iterator_type = typename U::output_iterator_type;
-    static_assert(!std::is_same_v<iterator_type, transient_iterator<typename U::output_value_type, U::rank>>);
+    using output_value_type = typename detail::packaged_task_traits<U>::output_value_type;
 
     auto out_beg = rhs.get_out_iterator();
     auto out_end = end(out_beg.get_buffer());
 
-    return sequence(package_generate<typename U::output_value_type, true>(fuse(lhs.get_task(), rhs.get_task()), out_beg, out_end));                                           
+    return sequence(package_generate<output_value_type, true>(fuse(lhs.get_task(), rhs.get_task()), out_beg, out_end));                                           
 }
 
 template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_sequence_v<T> &&
@@ -144,9 +188,10 @@ template <typename T, std::enable_if_t<detail::is_partially_packaged_task_v<T> &
                                        detail::stage_requirement_v<T> == stage_requirement::output, int> = 0>
 auto operator|(T lhs, distr_queue q)
 {
-    using value_type = typename T::output_value_type;
+    using value_type = typename detail::packaged_task_traits<T>::output_value_type;
+    constexpr auto rank = detail::packaged_task_traits<T>::rank;
 
-    buffer<value_type, T::rank> out_buf{lhs.get_range()};
+    buffer<value_type, rank> out_buf{lhs.get_range()};
     
     auto t = lhs.complete(begin(out_buf), end(out_buf));
 
