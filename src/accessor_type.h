@@ -151,13 +151,13 @@ constexpr std::enable_if_t<!has_call_operator_v<F>, access_type> get_accessor_ty
 	return access_type::invalid;
 }
 
-template <typename F, typename ValueType, size_t... Is>
+template <typename F, size_t... Is>
 constexpr auto dispatch_kernel_result(std::index_sequence<Is...>) -> std::invoke_result_t<F, arg_type_t<F, Is>...>
 {
 	return {};
 }
 
-template <typename F, typename ValueType>
+template <typename F>
 using kernel_result_t = std::conditional_t<has_call_operator_v<F>,
 										   result_type_t<F>,
 										   void>;
