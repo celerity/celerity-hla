@@ -87,8 +87,7 @@ public:
     template <typename Iterator>
     auto complete(Iterator beg, Iterator) const
     {
-        return 
-        package_transform<InputAccessType >(f_, in_beg_, in_end_, beg);
+        return package_transform<InputAccessType >(f_, in_beg_, in_end_, beg);
     }
 
     InputIteratorType get_in_beg() const { return in_beg_; }
@@ -175,7 +174,7 @@ struct packaged_task_traits<partially_packaged_transform_1<Rank, InputAccessType
 
     using input_iterator_type = InputIteratorType;
     using input_value_type = typename std::iterator_traits<InputIteratorType>::value_type;
-    using output_value_type = void;
+    using output_value_type = detail::kernel_result_t<KernelFunctor>;
     using output_iterator_type = void;
 };
 

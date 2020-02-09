@@ -68,7 +68,7 @@ class partially_packaged_generate
 {
 public:
     static_assert(!std::is_void_v<OutputValueType>);
-
+ 
     partially_packaged_generate(FunctorType functor, cl::sycl::range<Rank> range)
         : functor_(functor), range_(range)
     {
@@ -104,7 +104,7 @@ struct is_packaged_task<packaged_generate<FunctorType, InputValueType, OutputIte
 
 template <typename FunctorType, typename InputValueType, int Rank>
 struct is_partially_packaged_task<partially_packaged_generate<FunctorType, InputValueType, Rank>>
-    : std::false_type
+    : std::true_type
 {
 };
 
