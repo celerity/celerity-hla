@@ -22,8 +22,8 @@ public:
     packaged_transform(Functor functor, InputIteratorType in_beg, InputIteratorType in_end, OutputIteratorType out_beg)
         : functor_(functor), in_beg_(in_beg), in_end_(in_end), out_beg_(out_beg)
     {
-        assert(in_beg_.get_buffer().get_id() == in_end_.get_buffer().get_id());
-        assert(in_beg_.get_buffer().get_id() != out_beg_.get_buffer().get_id());
+        assert(are_equal(in_beg_.get_buffer() , in_end_.get_buffer()));
+        assert(!are_equal(in_beg_.get_buffer(), out_beg_.get_buffer()));
     }
 
     auto operator()(celerity::distr_queue &queue) const

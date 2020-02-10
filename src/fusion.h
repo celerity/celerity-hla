@@ -65,8 +65,10 @@ struct transient_buffer
 public:
     static_assert(!std::is_void_v<T>);
 
+    static unsigned long long curr_id;
+
     explicit transient_buffer(cl::sycl::range<Rank> range)
-        : range_(range) {}
+        : range_(range), id_(curr_id++) {}
 
     template <cl::sycl::access::mode Mode, typename RangeMapper>
     auto get_access(handler& cgh, RangeMapper)
@@ -77,11 +79,15 @@ public:
     }
 
     cl::sycl::range<Rank> get_range() const { return range_; }
-    size_t get_id() const { return -1; }
+    unsigned long long get_id() const { return id_; }
 
 private:
     cl::sycl::range<Rank> range_;
+    unsigned long long id_;
 };
+
+template <typename T, int Rank>
+unsigned long long transient_buffer<T, Rank>::curr_id = 0;
 
 template<typename T>
 struct is_transient : std::false_type { };
@@ -106,6 +112,8 @@ public:
     private : transient_buffer<T, Rank> buffer_;
 };
 
+
+
 template <typename T, int Rank>
 struct is_transient<transient_iterator<T, Rank>> : std::true_type {};
 
@@ -122,6 +130,26 @@ template <typename T, int Rank>
 transient_iterator<T, Rank> end(transient_buffer<T, Rank> buffer)
 {
     return algorithm::transient_iterator<T, Rank>(buffer.get_range(), buffer);
+}
+
+template <typename ElementTypeA, int RankA,
+            typename ElementTypeB, int RankB>
+bool are_equal(buffer<ElementTypeA, RankA> a, transient_buffer<ElementTypeB, RankB> b)
+{
+    return false;
+}
+
+template <typename ElementTypeA, int RankA,
+          typename ElementTypeB, int RankB>
+bool are_equal(transient_buffer<ElementTypeA, RankA> a, buffer<ElementTypeB, RankB> b)
+{
+    return false;
+}
+
+template <typename ElementType, int Rank>
+bool are_equal(transient_buffer<ElementType, Rank> a, transient_buffer<ElementType, Rank> b)
+{
+    return a.get_id() == b.get_id();
 }
 
 // template <typename T>
