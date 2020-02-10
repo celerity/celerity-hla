@@ -135,7 +135,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         }
     }
 
-    GIVEN("A fill value and two simple transform kernels and a buffer of hundred 1s also taking the current item")
+    GIVEN("A fill value and two simple transform kernels")
     {
         constexpr auto size = 100;
         constexpr auto init = 1;
@@ -161,6 +161,42 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
  
                 const auto r = copy_to_host(q, buf_out);
                 REQUIRE(elements_equal_to<18>(begin(r), end(r)));
+            }
+        } 
+    }
+
+    GIVEN("A generate and three transform kernels")
+    {
+        constexpr auto size = 100;
+
+        auto gen_i = [](cl::sycl::item<1> i) { return static_cast<int>(i.get_linear_id()); };
+        auto add_7 = [](int x) { return x + 7; };
+        auto mul_4 = [](int x) { return x * 4; };
+        auto div_2 = [](int x) { return x / 2; };
+
+        WHEN("chaining calls")
+        {
+            auto t1 = generate<class generate_item_id>(q, cl::sycl::range<1>{size}, gen_i);
+            auto t2 = transform<class n_add_7>(q, {}, {}, {}, add_7);
+            auto t3 = transform<class n_mul_4>(q, {}, {}, {}, mul_4);
+            auto t4 = transform<class n_div_2>(q, {}, {}, {}, div_2);
+
+            auto buf_out = t1 | t2 | t3 | t4 | submit_to(q);
+
+            THEN("kernels are fused and the result is 18")
+            {
+                using terminated_sequence_type = decltype(terminate(t1 | t2 | t3 | t4));
+                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+
+                static_assert(size_v<terminated_sequence_type> == 4);
+                static_assert(size_v<fused_sequence_type> == 1);
+ 
+                const auto r = copy_to_host(q, buf_out);
+
+                for (auto i = 0; i < size; ++i)
+                {
+                    REQUIRE(r[i] == div_2(mul_4(add_7(i))));
+                }
             }
         } 
     }
