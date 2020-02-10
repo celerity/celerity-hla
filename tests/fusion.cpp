@@ -76,11 +76,11 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     }
 
     GIVEN("A generate and a transform kernel")
-    {
-        auto gen_i = [](cl::sycl::item<1> i) { return static_cast<int>(i.get_linear_id()); };
-        auto mul_3 = [](int x) { return x * 3; };
-
+    { 
         constexpr auto size = 100;
+
+        auto gen_i = [](cl::sycl::item<1> i) { return static_cast<int>(i.get_linear_id()); };
+        auto mul_3 = [](int x) { return x * 3; };       
 
         WHEN("chaining calls")
         {
@@ -91,7 +91,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is 3")
             {
-                using terminated_sequence_type = decltype(terminate(t1 | t2)) using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+                using terminated_sequence_type = decltype(terminate(t1 | t2));
+                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
 
                 static_assert(size_v<terminated_sequence_type> == 2);
                 static_assert(size_v<fused_sequence_type> == 1);
@@ -107,11 +108,11 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     }
 
     GIVEN("A fill value and a transform kernel")
-    {
-        constexpr auto init = 1;
-        auto mul_3 = [](int x) { return x * 3; };
-
+    {       
         constexpr auto size = 100;
+        constexpr auto init = 1;
+
+        auto mul_3 = [](int x) { return x * 3; };
 
         WHEN("chaining calls")
         {
@@ -132,5 +133,35 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
                 REQUIRE(elements_equal_to<3 * init>(begin(r), end(r)));
             }
         }
+    }
+
+    GIVEN("A fill value and two simple transform kernels and a buffer of hundred 1s also taking the current item")
+    {
+        constexpr auto size = 100;
+        constexpr auto init = 1;
+
+        auto add_5 = [](int x) { return x + 5; };
+        auto mul_3 = [](int x) { return x * 3; };
+
+        WHEN("chaining calls")
+        {
+            auto t1 = fill<class fill_1>(q, cl::sycl::range<1>{size}, init);
+            auto t2 = transform<class add_w_item>(q, {}, {}, {}, add_5);
+            auto t3 = transform<class mul_w_item>(q, {}, {}, {}, mul_3);
+
+            auto buf_out = t1 | t2 | t3 | submit_to(q);
+
+            THEN("kernels are fused and the result is 18")
+            {
+                using terminated_sequence_type = decltype(terminate(t1 | t2 | t3));
+                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+
+                static_assert(size_v<terminated_sequence_type> == 3);
+                static_assert(size_v<fused_sequence_type> == 1);
+ 
+                const auto r = copy_to_host(q, buf_out);
+                REQUIRE(elements_equal_to<18>(begin(r), end(r)));
+            }
+        } 
     }
 }
