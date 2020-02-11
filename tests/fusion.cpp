@@ -187,17 +187,57 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             {
                 using terminated_sequence_type = decltype(terminate(t1 | t2 | t3 | t4));
                 using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
-
+    
                 static_assert(size_v<terminated_sequence_type> == 4);
                 static_assert(size_v<fused_sequence_type> == 1);
  
                 const auto r = copy_to_host(q, buf_out);
-
+ 
                 for (auto i = 0; i < size; ++i)
                 {
                     REQUIRE(r[i] == div_2(mul_4(add_7(i))));
                 }
-            }
-        } 
+            }  
+        }
+    }
+
+    GIVEN("A generate kernel, a buffer and a zip kernel")
+    {
+        constexpr auto size = 100;
+
+        auto gen_i = [](cl::sycl::item<1> i) { return static_cast<int>(i.get_linear_id()); };
+
+        std::vector<int> src(size, 1);
+        celerity::buffer<int, 1> buf_in(src.data(), {size});
+
+        auto zip_add = [](int x, int y) { return x + y; };
+
+        WHEN("chaining calls")
+        {
+            auto t1 = generate<class generate_item_id>(q, cl::sycl::range<1>{size}, gen_i);
+            auto t2 = transform<class zip_add_t>(q, zip_add);
+
+            auto buf_out = t1 | (t2 << buf_in) | submit_to(q);
+
+            THEN("kernels are fused and the result is 18")
+            {
+                using terminated_sequence_type = decltype(terminate(t1 | (t2 << buf_in)));
+                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+    
+                static_assert(is_sequence_v<terminated_sequence_type>);
+                static_assert(has_transient_input_v<last_element_t<terminated_sequence_type>>);
+                static_assert(is_fusable_sink_v<last_element_t<terminated_sequence_type>>);
+
+                static_assert(size_v<terminated_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 1);
+ 
+                const auto r = copy_to_host(q, buf_out);
+ 
+                for (auto i = 0; i < size; ++i)
+                {
+                    REQUIRE(r[i] == zip_add(1, i));
+                }
+            }  
+        }
     }
 }
