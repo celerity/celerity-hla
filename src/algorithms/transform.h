@@ -53,35 +53,66 @@ auto transform(ExecutionPolicy p, InIterator<T, Rank> beg, InIterator<T, Rank> e
     };
 }
 
-template <typename FirstInputAccessorType, typename SecondInputAccessorType, typename OutputAccessorType, typename ExecutionPolicy, typename F, typename T, typename U, int Rank,
+template <typename ExecutionPolicy, 
+          template <typename, int> typename FirstInputIteratorType,
+          template <typename, int> typename SecondInputIteratorType,
+          template <typename, int> typename OutputIteratorType, 
+          typename F, 
+          typename T, 
+          typename U, 
+          int Rank,
           ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
-auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
+auto transform(ExecutionPolicy p, 
+               FirstInputIteratorType<T, Rank> beg, 
+               FirstInputIteratorType<T, Rank> end, 
+               SecondInputIteratorType<U, Rank> beg2, 
+               OutputIteratorType<T, Rank> out, 
+               const F &f)
 {
     using policy_type = strip_queue_t<ExecutionPolicy>;
     using namespace cl::sycl::access;
 
-    return [=](celerity::handler &cgh) {
-        auto first_in_acc = get_access<policy_type, mode::read, FirstInputAccessorType>(cgh, beg, end);
-        auto second_in_acc = get_access<policy_type, mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
-        auto out_acc = get_access<policy_type, mode::write, OutputAccessorType>(cgh, out, out);
+    using first_accessor_type = algorithm::detail::accessor_type_t<F, 0, T>;
+    using second_accessor_type = algorithm::detail::accessor_type_t<F, 1, U>;
 
-        return [=](cl::sycl::item<Rank> item) { out_acc[item] = f(first_in_acc[item], second_in_acc[item]); };
+    return [=](celerity::handler &cgh) {
+        auto first_in_acc = get_access<policy_type, mode::read, first_accessor_type>(cgh, beg, end);
+        auto second_in_acc = get_access<policy_type, mode::read, second_accessor_type>(cgh, beg2, beg2);
+        auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
+
+        // TODO: item_context needs to fit for both T and U
+        return [=](item_context<Rank, T> ctx) { out_acc[ctx] = f(first_in_acc[ctx], second_in_acc[ctx]); };
     };
 }
 
-template <typename FirstInputAccessorType, typename SecondInputAccessorType, typename OutputAccessorType, typename ExecutionPolicy, typename F, typename T, typename U, int Rank,
+template <typename ExecutionPolicy, 
+          template <typename, int> typename FirstInputIteratorType,
+          template <typename, int> typename SecondInputIteratorType,
+          template <typename, int> typename OutputIteratorType, 
+          typename F, 
+          typename T, 
+          typename U, 
+          int Rank,          
           ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 3, int> = 0>
-auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
+auto transform(ExecutionPolicy p, 
+               FirstInputIteratorType<T, Rank> beg, 
+               FirstInputIteratorType<T, Rank> end, 
+               SecondInputIteratorType<U, Rank> beg2, 
+               OutputIteratorType<T, Rank> out, const F &f)
 {
     using policy_type = strip_queue_t<ExecutionPolicy>;
     using namespace cl::sycl::access;
 
-    return [=](celerity::handler &cgh) {
-        auto first_in_acc = get_access<policy_type, mode::read, FirstInputAccessorType>(cgh, beg, end);
-        auto second_in_acc = get_access<policy_type, mode::read, SecondInputAccessorType>(cgh, beg2, beg2);
-        auto out_acc = get_access<policy_type, mode::write, OutputAccessorType>(cgh, out, out);
+    using first_accessor_type = algorithm::detail::accessor_type_t<F, 1, T>;
+    using second_accessor_type = algorithm::detail::accessor_type_t<F, 2, T>;
 
-        return [=](cl::sycl::item<Rank> item) { out_acc[item] = f(item, first_in_acc[item], second_in_acc[item]); };
+    return [=](celerity::handler &cgh) {
+        auto first_in_acc = get_access<policy_type, mode::read, first_accessor_type>(cgh, beg, end);
+        auto second_in_acc = get_access<policy_type, mode::read, second_accessor_type>(cgh, beg2, beg2);
+        auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
+
+        // TODO: item_context needs to fit for both T and U
+        return [=](item_context<Rank, T> ctx) { out_acc[ctx] = f(ctx, first_in_acc[ctx], second_in_acc[ctx]); };
     };
 }
 
@@ -133,18 +164,48 @@ template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F
           ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
-    return package_zip<algorithm::detail::get_accessor_type<F, 0>(), algorithm::detail::get_accessor_type<F, 1>()>(
-        task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 0, T>, algorithm::detail::accessor_type_t<F, 1, U>, one_to_one>(p, beg, end, beg2, out, f)),
+    constexpr auto first_access_type = algorithm::detail::get_accessor_type<F, 0>();
+    constexpr auto second_access_type = algorithm::detail::get_accessor_type<F, 1>();
+
+    return package_zip<first_access_type, second_access_type>(
+        [p, f](auto _beg, auto _end, auto _beg2, auto _out) { return task<ExecutionPolicy>(detail::transform(p, _beg, _end, _beg2, _out, f)); },
         beg, end, beg2, out);
+}
+
+template <typename ExecutionPolicy, typename F,
+          ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 2, int> = 0>
+auto transform(ExecutionPolicy p, const F &f)
+{
+    constexpr auto first_access_type = algorithm::detail::get_accessor_type<F, 0>();
+    constexpr auto second_access_type = algorithm::detail::get_accessor_type<F, 1>();
+
+    return package_zip<first_access_type, second_access_type, F>(
+        [p, f](auto beg, auto end, auto beg2, auto out) { 
+            return task<ExecutionPolicy>(detail::transform(p, beg, end, beg2, out, f)); });
 }
 
 template <typename ExecutionPolicy, typename T, int Rank, typename F, typename U,
           ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 3, int> = 0>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
-    return package_zip<algorithm::detail::get_accessor_type<F, 1>(), algorithm::detail::get_accessor_type<F, 2>()>(
-        task<ExecutionPolicy>(detail::transform<algorithm::detail::accessor_type_t<F, 1, T>, algorithm::detail::accessor_type_t<F, 2, U>, one_to_one>(p, beg, end, beg2, out, f)),
+    constexpr auto first_access_type = algorithm::detail::get_accessor_type<F, 1>();
+    constexpr auto second_access_type = algorithm::detail::get_accessor_type<F, 2>();
+
+    return package_zip<first_access_type, second_access_type>(
+        [p, f](auto _beg, auto _end, auto _beg2, auto _out) { return task<ExecutionPolicy>(detail::transform(p, _beg, _end, _beg2, _out, f)); },
         beg, end, beg2, out);
+}
+
+template <typename ExecutionPolicy, typename F,
+          ::std::enable_if_t<algorithm::detail::function_traits<F>::arity == 3, int> = 0>
+auto transform(ExecutionPolicy p, const F &f)
+{
+    constexpr auto first_access_type = algorithm::detail::get_accessor_type<F, 1>();
+    constexpr auto second_access_type = algorithm::detail::get_accessor_type<F, 2>();
+
+    return package_zip<first_access_type, second_access_type, F>(
+        [p, f](auto beg, auto end, auto beg2, auto out) { 
+            return task<ExecutionPolicy>(detail::transform(p, beg, end, beg2, out, f)); });
 }
 
 } // namespace actions
@@ -212,6 +273,14 @@ template <typename KernelName, typename T, typename U, typename V, int Rank, typ
 auto transform(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<V, Rank> beg2, buffer_iterator<U, Rank> out, const F &f)
 {
     return transform(distr<KernelName>(q), beg, end, beg2, out, f);
+}
+
+template <typename KernelName, typename F,
+          typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid &&
+                                      detail::get_accessor_type<F, 1>() != access_type::invalid>>
+auto transform(celerity::distr_queue q, const F &f)
+{
+    return actions::transform(distr<KernelName>(q), f);
 }
 
 template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, typename F,
