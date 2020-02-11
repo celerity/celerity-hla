@@ -181,6 +181,8 @@ auto package_zip(FunctorType functor,
                                     SecondInputAccessType>(functor, in_beg, in_end, second_in_beg);
 }
 
+// Rename FirstInputIterator to SecondInputIterator 
+// we are switching those in this stage
 template <typename FunctorType, 
           typename KernelType,
           typename FirstInputIteratorType, 
@@ -199,10 +201,10 @@ public:
     }
 
     template<typename Iterator>
-    auto complete(Iterator beg, Iterator)
+    auto complete(Iterator beg, Iterator end)
     {
         return package_zip<FirstInputAccessType, SecondInputAccessType, KernelType>(
-            functor_, in_beg_, in_end_, beg);
+            functor_, beg, end, in_beg_);
     }
 
     FirstInputIteratorType get_in_beg() const { return in_beg_; }
