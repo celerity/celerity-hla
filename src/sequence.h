@@ -166,6 +166,17 @@ struct last_element<algorithm::sequence<>>
 	using type = void;
 };
 
+template <typename T, typename... Ts>
+struct first_element<algorithm::sequence<T, Ts...>>
+	: std::tuple_element<0, typename algorithm::sequence<T, Ts...>::actions_t>
+{
+};
+
+template <>
+struct first_element<algorithm::sequence<>>
+{
+	using type = void;
+};
 template <typename... Ts, typename... Us>
 auto operator|(sequence<Ts...> lhs, sequence<Us...> rhs)
 {
@@ -188,6 +199,24 @@ template <typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
 constexpr auto remove_last_element(const T &s)
 {
 	return dispatch_remove_last_element(s, std::make_index_sequence<size_v<T> - 1>{});
+}
+
+template <typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
+constexpr auto get_first_element(const T &s)
+{
+	return std::get<0>(s.actions());
+}
+
+template <typename T, size_t... Is>
+constexpr auto dispatch_remove_first_element(const T &s, std::index_sequence<Is...>)
+{
+	return sequence(std::get<Is + 1>(s.actions())...);
+}
+
+template <typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
+constexpr auto remove_first_element(const T &s)
+{
+	return dispatch_remove_first_element(s, std::make_index_sequence<size_v<T> - 1>{});
 }
 
 } // namespace celerity::algorithm
