@@ -312,6 +312,7 @@ void to_string(std::stringstream& ss, T task)
     using traits = detail::packaged_task_traits<T>;
 
     ss << "packaged task:\n";
+    ss << "  is t-joint          : " << std::boolalpha << detail::is_t_joint_v<T> << "\n";
     ss << "  type                : " << to_string(traits::computation_type) << "\n";
     ss << "  rank                : " << traits::rank << "\n";
     ss << "  access type         : " << to_string(traits::access_type) << "\n";
@@ -319,7 +320,18 @@ void to_string(std::stringstream& ss, T task)
     ss << "  output value type   : " << to_string<typename traits::output_value_type>() << "\n";
     ss << "  input iterator type : " << to_string<typename traits::input_iterator_type>() << "\n";
     ss << "  output iterator type: " << to_string<typename traits::output_iterator_type>() << "\n";
-    ss << "\n";
+
+    if constexpr(traits::computation_type == computation_type::zip)
+    {
+        using ext_traits = detail::extended_packaged_task_traits<T, computation_type::zip>;
+
+        ss << "\n";
+        ss << "  second input access type  : " << to_string(ext_traits::second_input_access_type) << "\n";
+        ss << "  second input value type   : " << to_string<typename ext_traits::second_input_value_type>() << "\n";
+        ss << "  second input iterator type: " << to_string<typename ext_traits::second_input_iterator_type>() << "\n";
+    }
+
+    ss << "\n\n";
 }
 
 template<typename T, size_t...Is, std::enable_if_t<is_sequence_v<T>, int> = 0>
