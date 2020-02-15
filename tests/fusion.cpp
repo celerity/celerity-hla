@@ -222,21 +222,50 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             THEN("kernels are fused and the result is 18")
             {
                 using terminated_sequence_type = decltype(terminate(t1 | (t2 << buf_in)));
-                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
     
-                static_assert(is_sequence_v<terminated_sequence_type>);
-                static_assert(has_transient_input_v<last_element_t<terminated_sequence_type>>);
-                static_assert(is_fusable_sink_v<last_element_t<terminated_sequence_type>>);
-
                 static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<fused_sequence_type> == 2);
  
                 const auto r = copy_to_host(q, buf_out);
  
                 for (auto i = 0; i < size; ++i)
                 {
                     REQUIRE(r[i] == zip_add(1, i));
-                }
+                } 
+            }  
+        }
+    }
+
+    GIVEN("Two generate kernels and a zip kernel")
+    {
+        constexpr auto size = 100;
+
+        auto gen_i = [](cl::sycl::item<1> i) { return static_cast<int>(i.get_linear_id()); };
+        auto zip_add = [](int x, int y) { return x + y; };
+
+        WHEN("chaining calls")
+        {
+            auto t1 = generate<class generate_item_id_1>(q, cl::sycl::range<1>{size}, gen_i);
+            auto t2 = fill<class fill_3>(q, cl::sycl::range<1>(size), 3);
+            auto t3 = transform<class zip_add_t_1>(q, zip_add);
+
+            auto buf_out = t1 | (t3 << t2) | submit_to(q);
+
+            THEN("kernels are fused and the result is (i + 3)")
+            {
+                using terminated_sequence_type = decltype(terminate(t1 | (t3 << t2)));
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+    
+                static_assert(size_v<terminated_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 2);
+ 
+                const auto r = copy_to_host(q, buf_out);
+ 
+                for (auto i = 0; i < size; ++i)
+                {
+                    REQUIRE(r[i] == zip_add(3, i));
+                } 
             }  
         }
     }
