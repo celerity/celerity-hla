@@ -173,7 +173,9 @@ public:
     auto get_in_end() const { return task_.get_in_end(); }
     auto get_out_iterator() const { return task_.get_out_iterator(); }
     auto get_range() const { return task_.get_range(); }
-    auto get_task() { return task_.get_task(); }
+
+    auto get_task() { return task_; }
+    auto get_secondary() { return secondary_in_; }
 
 private:
     Task task_;
@@ -256,12 +258,13 @@ struct packaged_task_traits<partial_t_joint<Task, SecondaryInputSequence>>
 };
 
 template<typename Task, typename SecondaryInputSequence>
-struct partially_packaged_task_traits<partial_t_joint<Task, SecondaryInputSequence>>
-{
-    using traits = partially_packaged_task_traits<Task>;
+struct extended_packaged_task_traits<partial_t_joint<Task, SecondaryInputSequence>, computation_type::zip> 
+    : extended_packaged_task_traits<Task, computation_type::zip>
+{};
 
-    static constexpr auto requirement = traits::requirement;
-};
+template<typename Task, typename SecondaryInputSequence>
+struct partially_packaged_task_traits<partial_t_joint<Task, SecondaryInputSequence>> 
+    : partially_packaged_task_traits<Task> {};
 
 template<typename T>
 struct is_t_joint : std::bool_constant<false> {};
