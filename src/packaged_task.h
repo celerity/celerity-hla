@@ -152,6 +152,13 @@ auto operator|(T lhs, U rhs)
         rhs.get_out_iterator()));
 }
 
+template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && detail::is_packaged_task_v<U> &&
+                                                   (!is_fusable_source_v<T> || !is_fusable_sink_v<U>), int> = 0>
+auto operator|(T lhs, U rhs)
+{
+    return sequence(lhs, rhs);
+}
+
 template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_sequence_v<T> && 
                                                    is_fusable_source_v<last_element_t<T>> && 
                                                    is_fusable_sink_v<U>, int> = 0>
