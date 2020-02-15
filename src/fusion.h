@@ -195,7 +195,22 @@ public:
     template<typename IteratorType>
     auto complete(IteratorType beg, IteratorType end)
     {
-        return t_joint{ task_.complete(beg, end), secondary_in_ };
+        auto completed_task = task_.complete(beg, end);
+
+        using completed_task_type = decltype(completed_task);
+
+        if constexpr (detail::is_partially_packaged_task_v<completed_task_type>)
+        {
+            return partial_t_joint<completed_task_type, SecondaryInputSequence>{ 
+                completed_task, secondary_in_ 
+            };
+        }
+        else
+        {
+            return t_joint<completed_task_type, SecondaryInputSequence>{ 
+                completed_task, secondary_in_ 
+            };
+        }
     }
 
     auto get_in_beg() const { return task_.get_in_beg(); }
