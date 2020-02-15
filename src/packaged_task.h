@@ -243,8 +243,8 @@ auto operator|(celerity::buffer<T, Rank> &lhs, U rhs)
 }
 
 template <typename T, int Rank, typename U, 
-          std::enable_if_t<algorithm::is_linkable_sink_v<U>, int> = 0>
-auto operator<<(U lhs, celerity::buffer<T, Rank> &rhs)
+          std::enable_if_t<algorithm::is_linkable_sink_v<T>, int> = 0>
+auto operator<<(T lhs, celerity::buffer<U, Rank> &rhs)
 {
     return lhs.complete(begin(rhs), end(rhs));
 }
