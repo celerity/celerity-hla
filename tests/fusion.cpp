@@ -34,7 +34,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             THEN("kernels are fused and the result is 18")
             {
                 using terminated_sequence_type = decltype(terminate(buf_in | t1 | t2));
-                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 2);
                 static_assert(size_v<fused_sequence_type> == 1);
@@ -64,7 +64,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             THEN("kernels are fused and the result is 18")
             {
                 using terminated_sequence_type = decltype(terminate(buf_in | t1 | t2));
-                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 2);
                 static_assert(size_v<fused_sequence_type> == 1);
@@ -92,7 +92,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             THEN("kernels are fused and the result is 3")
             {
                 using terminated_sequence_type = decltype(terminate(t1 | t2));
-                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 2);
                 static_assert(size_v<fused_sequence_type> == 1);
@@ -124,7 +124,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             THEN("kernels are fused and the result is 3")
             {
                 using terminated_sequence_type = decltype(terminate(t1 | t2));
-                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 2);
                 static_assert(size_v<fused_sequence_type> == 1);
@@ -154,7 +154,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             THEN("kernels are fused and the result is 18")
             {
                 using terminated_sequence_type = decltype(terminate(t1 | t2 | t3));
-                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 3);
                 static_assert(size_v<fused_sequence_type> == 1);
@@ -186,7 +186,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             THEN("kernels are fused and the result is 18")
             {
                 using terminated_sequence_type = decltype(terminate(t1 | t2 | t3 | t4));
-                using fused_sequence_type = decltype(std::declval<terminated_sequence_type>());
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
     
                 static_assert(size_v<terminated_sequence_type> == 4);
                 static_assert(size_v<fused_sequence_type> == 1);
