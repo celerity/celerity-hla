@@ -152,6 +152,71 @@ bool are_equal(transient_buffer<ElementType, Rank> a, transient_buffer<ElementTy
     return a.get_id() == b.get_id();
 }
 
+
+std::string to_string(access_type type)
+{
+    switch(type)
+    {
+        case access_type::one_to_one: return "one_to_one";
+        case access_type::slice: return "slice";
+        case access_type::chunk: return "chunk";
+        case access_type::all : return "all";
+        case access_type::item : return "item";
+        default: return "none";
+    }
+}
+
+std::string to_string(computation_type type)
+{
+    switch(type)
+    {
+        case computation_type::generate: return "generate";
+        case computation_type::transform: return "transform";
+        case computation_type::zip: return "zip";
+        case computation_type::reduce : return "reduce";
+        default: return "other";
+    }
+}
+
+template<typename T>
+std::string to_string()
+{
+    return typeid(T).name();
+}
+
+template<typename T, std::enable_if_t<detail::is_packaged_task_v<T>, int> = 0>
+void to_string(std::stringstream& ss, T task)
+{
+    using traits = detail::packaged_task_traits<T>;
+
+    ss << "packaged task:\n";
+    ss << "  type                : " << to_string(traits::computation_type) << "\n";
+    ss << "  rank                : " << traits::rank << "\n";
+    ss << "  access type         : " << to_string(traits::access_type) << "\n";
+    ss << "  input value type    : " << to_string<typename traits::input_value_type>() << "\n";
+    ss << "  output value type   : " << to_string<typename traits::output_value_type>() << "\n";
+    ss << "  input iterator type : " << to_string<typename traits::input_iterator_type>() << "\n";
+    ss << "  output iterator type: " << to_string<typename traits::output_iterator_type>() << "\n";
+    ss << "\n";
+}
+
+template<typename T, size_t...Is, std::enable_if_t<is_sequence_v<T>, int> = 0>
+void to_string(std::stringstream& ss, T seq, std::index_sequence<Is...>)
+{
+    ((to_string(ss, std::get<Is>(seq.actions()))), ...);
+}
+
+template<typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
+std::string to_string(T seq)
+{
+    std::stringstream ss{};
+
+    to_string(ss, seq, std::make_index_sequence<size_v<T>>{});
+
+    return ss.str();
+}
+
+
 // template <typename T>
 // constexpr auto is_simple_transform_task_v = detail::computation_type_of_v<T, computation_type::transform> &&
 //                                             detail::get_access_type<T>() == access_type::one_to_one;
