@@ -68,6 +68,21 @@ auto operator|(T lhs, U rhs)
     return sequence(t_left, t_right);
 }
 
+template <typename T, typename U, std::enable_if_t<is_linkable_source_v<T> && is_linkable_sink_v<U> && 
+                                                   (!is_transiently_linkable_source_v<T> || !is_transiently_linkable_sink_v<U>), int> = 0>
+auto operator|(T lhs, U rhs)
+{
+    using value_type = typename detail::packaged_task_traits<T>::output_value_type;
+    constexpr auto rank = detail::packaged_task_traits<T>::rank;
+
+    buffer<value_type, rank> out_buf{lhs.get_range()};
+
+    auto t_left = lhs.complete(begin(out_buf), end(out_buf));
+    auto t_right = rhs.complete(begin(out_buf), end(out_buf));
+
+    return sequence(t_left, t_right);
+}
+
 template <typename T, typename U, std::enable_if_t<is_sequence_v<T> && is_linkable_source_v<last_element_t<T>> && is_linkable_sink_v<U>, int> = 0>
 auto operator|(T lhs, U rhs)
 {
