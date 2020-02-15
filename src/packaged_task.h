@@ -90,37 +90,6 @@ auto operator|(T lhs, U rhs)
     return remove_last_element(lhs) | (get_last_element(lhs) | rhs);
 }
 
-template <typename T, typename U, std::enable_if_t<is_linkable_source_v<T> && 
-                                                   is_sequence_v<U> && 
-                                                   is_linkable_sink_v<last_element_t<U>>, int> = 0>
-auto operator|(T lhs, U rhs)
-{
-    auto linked_sequence = lhs | get_last_element(rhs);
-
-    auto linked_lhs = get_first_element(linked_sequence);
-    auto linked_last_rhs = get_last_element(linked_sequence);
-
-    partial_t_joint joint{linked_last_rhs, remove_last_element(rhs)};
-
-    return sequence(linked_lhs, joint);
-}
-
-template <typename T, typename U, std::enable_if_t<is_sequence_v<T> && 
-                                                   is_linkable_source_v<last_element_t<T>> && 
-                                                   is_sequence_v<U> && 
-                                                   is_linkable_sink_v<last_element_t<U>>, int> = 0>
-auto operator|(T lhs, U rhs)
-{
-    auto linked_sequence = lhs | get_last_element(rhs);
-
-    auto linked_last_lhs = get_last_element(remove_last_element(linked_sequence));
-    auto linked_last_rhs = get_last_element(linked_sequence);
-
-    partial_t_joint joint{linked_last_rhs, remove_last_element(rhs)};
-
-    return sequence(append(remove_last_element(lhs), linked_last_lhs) , joint);
-}
-
 template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && detail::is_partially_packaged_task_v<U> && detail::stage_requirement_v<U> == stage_requirement::input, int> = 0>
 auto operator|(T lhs, U rhs)
 {
@@ -273,12 +242,41 @@ auto operator|(T lhs, distr_queue q)
     return fuse(terminate(lhs)) | q;
 }
 
+template <typename T, typename U, std::enable_if_t<is_linkable_source_v<last_element_t<U>> && 
+                                                   is_sequence_v<U> && 
+                                                   is_linkable_sink_v<T>, int> = 0>
+auto operator << (T lhs, U rhs)
+{
+    auto linked_sequence = get_last_element(rhs) | lhs;
+
+    auto linked_lhs = get_last_element(linked_sequence);
+    auto linked_last_rhs = get_first_element(linked_sequence);
+
+    return partial_t_joint{linked_lhs, append(remove_last_element(rhs), linked_last_rhs) };
+}
+
+template <typename T, typename U, std::enable_if_t<is_sequence_v<U> && 
+                                                   is_linkable_source_v<last_element_t<U>> && 
+                                                   is_sequence_v<T> && 
+                                                   is_linkable_sink_v<last_element_t<T>>, int> = 0>
+auto operator << (T lhs, U rhs)
+{
+    auto linked_sequence = get_last_element(rhs) | get_last_element(lhs);
+
+    auto linked_last_lhs = get_last_element(linked_sequence);
+    auto linked_last_rhs = get_first_element(linked_sequence);
+
+    partial_t_joint joint{linked_last_lhs, append(remove_last_element(rhs), linked_last_rhs) };
+
+    return append(remove_last_element(lhs), joint);
+}
+
 template <typename T, typename U, std::enable_if_t<
     algorithm::is_linkable_sink_v<T> && 
     algorithm::is_linkable_source_v<U>, int> = 0>
 auto operator<<(T lhs, U rhs)
 {
-    return rhs | lhs;
+    return lhs << sequence(rhs);
 }
 
 } // namespace celerity::algorithm
