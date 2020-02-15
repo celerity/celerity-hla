@@ -33,12 +33,13 @@ public:
         assert(!are_equal(second_in_beg_.get_buffer(), out_beg_.get_buffer()));
     }
 
-    void operator()(celerity::distr_queue &queue) const
+    auto operator()(celerity::distr_queue &queue) const
     {
         std::invoke(get_task(), queue, in_beg_, in_end_);
+        return out_beg_.get_buffer();
     }
 
-    auto get_task() 
+    auto get_task() const
     {
         if constexpr (Fused)
         {
@@ -414,6 +415,20 @@ struct packaged_task_traits<partially_packaged_zip_1<FunctorType, KernelType, Fi
     using output_iterator_type = void;
 };
 
+template <typename FunctorType, 
+          typename KernelType,
+          typename FirstInputIteratorType, 
+          int Rank, 
+          access_type FirstInputAccessType, 
+          access_type SecondInputAccessType>
+struct extended_packaged_task_traits<partially_packaged_zip_1<FunctorType, KernelType, FirstInputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType>, computation_type::zip>
+{
+    static constexpr auto second_input_access_type = SecondInputAccessType;
+
+    using second_input_value_type = void;
+    using second_input_iterator_type = void;
+};
+
 
 template <typename FunctorType, 
           typename KernelType,
@@ -429,6 +444,18 @@ struct packaged_task_traits<partially_packaged_zip_0<FunctorType, KernelType, Fi
 
     using input_iterator_type = void;
     using output_iterator_type = void;
+};
+
+template <typename FunctorType, 
+          typename KernelType,
+          access_type FirstInputAccessType, 
+          access_type SecondInputAccessType>
+struct extended_packaged_task_traits<partially_packaged_zip_0<FunctorType, KernelType, FirstInputAccessType, SecondInputAccessType>, computation_type::zip>
+{
+    static constexpr auto second_input_access_type = SecondInputAccessType;
+
+    using second_input_value_type = void;
+    using second_input_iterator_type = void;
 };
 
 template <typename FunctorType, 
