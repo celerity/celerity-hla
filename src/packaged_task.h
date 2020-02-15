@@ -223,6 +223,14 @@ auto operator|(T lhs, distr_queue q)
     return fuse(terminate(lhs)) | q;
 }
 
+template <typename T, typename U, std::enable_if_t<
+    algorithm::is_linkable_sink_v<T> && 
+    algorithm::is_linkable_source_v<U>, int> = 0>
+auto operator<<(T lhs, U rhs)
+{
+    return rhs | lhs;
+}
+
 } // namespace celerity::algorithm
 
 namespace celerity
