@@ -42,7 +42,7 @@ struct extended_packaged_task_traits{};
 template<typename T>
 constexpr access_type get_second_input_access_type()
 {
-    if constexpr (!is_partially_packaged_task_v<T> && packaged_task_traits<T>::computation_type == computation_type::zip)
+    if constexpr (packaged_task_traits<T>::computation_type == computation_type::zip)
     {
         return extended_packaged_task_traits<T, computation_type::zip>::second_input_access_type;
     }
