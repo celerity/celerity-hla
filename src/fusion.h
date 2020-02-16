@@ -13,14 +13,14 @@ struct is_item_context : std::bool_constant<false>
 
 };
 
-template<int Rank, typename ContextType>
-class item_context
+template<int Rank, typename T>
+class item_shared_data
 {
 public:
-    using item_type = cl::sycl::item<Rank>;
+    item_shared_data(T& data, cl::sycl::item<Rank> item) 
+        : data_(data), item_(item) {}
 
-    explicit item_context(cl::sycl::item<Rank> item)
-        : item_(item) {}
+    T& get() const { return data_; }
 
     operator cl::sycl::item<Rank> ()
     {
@@ -32,11 +32,30 @@ public:
         return item_.get_id();
     }
 
-    ContextType& get() { return context_; }
+private:
+    T& data_;
+    cl::sycl::item<Rank> item_;
+};
+
+template<int Rank, typename ContextType>
+class item_context
+{
+public:
+    using item_type = cl::sycl::item<Rank>;
+
+    explicit item_context(cl::sycl::item<Rank> item)
+        : item_(item) {}
+
+    item_shared_data<Rank, ContextType> operator[](int idx)
+    {
+        return { shared_data_[idx], item_ };
+    }
+
+    cl::sycl::item<Rank> get_item() const { return item_; }
 
 private:
     cl::sycl::item<Rank> item_;
-    ContextType context_;
+    std::array<ContextType, 2> shared_data_;
 };
 
 template<int Rank, typename ContextType>
@@ -44,6 +63,13 @@ struct is_item_context<item_context<Rank, ContextType>> : std::bool_constant<tru
 {
 
 };
+
+// TODO: FIX THIS!
+// template<int Rank, typename ContextType>
+// struct is_item_context<std::tuple<item_context<Rank, ContextType>, item_context<Rank, ContextType>>> : std::bool_constant<true>
+// {
+
+// };
 
 template<typename T>
 inline constexpr bool is_item_context_v = is_item_context<T>::value;
@@ -54,9 +80,14 @@ struct transient_accessor
 public:
     transient_accessor() {}
 
-    auto operator[](item_context<Rank, T>& ctx) const -> std::conditional_t<Mode == cl::sycl::access::mode::read, T, T &>
+    auto operator[](item_shared_data<Rank, T> ctx) const -> std::conditional_t<Mode == cl::sycl::access::mode::read, T, T &>
     {
         return ctx.get();
+    }
+
+    auto operator[](cl::sycl::item<Rank>) const -> std::conditional_t<Mode == cl::sycl::access::mode::read, T, T &>
+    {
+        abort();
     }
 };
 

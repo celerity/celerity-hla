@@ -25,7 +25,11 @@ auto fill(ExecutionPolicy p, IteratorType<T, Rank> beg, IteratorType<T, Rank> en
 
     return [=](celerity::handler &cgh) {
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, beg, end);
-        return [=](item_context<Rank, T> &ctx) { out_acc[ctx] = value; };
+
+        return [=](item_context<Rank, T>& ctx)
+        { 
+            out_acc[ctx[0]] = value; 
+        };
     };
 }
 

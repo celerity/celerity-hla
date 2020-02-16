@@ -53,12 +53,12 @@ public:
 		return base::get_accessor()[item];
 	}
 
-	decltype(auto) operator[](item_context<Rank, T>& item) const
+	decltype(auto) operator[](item_shared_data<Rank, T> item) const
 	{
 		return base::get_accessor()[item];
 	}
 
-	decltype(auto) operator[](item_context<Rank, T>& item)
+	decltype(auto) operator[](item_shared_data<Rank, T> item)
 	{
 		return base::get_accessor()[item];
 	}

@@ -56,7 +56,7 @@ public:
 			using item_context_type = std::decay_t<detail::arg_type_t<first_kernel_type, 0>>;
 			
 			cgh.template parallel_for<KernelName>(d, *beg, [=](cl::sycl::item<Rank> item){
-				item_context_type ctx{item};
+				item_context_type ctx{ item };
 				std::invoke(sequence(r), ctx); 
 			});
 		});

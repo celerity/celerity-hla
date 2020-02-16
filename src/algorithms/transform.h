@@ -32,7 +32,10 @@ auto transform(ExecutionPolicy p, InIterator<T, Rank> beg, InIterator<T, Rank> e
         auto in_acc = get_access<policy_type, mode::read, accessor_type>(cgh, beg, end);
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
 
-        return [=](item_context<Rank, T>& item) { out_acc[item] = f(in_acc[item]); };
+        return [=](item_context<Rank, T>& ctx) 
+        { 
+            out_acc[ctx[0]] = f(in_acc[ctx[0]]);
+        };
     };
 }
 
@@ -49,7 +52,10 @@ auto transform(ExecutionPolicy p, InIterator<T, Rank> beg, InIterator<T, Rank> e
         auto in_acc = get_access<policy_type, mode::read, accessor_type>(cgh, beg, end);
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
 
-        return [=](item_context<Rank, T>& item) { out_acc[item] = f(item, in_acc[item]); };
+        return [=](item_context<Rank, T>& ctx)
+        { 
+            out_acc[ctx[0]] = f(ctx.get_item(), in_acc[ctx[0]]);
+        };
     };
 }
 
@@ -81,7 +87,10 @@ auto transform(ExecutionPolicy p,
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
 
         // TODO: item_context needs to fit for both T and U
-        return [=](item_context<Rank, T> ctx) { out_acc[ctx] = f(first_in_acc[ctx], second_in_acc[ctx]); };
+        return [=](item_context<Rank, T>& ctx)
+        { 
+            out_acc[ctx[0]] = f(first_in_acc[ctx[0]], second_in_acc[ctx[1]]);
+        };
     };
 }
 
@@ -112,7 +121,10 @@ auto transform(ExecutionPolicy p,
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
 
         // TODO: item_context needs to fit for both T and U
-        return [=](item_context<Rank, T> ctx) { out_acc[ctx] = f(ctx, first_in_acc[ctx], second_in_acc[ctx]); };
+        return [=](item_context<Rank, T>&  ctx)
+        { 
+            out_acc[ctx[0]] = f(ctx.get_item(), first_in_acc[ctx[0]], second_in_acc[ctx[1]]);
+        };
     };
 }
 

@@ -29,11 +29,17 @@ auto generate(ExecutionPolicy p, IteratorType<T, Rank> beg, IteratorType<T, Rank
 
         if constexpr (algorithm::detail::arity_v<F> == 1)
         {
-            return [=](item_context<Rank, T>& ctx) { out_acc[ctx] = f(ctx); };
+            return [=](item_context<Rank, T>& ctx) 
+            { 
+                out_acc[ctx[0]] = f(ctx[0]); 
+            };
         }
         else
         {
-            return [=](item_context<Rank, T>& ctx) { out_acc[ctx] = f(); };
+            return [=](item_context<Rank, T>& ctx) 
+            {
+                 out_acc[ctx[0]] = f(); 
+            };
         }
     };
 }
