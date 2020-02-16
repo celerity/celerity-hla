@@ -225,7 +225,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
     
                 static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 1);
  
                 const auto r = copy_to_host(q, buf_out);
  
@@ -250,22 +250,27 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             auto t2 = fill<class fill_3>(q, cl::sycl::range<1>(size), 3);
             auto t3 = transform<class zip_add_t_1>(q, zip_add);
 
+            std::cout << to_string(terminate(t1 | (t3 << t2))) << std::endl;
+
+            std::cout << "Fused:\n\n";
+            std::cout << to_string(fuse(terminate(t1 | (t3 << t2)))) << std::endl;
+
             auto buf_out = t1 | (t3 << t2) | submit_to(q);
 
-            THEN("kernels are fused and the result is (i + 3)")
-            {
+            THEN("kernels are fused and the result is (i + 3)") 
+            { 
                 using terminated_sequence_type = decltype(terminate(t1 | (t3 << t2)));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>())); 
     
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 2);
+                static_assert(size_v<terminated_sequence_type> == 2); 
+                static_assert(size_v<fused_sequence_type> == 1);
  
-                const auto r = copy_to_host(q, buf_out);
+                const auto r = copy_to_host(q, buf_out); 
  
-                for (auto i = 0; i < size; ++i)
-                {
+                for (auto i = 5; i < size; ++i) 
+                { 
                     REQUIRE(r[i] == zip_add(3, i));
-                } 
+                }  
             }  
         }
     }

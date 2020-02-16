@@ -49,10 +49,15 @@ template <typename T>
 inline constexpr bool has_transient_input_v = is_transient_v<typename detail::packaged_task_traits<T>::input_iterator_type>;
 
 template <typename T>
-inline constexpr bool is_fusable_source_v = detail::is_packaged_task_v<T> && has_transient_output_v<T>;
+inline constexpr bool is_fusable_source_v = detail::is_packaged_task_v<T> && has_transient_output_v<T> && !detail::is_t_joint_v<T>;
 
 template <typename T>
-inline constexpr bool is_fusable_sink_v = detail::is_packaged_task_v<T> && has_transient_input_v<T>;
+inline constexpr bool is_fusable_t_joint_sink_v = detail::is_t_joint_v<T> &&
+                                                  size_v<typename detail::t_joint_traits<T>::secondary_input_sequence_type> && 
+                                                  is_fusable_source_v<last_element_t<typename detail::t_joint_traits<T>::secondary_input_sequence_type>>;
+
+template <typename T>
+inline constexpr bool is_fusable_sink_v = detail::is_packaged_task_v<T> && has_transient_input_v<T> && !detail::is_t_joint_v<T>; 
 
 template <typename T, typename U, std::enable_if_t<is_transiently_linkable_source_v<T> && 
                                                    is_transiently_linkable_sink_v<U>, int> = 0>
@@ -109,8 +114,7 @@ auto operator|(T lhs, U rhs)
 
 template <typename T, typename U, std::enable_if_t<is_fusable_source_v<T> && 
                                                    detail::computation_type_of_v<T, computation_type::transform> && 
-                                                   is_fusable_sink_v<U> &&
-                                                   !detail::is_t_joint_v<U>, int> = 0>
+                                                   is_fusable_sink_v<U>, int> = 0>
 auto operator|(T lhs, U rhs)
 {
     return sequence(package_transform<access_type::one_to_one, true>(fuse(lhs.get_task(), rhs.get_task()),
@@ -128,8 +132,7 @@ auto operator|(T lhs, U rhs)
 
 template <typename T, typename U, std::enable_if_t<is_fusable_source_v<T> && 
                                                    detail::computation_type_of_v<T, computation_type::generate> && 
-                                                   is_fusable_sink_v<U> &&
-                                                   !detail::is_t_joint_v<U>, int> = 0>
+                                                   is_fusable_sink_v<U>, int> = 0>
 auto operator|(T lhs, U rhs)
 {
     using output_value_type = typename detail::packaged_task_traits<U>::output_value_type;
@@ -142,8 +145,7 @@ auto operator|(T lhs, U rhs)
 
 template <typename T, typename U, std::enable_if_t<is_fusable_source_v<T> && 
                                                    detail::computation_type_of_v<T, computation_type::zip> && 
-                                                   is_fusable_sink_v<U>&&
-                                                   !detail::is_t_joint_v<U>, int> = 0>
+                                                   is_fusable_sink_v<U>, int> = 0>
 auto operator|(T lhs, U rhs)
 {
     constexpr auto first_input_access_type = detail::packaged_task_traits<U>::access_type;
@@ -156,13 +158,40 @@ auto operator|(T lhs, U rhs)
         rhs.get_out_iterator()));
 }
 
-template <typename T, typename U, std::enable_if_t<is_fusable_source_v<T> && 
-                                                   is_fusable_sink_v<U> &&
-                                                   detail::is_t_joint_v<U>, int> = 0>
-auto operator|(T lhs, U rhs)
-{
-    return sequence(t_joint{ get_first_element(lhs | rhs.get_task()), rhs.get_secondary() });
-}
+// TODO
+//
+// when encountering a t-joint, immediately fuse existing primary and secondary sequence  
+//
+// if the secondary sequence is reduced to a single task then it can be merged into
+// the primary one by fusing the t-joint which removes the t-joint
+//
+// otherwise we need to mark the j-joint as non-fusable by connecting to the secondary
+// sequence using a regular buffer
+//
+// this also requires that t-joints must never be transiently linkable sources
+// 
+// to achieve the previous, following changes are required
+//    - adapt traits to detect t-joints in the linking pass (transiently_linkable_*_v)
+//    - when encountering a t-joint as sink:
+//       + fuse secondary sequence
+//       + if fully fused: replace t-joint by underlying task and complete it transiently
+//       + otherise: complete the t-joint using a regular buffer
+//
+// template <typename T, typename U, std::enable_if_t<is_fusable_source_v<T> && 
+//                                                    detail::is_t_joint_v<U>, int> = 0>
+// auto operator|(T lhs, U rhs)
+// {
+//     auto fused_second_input = fuse(rhs.get_secondary());
+
+//     if constexpr (size_v<fused_second_input> > 1)
+//     {
+//         return sequence(lhs, t_joint{ rhs.get_task(), fused_second_input });
+//     }
+//     else
+//     {
+//         return sequence(t_joint{ get_first_element(lhs | rhs.get_task()), rhs.get_secondary() });
+//     }
+// }
 
 template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && detail::is_packaged_task_v<U> &&
                                                    (!is_fusable_source_v<T> || !is_fusable_sink_v<U>), int> = 0>

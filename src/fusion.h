@@ -322,6 +322,20 @@ struct is_t_joint<t_joint<Task, SecondaryInputSequence>>
 template<typename T>
 constexpr inline bool is_t_joint_v = is_t_joint<T>::value;
 
+template <typename T>
+struct t_joint_traits 
+{
+    using task_type = void;
+    using secondary_input_sequence_type = sequence<>; 
+};
+
+template <typename Task, typename SecondaryInputSequence>
+struct t_joint_traits<t_joint<Task, SecondaryInputSequence>>
+{
+    using task_type = Task;
+    using secondary_input_sequence_type = SecondaryInputSequence; 
+};
+
 }
 
 std::string to_string(access_type type)
