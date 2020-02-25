@@ -1,4 +1,8 @@
-//#define MOCK_CELERITY
+#pragma clang diagnostic ignored "-Wunused-result"
+#pragma clang diagnostic ignored "-Wsometimes-uninitialized"
+#pragma clang diagnostic ignored "-Wunused-result"
+#pragma clang diagnostic ignored "-Wreturn-type"
+
 #include "../../src/algorithm.h"
 #include "../../src/actions.h"
 #include "../../src/buffer_traits.h"
@@ -17,30 +21,22 @@ int main(int argc, char *argv[])
 	celerity::experimental::bench::log_user_config({{"matSize", std::to_string(MAT_SIZE)}});
 
 	using namespace celerity;
-
-	std::vector<float> mat_a(MAT_SIZE * MAT_SIZE);
-	std::vector<float> mat_b(MAT_SIZE * MAT_SIZE);
-
-	// Initialize matrices a and b to the identity
-	for (size_t i = 0; i < MAT_SIZE; ++i)
-	{
-		for (size_t j = 0; j < MAT_SIZE; ++j)
-		{
-			mat_a[i * MAT_SIZE + j] = i == j;
-			mat_b[i * MAT_SIZE + j] = (i == j) * 2;
-		}
-	}
+	using namespace algorithm;
 
 	try
 	{
 		using buffer_type = celerity::buffer<float, 2>;
-		//using t = celerity::algorithm::buffer_traits<buffer_type>;
 		using t = celerity::algorithm::buffer_traits<float, 2>;
 
-		celerity::distr_queue queue;
-		buffer_type mat_a_buf(mat_a.data(), cl::sycl::range<2>{MAT_SIZE, MAT_SIZE});
-		buffer_type mat_b_buf(mat_b.data(), cl::sycl::range<2>{MAT_SIZE, MAT_SIZE});
-		buffer_type mat_c_buf(cl::sycl::range<2>{MAT_SIZE, MAT_SIZE});
+		distr_queue queue;
+
+		auto gen_a = [](cl::sycl::item<2> item) {
+			return static_cast<float>(item.get_id(0) == item.get_id(1));
+		};
+
+		auto gen_b = [gen_a](cl::sycl::item<2> item) {
+			return gen_a(item) * 2;
+		};
 
 		auto multiply = [](const t::slice<1> &a, const t::slice<0> &b) {
 			auto sum = 0.f;
@@ -55,17 +51,30 @@ int main(int argc, char *argv[])
 			return sum;
 		};
 
+		const auto mat_range = cl::sycl::range<2>{MAT_SIZE, MAT_SIZE};
+
 		MPI_Barrier(MPI_COMM_WORLD);
 		celerity::experimental::bench::begin("main program");
 
-		auto seq = mat_a_buf |
-				   algorithm::transform<class mul_ab>(queue, {}, {}, mat_c_buf, multiply) << mat_b_buf |
-				   algorithm::transform<class mul_bc>(queue, {}, {}, mat_a_buf, multiply) << mat_b_buf;
+		auto mat_b =
+			generate<class gen_b>(mat_range, gen_b) |
+			submit_to(queue);
 
-		seq(queue);
+		auto out_buf =
+			generate<class gen_a>(mat_range, gen_a) |
+			transform<class mul_a_b>(multiply) << mat_b |
+			transform<class mul_ab_b>(multiply) << mat_b |
+			submit_to(queue);
 
-		algorithm::master_task(algorithm::master(queue), [=, &verification_passed](auto &cgh) {
-			auto r_d = mat_a_buf.get_access<cl::sycl::access::mode::read>(cgh, mat_a_buf.get_range());
+		// auto seq = generate<class gen_a>(cl::sycl::range<2>{MAT_SIZE, MAT_SIZE}, gen_a) |
+		// 		   transform<class mul_a_b>(multiply) << mat_b |
+		// 		   transform<class mul_ab_b>(multiply) << mat_b;
+
+		// static_assert(size_v<decltype(terminate(seq))> == 3);
+		// static_assert(size_v<decltype(fuse(terminate(seq)))> == 3);
+
+		master_task(algorithm::master(queue), [=, &verification_passed](auto &cgh) {
+			auto r_d = out_buf.get_access<cl::sycl::access::mode::read>(cgh, out_buf.get_range());
 
 			return [=, &verification_passed]() {
 				for (size_t i = 0; i < MAT_SIZE; ++i)
