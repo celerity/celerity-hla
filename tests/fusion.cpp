@@ -26,14 +26,15 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
         WHEN("chaining calls")
         {
-            auto t1 = transform<class add>(q, {}, {}, {}, add_5);
-            auto t2 = transform<class mul>(q, {}, {}, {}, mul_3);
+            auto t1 = transform<class add>(add_5);
+            auto t2 = transform<class mul>(mul_3);
 
-            auto buf_out = buf_in | t1 | t2 | submit_to(q);
+            auto seq = buf_in | t1 | t2;
+            auto buf_out = seq | submit_to(q);
 
             THEN("kernels are fused and the result is 18")
             {
-                using terminated_sequence_type = decltype(terminate(buf_in | t1 | t2));
+                using terminated_sequence_type = decltype(terminate(seq));
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 2);
@@ -56,14 +57,15 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
         WHEN("chaining calls")
         {
-            auto t1 = transform<class add_w_item>(q, {}, {}, {}, add_5);
-            auto t2 = transform<class mul_w_item>(q, {}, {}, {}, mul_3);
+            auto t1 = transform<class add_w_item>(add_5);
+            auto t2 = transform<class mul_w_item>(mul_3);
 
-            auto buf_out = buf_in | t1 | t2 | submit_to(q);
+            auto seq = buf_in | t1 | t2;
+            auto buf_out = seq | submit_to(q);
 
             THEN("kernels are fused and the result is 18")
             {
-                using terminated_sequence_type = decltype(terminate(buf_in | t1 | t2));
+                using terminated_sequence_type = decltype(terminate(seq));
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 2);
@@ -85,13 +87,14 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         WHEN("chaining calls")
         {
             auto t1 = generate<class gen_item_id>(q, cl::sycl::range<1>{size}, gen_i);
-            auto t2 = transform<class mul_3_f>(q, {}, {}, {}, mul_3);
+            auto t2 = transform<class mul_3_f>(mul_3);
 
-            auto buf_out = t1 | t2 | submit_to(q);
+            auto seq = t1 | t2;
+            auto buf_out = seq | submit_to(q);
 
             THEN("kernels are fused and the result is 3")
             {
-                using terminated_sequence_type = decltype(terminate(t1 | t2));
+                using terminated_sequence_type = decltype(terminate(seq));
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 2);
@@ -117,13 +120,14 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         WHEN("chaining calls")
         {
             auto t1 = fill<class fill_1>(q, cl::sycl::range<1>{size}, init);
-            auto t2 = transform<class mul_3_f_>(q, {}, {}, {}, mul_3);
+            auto t2 = transform<class mul_3_f_>(mul_3);
 
-            auto buf_out = t1 | t2 | submit_to(q);
+            auto seq = t1 | t2;
+            auto buf_out = seq | submit_to(q);
 
             THEN("kernels are fused and the result is 3")
             {
-                using terminated_sequence_type = decltype(terminate(t1 | t2));
+                using terminated_sequence_type = decltype(terminate(seq));
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 2);
@@ -146,14 +150,15 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         WHEN("chaining calls")
         {
             auto t1 = fill<class fill_1>(q, cl::sycl::range<1>{size}, init);
-            auto t2 = transform<class add_w_item>(q, {}, {}, {}, add_5);
-            auto t3 = transform<class mul_w_item>(q, {}, {}, {}, mul_3);
+            auto t2 = transform<class add_w_item>(add_5);
+            auto t3 = transform<class mul_w_item>(mul_3);
 
-            auto buf_out = t1 | t2 | t3 | submit_to(q);
+            auto seq = t1 | t2 | t3;
+            auto buf_out = seq | submit_to(q);
 
             THEN("kernels are fused and the result is 18")
             {
-                using terminated_sequence_type = decltype(terminate(t1 | t2 | t3));
+                using terminated_sequence_type = decltype(terminate(seq));
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 3);
@@ -177,15 +182,16 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         WHEN("chaining calls")
         {
             auto t1 = generate<class generate_item_id>(q, cl::sycl::range<1>{size}, gen_i);
-            auto t2 = transform<class n_add_7>(q, {}, {}, {}, add_7);
-            auto t3 = transform<class n_mul_4>(q, {}, {}, {}, mul_4);
-            auto t4 = transform<class n_div_2>(q, {}, {}, {}, div_2);
+            auto t2 = transform<class n_add_7>(add_7);
+            auto t3 = transform<class n_mul_4>(mul_4);
+            auto t4 = transform<class n_div_2>(div_2);
 
-            auto buf_out = t1 | t2 | t3 | t4 | submit_to(q);
+            auto seq = t1 | t2 | t3 | t4;
+            auto buf_out = seq | submit_to(q);
 
-            THEN("kernels are fused and the result is 18")
+            THEN("kernels are fused and the result is correct")
             {
-                using terminated_sequence_type = decltype(terminate(t1 | t2 | t3 | t4));
+                using terminated_sequence_type = decltype(terminate(seq));
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 4);
@@ -215,13 +221,14 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         WHEN("chaining calls")
         {
             auto t1 = generate<class generate_item_id>(q, cl::sycl::range<1>{size}, gen_i);
-            auto t2 = transform<class zip_add_t>(q, zip_add);
+            auto t2 = transform<class zip_add_t>(zip_add);
 
-            auto buf_out = t1 | (t2 << buf_in) | submit_to(q);
+            auto seq = t1 | (t2 << buf_in);
+            auto buf_out = seq | submit_to(q);
 
             THEN("kernels are fused and the result is 18")
             {
-                using terminated_sequence_type = decltype(terminate(t1 | (t2 << buf_in)));
+                using terminated_sequence_type = decltype(terminate(seq));
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 2);
@@ -248,18 +255,20 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         {
             auto t1 = generate<class generate_item_id_1>(q, cl::sycl::range<1>{size}, gen_i);
             auto t2 = fill<class fill_3>(q, cl::sycl::range<1>(size), 3);
-            auto t3 = transform<class zip_add_t_1>(q, zip_add);
+            auto t3 = transform<class zip_add_t_1>(zip_add);
 
-            std::cout << to_string(terminate(t1 | (t3 << t2))) << std::endl;
+            auto seq = t1 | (t3 << t2);
+
+            std::cout << to_string(terminate(seq)) << std::endl;
 
             std::cout << "Fused:\n\n";
-            std::cout << to_string(fuse(terminate(t1 | (t3 << t2)))) << std::endl;
+            std::cout << to_string(fuse(terminate(seq))) << std::endl;
 
-            auto buf_out = t1 | (t3 << t2) | submit_to(q);
+            auto buf_out = seq | submit_to(q);
 
             THEN("kernels are fused and the result is (i + 3)")
             {
-                using terminated_sequence_type = decltype(terminate(t1 | (t3 << t2)));
+                using terminated_sequence_type = decltype(terminate(seq));
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 2);
@@ -287,19 +296,15 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         {
             auto t1 = generate<class generate_item_id_2>(q, cl::sycl::range<1>{size}, gen_i);
             auto t2 = fill<class fill_4>(q, cl::sycl::range<1>(size), 3);
-            auto t3 = transform<class zip_add_t_2>(q, zip_add);
-            auto t4 = transform<class mul_2_t_1>(q, {}, {}, {}, mul_2);
+            auto t3 = transform<class zip_add_t_2>(zip_add);
+            auto t4 = transform<class mul_2_t_1>(mul_2);
 
-            std::cout << to_string(terminate(t1 | (t3 << t2))) << std::endl;
-
-            std::cout << "Fused:\n\n";
-            std::cout << to_string(fuse(terminate(t1 | (t3 << t2)))) << std::endl;
-
-            auto buf_out = t1 | (t3 << t2) | t4 | submit_to(q);
+            auto seq = t1 | (t3 << t2) | t4;
+            auto buf_out = seq | submit_to(q);
 
             THEN("kernels are fused and the result is (i + 3)")
             {
-                using terminated_sequence_type = decltype(terminate(t1 | (t3 << t2) | t4));
+                using terminated_sequence_type = decltype(terminate(seq));
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 3);
@@ -328,15 +333,16 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         {
             auto t1 = generate<class generate_item_id_3>(q, cl::sycl::range<1>{size}, gen_i);
             auto t2 = fill<class fill_5>(q, cl::sycl::range<1>(size), 3);
-            auto t3 = transform<class zip_add_t_3>(q, zip_add);
-            auto t4 = transform<class mul_2_t_2>(q, {}, {}, {}, mul_2);
-            auto t5 = transform<class add_3_t_2>(q, {}, {}, {}, add_3);
+            auto t3 = transform<class zip_add_t_3>(zip_add);
+            auto t4 = transform<class mul_2_t_2>(mul_2);
+            auto t5 = transform<class add_3_t_2>(add_3);
 
-            auto buf_out = t1 | (t3 << t2) | t4 | t5 | submit_to(q);
+            auto seq = t1 | (t3 << t2) | t4 | t5;
+            auto buf_out = seq | submit_to(q);
 
             THEN("kernels are fused and the result is (i + 3)")
             {
-                using terminated_sequence_type = decltype(terminate(t1 | (t3 << t2) | t4 | t5));
+                using terminated_sequence_type = decltype(terminate(seq));
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 4);
