@@ -7,7 +7,7 @@ namespace celerity
 {
     template <typename ElementTypeA, int RankA,
               typename ElementTypeB, int RankB,
-              std::enable_if<!std::is_same_v<ElementTypeA, ElementTypeB> ||
+              std::enable_if_t<!std::is_same_v<ElementTypeA, ElementTypeB> ||
                              RankA != RankB, int> = 0>
     bool are_equal(buffer<ElementTypeA, RankA> a, buffer<ElementTypeB, RankB> b)
     {
