@@ -15,10 +15,9 @@
 #include "../../src/algorithm.h"
 #include "../../src/buffer_traits.h"
 
-bool is_on_boundary(cl::sycl::range<2> range, size_t filter_size, cl::sycl::id<2> id)
-{
-	return (id[0] < (filter_size / 2) || id[1] < (filter_size / 2) || id[0] > range[0] - (filter_size / 2) - 1 || id[1] > range[1] - (filter_size / 2) - 1);
-}
+constexpr int FILTER_SIZE = 16;
+constexpr float sigma = 3.f;
+constexpr float PI = 3.141592f;
 
 int main(int argc, char *argv[])
 {
@@ -46,29 +45,9 @@ int main(int argc, char *argv[])
 		stbi_image_free(image_data);
 	}
 
-	constexpr int FILTER_SIZE = 16;
-	constexpr float sigma = 3.f;
-	constexpr float PI = 3.141592f;
-
-	std::vector<float> gaussian_matrix(FILTER_SIZE * FILTER_SIZE);
-	for (size_t j = 0; j < FILTER_SIZE; ++j)
-	{
-		for (size_t i = 0; i < FILTER_SIZE; ++i)
-		{
-			const auto x = i - (FILTER_SIZE / 2);
-			const auto y = j - (FILTER_SIZE / 2);
-			const auto value = std::exp(-1.f * (x * x + y * y) / (2 * sigma * sigma)) / (2 * PI * sigma * sigma);
-			gaussian_matrix[j * FILTER_SIZE + i] = value;
-		}
-	}
-
 	using namespace celerity;
 	using namespace algorithm;
 
-	using buffer_f = celerity::buffer<float, 2>;
-	using buffer_f3 = celerity::buffer<cl::sycl::float3, 2>;
-	//using f = celerity::algorithm::buffer_traits<buffer_f>;
-	//using f3 = celerity::algorithm::buffer_traits<buffer_f3>;
 	using f = celerity::algorithm::buffer_traits<float, 2>;
 	using f3 = celerity::algorithm::buffer_traits<cl::sycl::float3, 2>;
 
@@ -77,7 +56,13 @@ int main(int argc, char *argv[])
 	distr_queue queue;
 
 	celerity::buffer<float3, 2> image_input_buf(image_input.data(), cl::sycl::range<2>(image_height, image_width));
-	celerity::buffer<float, 2> gaussian_mat_buf(gaussian_matrix.data(), cl::sycl::range<2>(FILTER_SIZE, FILTER_SIZE));
+
+	auto generate_gaussian_mat = [](cl::sycl::item<2> item) {
+		const auto x = item.get_id(1) - (FILTER_SIZE / 2);
+		const auto y = item.get_id(0) - (FILTER_SIZE / 2);
+
+		return cl::sycl::exp(-1.f * (x * x + y * y) / (2 * sigma * sigma)) / (2 * PI * sigma * sigma);
+	};
 
 	auto gaussian_blur = [fs = FILTER_SIZE, image_height, image_width](const f3::chunk<FILTER_SIZE, FILTER_SIZE> &in, const f::all &gauss) {
 		using cl::sycl::float3;
@@ -128,7 +113,7 @@ int main(int argc, char *argv[])
 	};
 
 	auto out_buf = image_input_buf |
-				   (transform<class gaussian_blur>(gaussian_blur) << gaussian_mat_buf) |
+				   (transform<class gaussian_blur>(gaussian_blur) << generate<class gen_gauss>(cl::sycl::range<2>(FILTER_SIZE, FILTER_SIZE), generate_gaussian_mat)) |
 				   transform<class sharpening>(sharpening) |
 				   transform<class to_uchar>(convert_to_uint8) |
 				   submit_to(queue);
