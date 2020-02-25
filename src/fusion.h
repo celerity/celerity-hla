@@ -3,6 +3,9 @@
 
 #include "celerity_helper.h"
 #include "packaged_task_traits.h"
+#include "item_context.h"
+#include "sequence.h"
+
 
 namespace celerity::algorithm
 {

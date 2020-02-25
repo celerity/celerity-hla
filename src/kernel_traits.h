@@ -5,6 +5,7 @@
 
 #include "accessor_proxy.h"
 #include "sequence_traits.h"
+#include "item_context.h"
 
 namespace celerity::algorithm
 {
