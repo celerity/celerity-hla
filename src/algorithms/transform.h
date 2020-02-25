@@ -230,7 +230,7 @@ template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F
           typename = std::enable_if_t<detail::get_accessor_type<F, 0>() != access_type::invalid>>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
-    return scoped_sequence{actions::transform(p, beg, end, out, f), submit_to(p.q)};
+    return scoped_sequence{actions::transform<ExecutionPolicy>(beg, end, out, f), submit_to(p.q)};
 }
 
 template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, typename F,
@@ -238,7 +238,7 @@ template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank
                                       detail::get_accessor_type<F, 1>() != access_type::invalid>>
 auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<V, Rank> beg2, buffer_iterator<U, Rank> out, const F &f)
 {
-    return scoped_sequence{actions::transform(p, beg, end, beg2, out, f), submit_to(p.q)};
+    return scoped_sequence{actions::transform<ExecutionPolicy>(beg, end, beg2, out, f), submit_to(p.q)};
 }
 
 template <typename KernelName, typename F>

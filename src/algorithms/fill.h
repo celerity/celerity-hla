@@ -18,7 +18,7 @@ namespace detail
 {
 
 template <typename ExecutionPolicy, template <typename, int> typename IteratorType, typename T, int Rank>
-auto fill(ExecutionPolicy p, IteratorType<T, Rank> beg, IteratorType<T, Rank> end, const T &value)
+auto fill(IteratorType<T, Rank> beg, IteratorType<T, Rank> end, const T &value)
 {
     using policy_type = strip_queue_t<ExecutionPolicy>;
     using namespace cl::sycl::access;
@@ -26,9 +26,8 @@ auto fill(ExecutionPolicy p, IteratorType<T, Rank> beg, IteratorType<T, Rank> en
     return [=](celerity::handler &cgh) {
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, beg, end);
 
-        return [=](item_context<Rank, T>& ctx)
-        { 
-            out_acc[ctx[0]] = value; 
+        return [=](item_context<Rank, T> &ctx) {
+            out_acc[ctx[0]] = value;
         };
     };
 }
@@ -36,18 +35,18 @@ auto fill(ExecutionPolicy p, IteratorType<T, Rank> beg, IteratorType<T, Rank> en
 } // namespace detail
 
 template <typename ExecutionPolicy, typename T, int Rank>
-auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
+auto fill(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
 {
     return package_generate<T>(
-        [p, value](auto _beg, auto _end) { return task<ExecutionPolicy>(detail::fill(p, _beg, _end, value)); },
+        [value](auto _beg, auto _end) { return task<ExecutionPolicy>(detail::fill<ExecutionPolicy>(_beg, _end, value)); },
         beg, end);
 }
 
 template <typename ExecutionPolicy, typename T, int Rank>
-auto fill(ExecutionPolicy p, cl::sycl::range<Rank> range, const T &value)
+auto fill(cl::sycl::range<Rank> range, const T &value)
 {
     return package_generate<T>(
-        [p, value](auto beg, auto end) { return task<ExecutionPolicy>(detail::fill(p, beg, end, value)); },
+        [value](auto beg, auto end) { return task<ExecutionPolicy>(detail::fill<ExecutionPolicy>(beg, end, value)); },
         range);
 }
 
@@ -56,19 +55,14 @@ auto fill(ExecutionPolicy p, cl::sycl::range<Rank> range, const T &value)
 template <typename ExecutionPolicy, typename T, int Rank>
 auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
 {
-    return scoped_sequence{actions::fill(p, beg, end, value), submit_to(p.q)};
-}
-
-template <typename ExecutionPolicy, typename T, int Rank>
-auto fill(ExecutionPolicy p, cl::sycl::range<Rank> range, const T &value)
-{
-    return actions::fill(p, range, value);
+    return scoped_sequence{actions::fill<ExecutionPolicy>(beg, end, value), submit_to(p.q)};
 }
 
 template <typename KernelName, typename T, int Rank>
-auto fill(celerity::distr_queue q, cl::sycl::range<Rank> range, const T &value)
+auto fill(cl::sycl::range<Rank> range, const T &value)
 {
-    return fill(distr<KernelName>(q), range, value);
+    using execution_policy = named_distributed_execution_policy<KernelName>;
+    return actions::fill<execution_policy>(range, value);
 }
 
 template <typename KernelName, typename T, int Rank>

@@ -86,7 +86,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
         WHEN("chaining calls")
         {
-            auto t1 = generate<class gen_item_id>(q, cl::sycl::range<1>{size}, gen_i);
+            auto t1 = generate<class gen_item_id>(cl::sycl::range<1>{size}, gen_i);
             auto t2 = transform<class mul_3_f>(mul_3);
 
             auto seq = t1 | t2;
@@ -119,7 +119,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
         WHEN("chaining calls")
         {
-            auto t1 = fill<class fill_1>(q, cl::sycl::range<1>{size}, init);
+            auto t1 = fill<class fill_1>(cl::sycl::range<1>{size}, init);
             auto t2 = transform<class mul_3_f_>(mul_3);
 
             auto seq = t1 | t2;
@@ -149,7 +149,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
         WHEN("chaining calls")
         {
-            auto t1 = fill<class fill_1>(q, cl::sycl::range<1>{size}, init);
+            auto t1 = fill<class fill_1>(cl::sycl::range<1>{size}, init);
             auto t2 = transform<class add_w_item>(add_5);
             auto t3 = transform<class mul_w_item>(mul_3);
 
@@ -181,7 +181,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
         WHEN("chaining calls")
         {
-            auto t1 = generate<class generate_item_id>(q, cl::sycl::range<1>{size}, gen_i);
+            auto t1 = generate<class generate_item_id>(cl::sycl::range<1>{size}, gen_i);
             auto t2 = transform<class n_add_7>(add_7);
             auto t3 = transform<class n_mul_4>(mul_4);
             auto t4 = transform<class n_div_2>(div_2);
@@ -220,7 +220,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
         WHEN("chaining calls")
         {
-            auto t1 = generate<class generate_item_id>(q, cl::sycl::range<1>{size}, gen_i);
+            auto t1 = generate<class generate_item_id>(cl::sycl::range<1>{size}, gen_i);
             auto t2 = transform<class zip_add_t>(zip_add);
 
             auto seq = t1 | (t2 << buf_in);
@@ -253,8 +253,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
         WHEN("chaining calls")
         {
-            auto t1 = generate<class generate_item_id_1>(q, cl::sycl::range<1>{size}, gen_i);
-            auto t2 = fill<class fill_3>(q, cl::sycl::range<1>(size), 3);
+            auto t1 = generate<class generate_item_id_1>(cl::sycl::range<1>{size}, gen_i);
+            auto t2 = fill<class fill_3>(cl::sycl::range<1>(size), 3);
             auto t3 = transform<class zip_add_t_1>(zip_add);
 
             auto seq = t1 | (t3 << t2);
@@ -294,8 +294,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
         WHEN("chaining calls")
         {
-            auto t1 = generate<class generate_item_id_2>(q, cl::sycl::range<1>{size}, gen_i);
-            auto t2 = fill<class fill_4>(q, cl::sycl::range<1>(size), 3);
+            auto t1 = generate<class generate_item_id_2>(cl::sycl::range<1>{size}, gen_i);
+            auto t2 = fill<class fill_4>(cl::sycl::range<1>(size), 3);
             auto t3 = transform<class zip_add_t_2>(zip_add);
             auto t4 = transform<class mul_2_t_1>(mul_2);
 
@@ -331,8 +331,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
         WHEN("chaining calls")
         {
-            auto t1 = generate<class generate_item_id_3>(q, cl::sycl::range<1>{size}, gen_i);
-            auto t2 = fill<class fill_5>(q, cl::sycl::range<1>(size), 3);
+            auto t1 = generate<class generate_item_id_3>(cl::sycl::range<1>{size}, gen_i);
+            auto t2 = fill<class fill_5>(cl::sycl::range<1>(size), 3);
             auto t3 = transform<class zip_add_t_3>(zip_add);
             auto t4 = transform<class mul_2_t_2>(mul_2);
             auto t5 = transform<class add_3_t_2>(add_3);
