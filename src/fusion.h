@@ -317,7 +317,12 @@ struct is_t_joint : std::bool_constant<false> {};
 
 template<typename Task, typename SecondaryInputSequence>
 struct is_t_joint<t_joint<Task, SecondaryInputSequence>>
-    : std::bool_constant<true> {};
+
+template <typename Task, typename SecondaryInputSequence>
+struct is_t_joint<partial_t_joint<Task, SecondaryInputSequence>>
+    : std::bool_constant<true>
+{
+};
 
 template<typename T>
 constexpr inline bool is_t_joint_v = is_t_joint<T>::value;
