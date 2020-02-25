@@ -10,6 +10,7 @@
 #pragma clang diagnostic ignored "-Wunused-result"
 #pragma clang diagnostic ignored "-Wsometimes-uninitialized"
 #pragma clang diagnostic ignored "-Wunused-result"
+#pragma clang diagnostic ignored "-Wreturn-type"
 
 #include "../../src/algorithm.h"
 #include "../../src/buffer_traits.h"
@@ -71,69 +72,79 @@ int main(int argc, char *argv[])
 	using f = celerity::algorithm::buffer_traits<float, 2>;
 	using f3 = celerity::algorithm::buffer_traits<cl::sycl::float3, 2>;
 
+	using float3 = cl::sycl::float3;
+
 	distr_queue queue;
 
-	buffer_f3 image_input_buf(image_input.data(), cl::sycl::range<2>(image_height, image_width));
-	buffer_f3 image_tmp_buf(image_input_buf.get_range());
-	buffer_f gaussian_mat_buf(gaussian_matrix.data(), cl::sycl::range<2>(FILTER_SIZE, FILTER_SIZE));
+	celerity::buffer<float3, 2> image_input_buf(image_input.data(), cl::sycl::range<2>(image_height, image_width));
+	celerity::buffer<float, 2> gaussian_mat_buf(gaussian_matrix.data(), cl::sycl::range<2>(FILTER_SIZE, FILTER_SIZE));
 
-	transform<class gaussian_blur>(queue, begin(image_input_buf), end(image_input_buf), begin(gaussian_mat_buf), begin(image_tmp_buf),
-								   [fs = FILTER_SIZE, image_height, image_width](const f3::chunk<FILTER_SIZE, FILTER_SIZE> &in, const f::all &gauss) {
-									   using cl::sycl::float3;
+	auto gaussian_blur = [fs = FILTER_SIZE, image_height, image_width](const f3::chunk<FILTER_SIZE, FILTER_SIZE> &in, const f::all &gauss) {
+		using cl::sycl::float3;
 
-									   if (in.is_on_boundary(cl::sycl::range<2>(image_height, image_width)))
-									   {
-										   return float3(0.f, 0.f, 0.f);
-									   }
+		if (in.is_on_boundary(cl::sycl::range<2>(image_height, image_width)))
+		{
+			return float3(0.f, 0.f, 0.f);
+		}
 
-									   float3 sum = {0.f, 0.f, 0.f};
-									   for (auto y = -(fs / 2); y < fs / 2; ++y)
-									   {
-										   for (auto x = -(fs / 2); x < fs / 2; ++x)
-										   {
-											   sum += gauss[{static_cast<size_t>(fs / 2 + y), static_cast<size_t>(fs / 2 + x)}] * in[{y, x}];
-										   }
-									   }
+		float3 sum = {0.f, 0.f, 0.f};
+		for (auto y = -(fs / 2); y < fs / 2; ++y)
+		{
+			for (auto x = -(fs / 2); x < fs / 2; ++x)
+			{
+				sum += gauss[{static_cast<size_t>(fs / 2 + y), static_cast<size_t>(fs / 2 + x)}] * in[{y, x}];
+			}
+		}
 
-									   return sum;
-								   });
+		return sum;
+	};
 
-	buffer_f3 image_output_buf(image_tmp_buf.get_range());
+	auto sharpening = [image_height, image_width](f3::chunk<3, 3> in) {
+		using cl::sycl::float3;
+		if (in.is_on_boundary(cl::sycl::range<2>(image_height, image_width)))
+		{
+			return float3(0.f, 0.f, 0.f);
+		}
 
-	transform<class sharpening>(queue, begin(image_tmp_buf), end(image_tmp_buf), begin(image_output_buf),
-								[image_height, image_width](f3::chunk<3, 3> in) {
-									using cl::sycl::float3;
-									if (in.is_on_boundary(cl::sycl::range<2>(image_height, image_width)))
-									{
-										return float3(0.f, 0.f, 0.f);
-									}
+		float3 sum = 5.f * (*in);
+		sum -= in[{-1, 0}];
+		sum -= in[{1, 0}];
+		sum -= in[{0, -1}];
+		sum -= in[{0, 1}];
 
-									float3 sum = 5.f * (*in);
-									sum -= in[{-1, 0}];
-									sum -= in[{1, 0}];
-									sum -= in[{0, -1}];
-									sum -= in[{0, 1}];
+		return float3{
+			std::max(0.f, std::min(1.f, sum.x())),
+			std::max(0.f, std::min(1.f, sum.y())),
+			std::max(0.f, std::min(1.f, sum.z()))};
 
-									return float3{
-										std::max(0.f, std::min(1.f, sum.x())),
-										std::max(0.f, std::min(1.f, sum.y())),
-										std::max(0.f, std::min(1.f, sum.z()))};
+		//return fmax(float3(0, 0, 0), fmin(float3(1.f, 1.f, 1.f), sum)); HIP ERROR 77
+	};
 
-									//return fmax(float3(0, 0, 0), fmin(float3(1.f, 1.f, 1.f), sum)); HIP ERROR 77
-								});
+	auto convert_to_uint8 = [](cl::sycl::float3 c) -> uchar3 {
+		return {
+			static_cast<u_char>(c.x() * 255.f),
+			static_cast<u_char>(c.y() * 255.f),
+			static_cast<u_char>(c.z() * 255.f)};
+	};
 
-	buffer<uchar3, 2> image_output_buf_uchar3(image_output_buf.get_range());
+	auto out_buf = image_input_buf |
+				   (transform<class gaussian_blur>(gaussian_blur) << gaussian_mat_buf) |
+				   transform<class sharpening>(sharpening) |
+				   transform<class to_uchar>(convert_to_uint8) |
+				   submit_to(queue);
 
-	transform<class to_uchar>(queue, begin(image_output_buf), end(image_output_buf), begin(image_output_buf_uchar3),
-							  [](cl::sycl::float3 c) -> uchar3 {
-								  return {
-									  static_cast<u_char>(c.x() * 255.f),
-									  static_cast<u_char>(c.y() * 255.f),
-									  static_cast<u_char>(c.z() * 255.f)};
-							  });
+	// auto seq = image_input_buf |
+	// 		   (transform<class gaussian_blur>(gaussian_blur) << gaussian_mat_buf) |
+	// 		   transform<class sharpening>(sharpening) |
+	// 		   transform<class to_uchar>(convert_to_uint8);
+
+	// static_assert(size_v<decltype(terminate(seq))> == 3);
+	// static_assert(size_v<decltype(fuse(terminate(seq)))> == 2);
+
+	// auto out_buf = seq | submit_to(queue);
 
 	std::vector<std::array<uint8_t, 3>> image_output(image_width * image_height);
-	copy(master_blocking(queue), begin(image_output_buf_uchar3), end(image_output_buf_uchar3), image_output.data());
+	copy(master_blocking(queue), begin(out_buf), end(out_buf), image_output.data());
 
 	stbi_write_png("./output.png", image_width, image_height, 3, image_output.data(), 0);
 

@@ -1,6 +1,6 @@
 #ifndef TRANSFORM_DECORATOR_H
 #define TRANSFORM_DECORATOR_H
- 
+
 #include "../iterator.h"
 #include "../celerity_helper.h"
 #include "../accessor_type.h"
@@ -22,7 +22,7 @@ public:
     packaged_transform(Functor functor, InputIteratorType in_beg, InputIteratorType in_end, OutputIteratorType out_beg)
         : functor_(functor), in_beg_(in_beg), in_end_(in_end), out_beg_(out_beg)
     {
-        assert(are_equal(in_beg_.get_buffer() , in_end_.get_buffer()));
+        assert(are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
         assert(!are_equal(in_beg_.get_buffer(), out_beg_.get_buffer()));
     }
 
@@ -78,7 +78,6 @@ template <int Rank, access_type InputAccessType, typename Functor, typename Kern
 class partially_packaged_transform_1
 {
 public:
-    static_assert(std::is_same_v<detail::kernel_result_t<KernelFunctor>, typename std::iterator_traits<InputIteratorType>::value_type>);
     static_assert(!std::is_void_v<typename std::iterator_traits<InputIteratorType>::value_type>);
 
     explicit partially_packaged_transform_1(Functor f, InputIteratorType beg, InputIteratorType end)
@@ -87,13 +86,13 @@ public:
     template <typename Iterator>
     auto complete(Iterator beg, Iterator) const
     {
-        return package_transform<InputAccessType >(f_, in_beg_, in_end_, beg);
+        return package_transform<InputAccessType>(f_, in_beg_, in_end_, beg);
     }
 
     InputIteratorType get_in_beg() const { return in_beg_; }
     InputIteratorType get_in_end() const { return in_end_; }
 
-    cl::sycl::range<Rank> get_range() const { return distance (in_beg_, in_end_); } 
+    cl::sycl::range<Rank> get_range() const { return distance(in_beg_, in_end_); }
 
 private:
     Functor f_;
@@ -138,7 +137,6 @@ struct is_packaged_task<packaged_transform<Rank, InputAccessType, Functor, Input
     : std::true_type
 {
 };
-
 
 template <int Rank, access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputValueType>
 struct is_partially_packaged_task<partially_packaged_transform_1<Rank, InputAccessType, Functor, KernelFunctor, InputValueType>>
