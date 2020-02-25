@@ -80,17 +80,17 @@ void static_assert_kernel_traits()
     using namespace celerity::algorithm;
     using namespace celerity::algorithm::detail;
 
-    auto one_d = [](cl::sycl::item<1>) {};
-    auto two_d = [](cl::sycl::item<1>) {};
-    auto three_d = [](cl::sycl::item<1>) {};
-    auto generic = [](auto) {};
+    auto one_d = [](item_context<1, int> &) {};
+    auto two_d = [](item_context<2, int> &) {};
+    auto three_d = [](item_context<3, int> &) {};
+    //auto generic = [](auto) {};
 
     static_assert(is_kernel_v<decltype(one_d)>);
     static_assert(is_kernel_v<decltype(two_d)>);
     static_assert(is_kernel_v<decltype(three_d)>);
-    static_assert(is_kernel_v<decltype(generic)>);
+    //static_assert(!is_kernel_v<decltype(generic)>);
 
-    auto compute_task = [](celerity::handler &) { return [](cl::sycl::item<1>) {}; };
+    auto compute_task = [one_d](celerity::handler &) { return one_d; };
     static_assert(is_compute_task_v<decltype(compute_task)>);
     static_assert(is_master_task_v<decltype(compute_task)>);
 
@@ -106,13 +106,6 @@ void static_assert_kernel_traits()
     auto placeholder = [](iterator_t, iterator_t) {};
     static_assert(is_placeholder_task_v<decltype(placeholder), iterator_t>);
     static_assert(!is_placeholder_task_v<decltype(placeholder), iterator<2>>);
-
-    auto t = [](celerity::distr_queue &, auto, auto) {};
-    using packaged_task_type = packaged_generate<decltype(t), int, int, 1>;
-
-    static_assert(is_packaged_task_sequence<sequence<packaged_task_type, packaged_task_type>>());
-    static_assert(!is_packaged_task_sequence<packaged_task_type>());
-    static_assert(!is_packaged_task_sequence<decltype(sequence{placeholder})>());
 }
 
 int main(int, char *[])

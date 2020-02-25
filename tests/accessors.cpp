@@ -520,13 +520,13 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
 
                 auto out = buf_out.get_access<cl::sycl::access::mode::write>(c, celerity::access::one_to_one<1>());
 
-                return [=](cl::sycl::item<1> it) {
+                return [=](item_context<1, int> it) {
                     //out[it] = add(in_a[it], in_b[it]);            // FAILS
                     //out[it] = add3(*in_a[it], in_b[it]);          // WORKS
                     //auto ca = in_a[it];
                     //auto cb = in_b[it];
                     //out[it] = add(std::move(ca), std::move(cb));  // FAILS
-                    out[it] = add5(in_a[it], in_b[it]);
+                    out[it[0]] = add5(in_a[it[0]], in_b[it[1]]);
                 };
             };
 
