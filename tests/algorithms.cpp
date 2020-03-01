@@ -303,3 +303,60 @@ SCENARIO("transforming a buffer", "[celerity::algorithm]")
         }
     }
 }
+
+SCENARIO("iterating a buffer on the master", "[celerity::algorithm]")
+{
+    distr_queue q;
+
+    GIVEN("A one-dimensional buffer of a hundred 1s")
+    {
+        constexpr auto size = 100;
+
+        buffer<int, 1> buf(cl::sycl::range<1>{size});
+
+        fill<class fill_x_1>(q, buf, 1);
+
+        WHEN("checking if all are 1")
+        {
+            auto all_one = true;
+            auto checked = 0;
+
+            for_each(master_blocking(q), buf, [&](cl::sycl::item<1> it, int x) {
+                all_one = all_one && x == 1;
+                checked++;
+            });
+
+            THEN("the outcome is true")
+            {
+                REQUIRE(all_one);
+                REQUIRE(checked == 100);
+            }
+        }
+    }
+
+    GIVEN("A three-dimensional buffer of 10x10x10 1s")
+    {
+        constexpr auto size = 10;
+
+        buffer<int, 3> buf({size, size, size});
+
+        fill<class fill_x_2>(q, buf, 1);
+
+        WHEN("checking if all are 1")
+        {
+            auto all_one = true;
+            auto checked = 0;
+
+            for_each(master_blocking(q), buf, [&](cl::sycl::item<3> it, int x) {
+                all_one = all_one && x == 1;
+                checked++;
+            });
+
+            THEN("the outcome is true")
+            {
+                REQUIRE(all_one);
+                REQUIRE(checked == 1000);
+            }
+        }
+    }
+}

@@ -16,26 +16,29 @@ namespace actions
 {
 namespace detail
 {
-template <typename InputAccessorType, typename ExecutionPolicy, typename F, typename T, int Rank,
+template <typename ExecutionPolicy, typename F, typename T, int Rank, template <typename, int> typename InIterator,
           typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<F, 0>() == access_type::item>>
-auto for_each(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
+auto for_each(InIterator<T, Rank> beg, InIterator<T, Rank> end, const F &f)
 {
-    /*using policy_type = strip_queue_t<ExecutionPolicy>;
+    using policy_type = strip_queue_t<ExecutionPolicy>;
+    using accessor_type = algorithm::detail::accessor_type_t<F, 1, T>;
 
-	return [=](celerity::handler &cgh) {
-		auto in_acc = get_access<policy_type, cl::sycl::access::mode::read, InputAccessorType>(cgh, beg, end);
+    return [=](celerity::handler &cgh) {
+        auto in_acc = get_access<policy_type, cl::sycl::access::mode::read, accessor_type>(cgh, beg, end);
 
-		dispatch<policy_type>(cgh, beg, end, [=](auto item) {
-			f(item, in_acc[item]);
-		});
-	};*/
+        return [=](item_context<Rank, T> &ctx) {
+            f(ctx[0], in_acc[ctx[0]]);
+        };
+    };
 }
 } // namespace detail
 
 template <typename ExecutionPolicy, typename T, int Rank, typename F>
-auto for_each(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
+auto for_each(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
-    return task<ExecutionPolicy>(detail::for_each<algorithm::detail::accessor_type_t<F, 1, T>>(p, beg, end, f));
+    return [=, t = task<ExecutionPolicy>(detail::for_each<ExecutionPolicy>(beg, end, f))](distr_queue q) {
+        return t(q, beg, end);
+    };
 }
 
 } // namespace actions
@@ -44,7 +47,7 @@ template <typename ExecutionPolicy, typename T, int Rank, typename F,
           typename = std::enable_if_t<detail::get_accessor_type<F, 0>() == access_type::item>>
 auto for_each(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
-    return scoped_sequence{actions::for_each(p, beg, end, f), submit_to(p.q)};
+    return scoped_sequence{actions::for_each<ExecutionPolicy>(beg, end, f), submit_to(p.q)};
 }
 
 template <typename ExecutionPolicy, typename T, int Rank, typename F,

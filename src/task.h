@@ -83,7 +83,16 @@ public:
 
 		q.with_master_access([seq = sequence_, d, beg, end](handler &cgh) {
 			const auto r = std::invoke(seq, cgh);
-			cgh.run([&]() { for_each_index(beg, end, d, *beg, to_kernel(r)); });
+
+			using first_kernel_type = first_result_t<decltype(r)>;
+			using item_context_type = std::decay_t<detail::arg_type_t<first_kernel_type, 0>>;
+
+			cgh.run([&]() {
+				for_each_index(beg, end, d, *beg, [r](cl::sycl::item<Rank> item) {
+					item_context_type ctx{item};
+					std::invoke(sequence(r), ctx);
+		});
+			});
 		});
 	}
 
@@ -115,7 +124,16 @@ public:
 
 		q.with_master_access([seq = sequence_, d, beg, end](handler &cgh) {
 			const auto r = std::invoke(seq, cgh);
-			cgh.run([&]() { for_each_index(beg, end, d, *beg, to_kernel(r)); });
+
+			using first_kernel_type = first_result_t<decltype(r)>;
+			using item_context_type = std::decay_t<detail::arg_type_t<first_kernel_type, 0>>;
+
+			cgh.run([&]() {
+				for_each_index(beg, end, d, *beg, [r](cl::sycl::item<Rank> item) {
+					item_context_type ctx{item};
+					std::invoke(sequence(r), ctx);
+				});
+			});
 		});
 
 		q.slow_full_sync();
