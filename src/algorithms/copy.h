@@ -68,6 +68,12 @@ auto copy(ExecutionPolicy p, buffer<T, Rank> in, buffer<T, Rank> out)
 	return copy(p, begin(in), end(in), begin(out));
 }
 
+template <typename T, int Rank>
+auto make_buffer(T *data, cl::sycl::range<Rank> range) -> celerity::buffer<T, Rank>
+{
+	return {data, range};
+}
+
 } // namespace celerity::algorithm
 
 #endif // COPY_H
