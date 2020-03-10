@@ -132,8 +132,8 @@ auto transform(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffe
 {
     constexpr auto access_type = algorithm::detail::get_accessor_type<F, 0>();
 
-    return package_transform<access_type>(
-        [f](auto _beg, auto _end, auto _out) { return task<ExecutionPolicy>(detail::transform<ExecutionPolicy>(_beg, _end, _out, f)); },
+    return package_transform<access_type, true>(
+        task<ExecutionPolicy>(detail::transform<ExecutionPolicy>(beg, end, out, f)),
         beg, end, out);
 }
 
@@ -158,7 +158,7 @@ auto transform(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffe
     constexpr auto access_type = algorithm::detail::get_accessor_type<F, 1>();
 
     return package_transform<access_type>(
-        [f](auto _beg, auto _end, auto _out) { return task<ExecutionPolicy>(detail::transform<ExecutionPolicy>(_beg, _end, _out, f)); },
+        task<ExecutionPolicy>(detail::transform<ExecutionPolicy, true>(beg, end, out, f)),
         beg, end, out);
 }
 
@@ -183,9 +183,13 @@ auto transform(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffe
     constexpr auto first_access_type = algorithm::detail::get_accessor_type<F, 0>();
     constexpr auto second_access_type = algorithm::detail::get_accessor_type<F, 1>();
 
-    return package_zip<first_access_type, second_access_type>(
-        [f](auto _beg, auto _end, auto _beg2, auto _out) { return task<ExecutionPolicy>(detail::transform<ExecutionPolicy>(_beg, _end, _beg2, _out, f)); },
-        beg, end, beg2, out);
+    const auto t = task<ExecutionPolicy>(detail::transform<ExecutionPolicy>(beg, end, beg2, out, f));
+
+    return [=](distr_queue q) { t(q, beg, end); };
+
+    /*return package_zip<first_access_type, second_access_type, true>(
+        task<ExecutionPolicy>(detail::transform<ExecutionPolicy>(beg, end, beg2, out, f)),
+        beg, end, beg2, out);*/
 }
 
 template <typename ExecutionPolicy, typename F,
@@ -208,8 +212,8 @@ auto transform(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffe
     constexpr auto first_access_type = algorithm::detail::get_accessor_type<F, 1>();
     constexpr auto second_access_type = algorithm::detail::get_accessor_type<F, 2>();
 
-    return package_zip<first_access_type, second_access_type>(
-        [f](auto _beg, auto _end, auto _beg2, auto _out) { return task<ExecutionPolicy>(detail::transform<ExecutionPolicy>(_beg, _end, _beg2, _out, f)); },
+    return package_zip<first_access_type, second_access_type, true>(
+        task<ExecutionPolicy>(detail::transform<ExecutionPolicy>(beg, end, beg2, out, f)),
         beg, end, beg2, out);
 }
 
