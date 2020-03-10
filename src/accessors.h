@@ -118,7 +118,7 @@ private:
 		const auto id = item_.get_id();
 
 		return ((id[Is] < (Extents / 2)) || ...) ||
-			   ((id[Is] > range[Is] - (Extents / 2) - 1) || ...);
+			   ((static_cast<int>(id[Is]) > static_cast<int>(range[Is]) - static_cast<int>(Extents / 2) - 1) || ...);
 	}
 };
 
