@@ -9,7 +9,6 @@
 
 #pragma clang diagnostic ignored "-Wunused-result"
 #pragma clang diagnostic ignored "-Wsometimes-uninitialized"
-#pragma clang diagnostic ignored "-Wunused-result"
 #pragma clang diagnostic ignored "-Wreturn-type"
 
 #include "../../src/algorithm.h"
@@ -29,6 +28,7 @@ int main(int argc, char *argv[])
 
 	std::vector<cl::sycl::float3> image_input;
 	int image_width = 0, image_height = 0, image_channels = 0;
+
 	{
 		uint8_t *image_data = stbi_load(argv[1], &image_width, &image_height, &image_channels, 3);
 		assert(image_data != nullptr);
@@ -51,23 +51,20 @@ int main(int argc, char *argv[])
 	using f = celerity::algorithm::buffer_traits<float, 2>;
 	using f3 = celerity::algorithm::buffer_traits<cl::sycl::float3, 2>;
 
-	using float3 = cl::sycl::float3;
+	cl::sycl::range<2> image_range(image_height, image_width);
+	cl::sycl::range<2> gauss_mat_range(FILTER_SIZE, FILTER_SIZE);
 
-	distr_queue queue;
-
-	celerity::buffer<float3, 2> image_input_buf(image_input.data(), cl::sycl::range<2>(image_height, image_width));
-
-	auto generate_gaussian_mat = [](cl::sycl::item<2> item) {
+	const auto generate_gaussian_mat = [](cl::sycl::item<2> item) {
 		const auto x = item.get_id(1) - (FILTER_SIZE / 2);
 		const auto y = item.get_id(0) - (FILTER_SIZE / 2);
 
 		return cl::sycl::exp(-1.f * (x * x + y * y) / (2 * sigma * sigma)) / (2 * PI * sigma * sigma);
 	};
 
-	auto gaussian_blur = [fs = FILTER_SIZE, image_height, image_width](const f3::chunk<FILTER_SIZE, FILTER_SIZE> &in, const f::all &gauss) {
+	const auto gaussian_blur = [fs = FILTER_SIZE, image_range](const f3::chunk<FILTER_SIZE, FILTER_SIZE> &in, const f::all &gauss) {
 		using cl::sycl::float3;
 
-		if (in.is_on_boundary(cl::sycl::range<2>(image_height, image_width)))
+		if (in.is_on_boundary(image_range))
 		{
 			return float3(0.f, 0.f, 0.f);
 		}
@@ -84,9 +81,9 @@ int main(int argc, char *argv[])
 		return sum;
 	};
 
-	auto sharpening = [image_height, image_width](f3::chunk<3, 3> in) {
+	const auto sharpening = [image_range](f3::chunk<3, 3> in) {
 		using cl::sycl::float3;
-		if (in.is_on_boundary(cl::sycl::range<2>(image_height, image_width)))
+		if (in.is_on_boundary(image_range))
 		{
 			return float3(0.f, 0.f, 0.f);
 		}
@@ -105,15 +102,20 @@ int main(int argc, char *argv[])
 		//return fmax(float3(0, 0, 0), fmin(float3(1.f, 1.f, 1.f), sum)); HIP ERROR 77
 	};
 
-	auto convert_to_uint8 = [](cl::sycl::float3 c) -> uchar3 {
+	const auto convert_to_uint8 = [](cl::sycl::float3 c) -> uchar3 {
 		return {
 			static_cast<u_char>(c.x() * 255.f),
 			static_cast<u_char>(c.y() * 255.f),
 			static_cast<u_char>(c.z() * 255.f)};
 	};
 
-	auto out_buf = image_input_buf |
-				   (transform<class gaussian_blur>(gaussian_blur) << generate<class gen_gauss>(cl::sycl::range<2>(FILTER_SIZE, FILTER_SIZE), generate_gaussian_mat)) |
+	distr_queue queue;
+
+	MPI_Barrier(MPI_COMM_WORLD);
+	celerity::experimental::bench::begin("main program");
+
+	auto out_buf = make_buffer(image_input.data(), image_range) |
+				   transform<class gaussian_blur>(gaussian_blur) << generate<class gen_gauss>(gauss_mat_range, generate_gaussian_mat) |
 				   transform<class sharpening>(sharpening) |
 				   transform<class to_uchar>(convert_to_uint8) |
 				   submit_to(queue);

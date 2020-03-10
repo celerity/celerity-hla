@@ -7,7 +7,7 @@
 #include "../../src/actions.h"
 #include "../../src/buffer_traits.h"
 
-constexpr auto MAT_SIZE = 4;
+constexpr auto MAT_SIZE = 1024;
 
 using namespace celerity;
 using namespace algorithm;
@@ -53,22 +53,26 @@ int main(int argc, char *argv[])
 
 		const auto mat_range = cl::sycl::range<2>{MAT_SIZE, MAT_SIZE};
 
-		MPI_Barrier(MPI_COMM_WORLD);
-		celerity::experimental::bench::begin("main program");
-
 		auto mat_b =
 			generate<class gen_b>(mat_range, gen_b) |
 			submit_to(queue);
 
-		auto out_buf =
-			generate<class gen_a>(mat_range, gen_a) |
-			transform<class mul_a_b>(multiply) << mat_b |
-			transform<class mul_ab_b>(multiply) << mat_b |
-			submit_to(queue);
+		// auto out_buf =
+		// 	generate<class gen_a>(mat_range, gen_a) |
+		// 	transform<class mul_a_b>(multiply) << mat_b |
+		// 	transform<class mul_ab_b>(multiply) << mat_b |
+		// 	submit_to(queue);
 
-		// auto seq = generate<class gen_a>(cl::sycl::range<2>{MAT_SIZE, MAT_SIZE}, gen_a) |
-		// 		   transform<class mul_a_b>(multiply) << mat_b |
-		// 		   transform<class mul_ab_b>(multiply) << mat_b;
+		auto seq = generate<class gen_a>(cl::sycl::range<2>{MAT_SIZE, MAT_SIZE}, gen_a) |
+				   transform<class mul_a_b>(multiply) << mat_b |
+				   transform<class mul_ab_b>(multiply) << mat_b;
+
+		auto fused = fuse(terminate(seq));
+
+		MPI_Barrier(MPI_COMM_WORLD);
+		celerity::experimental::bench::begin("main program");
+
+		auto out_buf = std::get<2>(fused(queue));
 
 		// static_assert(size_v<decltype(terminate(seq))> == 3);
 		// static_assert(size_v<decltype(fuse(terminate(seq)))> == 3);
