@@ -6,17 +6,18 @@
 #include "../accessor_type.h"
 #include "../computation_type.h"
 #include "../packaged_task_traits.h"
+#include "../partially_packaged_task.h"
 
 namespace celerity::algorithm
 {
 
-template <typename FunctorType, 
-          typename FirstInputIteratorType, 
-          typename SecondInputIteratorType, 
-          typename OutputIteratorType, 
-          int Rank, 
-          access_type FirstInputAccessType, 
-          access_type SecondInputAccessType, 
+template <typename FunctorType,
+          typename FirstInputIteratorType,
+          typename SecondInputIteratorType,
+          typename OutputIteratorType,
+          int Rank,
+          access_type FirstInputAccessType,
+          access_type SecondInputAccessType,
           bool Fused>
 class packaged_zip
 {
@@ -66,15 +67,15 @@ private:
     OutputIteratorType out_beg_;
 };
 
-template <access_type FirstInputAccessType, 
-          access_type SecondInputAccessType, 
-          typename FunctorType, 
-          template<typename, int> typename InIteratorType, 
-          template<typename, int> typename SecondInIteratorType, 
-          template<typename, int> typename OutIteratorType, 
-          typename FirstInputValueType, 
-          typename SecondInputValueType, 
-          typename OutputValueType, 
+template <access_type FirstInputAccessType,
+          access_type SecondInputAccessType,
+          typename FunctorType,
+          template <typename, int> typename InIteratorType,
+          template <typename, int> typename SecondInIteratorType,
+          template <typename, int> typename OutIteratorType,
+          typename FirstInputValueType,
+          typename SecondInputValueType,
+          typename OutputValueType,
           int Rank>
 auto package_zip(FunctorType task,
                  InIteratorType<FirstInputValueType, Rank> in_beg,
@@ -82,26 +83,26 @@ auto package_zip(FunctorType task,
                  SecondInIteratorType<SecondInputValueType, Rank> second_in_beg,
                  OutIteratorType<OutputValueType, Rank> out_beg)
 {
-    return packaged_zip<FunctorType, 
-                        InIteratorType<FirstInputValueType, Rank>, 
-                        SecondInIteratorType<SecondInputValueType, Rank>, 
-                        OutIteratorType<OutputValueType, Rank>, 
-                        Rank, 
-                        FirstInputAccessType, 
+    return packaged_zip<FunctorType,
+                        InIteratorType<FirstInputValueType, Rank>,
+                        SecondInIteratorType<SecondInputValueType, Rank>,
+                        OutIteratorType<OutputValueType, Rank>,
+                        Rank,
+                        FirstInputAccessType,
                         SecondInputAccessType,
                         false>(task, in_beg, in_end, second_in_beg, out_beg);
 }
 
-template <access_type FirstInputAccessType, 
-          access_type SecondInputAccessType, 
+template <access_type FirstInputAccessType,
+          access_type SecondInputAccessType,
           bool Fused,
-          typename FunctorType, 
-          template<typename, int> typename InIteratorType, 
-          template<typename, int> typename SecondInIteratorType, 
-          template<typename, int> typename OutIteratorType, 
-          typename FirstInputValueType, 
-          typename SecondInputValueType, 
-          typename OutputValueType, 
+          typename FunctorType,
+          template <typename, int> typename InIteratorType,
+          template <typename, int> typename SecondInIteratorType,
+          template <typename, int> typename OutIteratorType,
+          typename FirstInputValueType,
+          typename SecondInputValueType,
+          typename OutputValueType,
           int Rank>
 auto package_zip(FunctorType task,
                  InIteratorType<FirstInputValueType, Rank> in_beg,
@@ -109,22 +110,22 @@ auto package_zip(FunctorType task,
                  SecondInIteratorType<SecondInputValueType, Rank> second_in_beg,
                  OutIteratorType<OutputValueType, Rank> out_beg)
 {
-    return packaged_zip<FunctorType, 
-                        InIteratorType<FirstInputValueType, Rank>, 
-                        SecondInIteratorType<SecondInputValueType, Rank>, 
-                        OutIteratorType<OutputValueType, Rank>, 
-                        Rank, 
-                        FirstInputAccessType, 
+    return packaged_zip<FunctorType,
+                        InIteratorType<FirstInputValueType, Rank>,
+                        SecondInIteratorType<SecondInputValueType, Rank>,
+                        OutIteratorType<OutputValueType, Rank>,
+                        Rank,
+                        FirstInputAccessType,
                         SecondInputAccessType,
                         Fused>(task, in_beg, in_end, second_in_beg, out_beg);
 }
 
-template <typename FunctorType, 
+template <typename FunctorType,
           typename KernelType,
-          typename FirstInputIteratorType, 
-          typename SecondInputIteratorType, 
-          int Rank, 
-          access_type FirstInputAccessType, 
+          typename FirstInputIteratorType,
+          typename SecondInputIteratorType,
+          int Rank,
+          access_type FirstInputAccessType,
           access_type SecondInputAccessType>
 class partially_packaged_zip_2
 {
@@ -139,7 +140,7 @@ public:
         assert(!are_equal(in_beg_.get_buffer(), second_in_beg_.get_buffer()));
     }
 
-    template<typename Iterator>
+    template <typename Iterator>
     auto complete(Iterator beg, Iterator)
     {
         return package_zip<FirstInputAccessType, SecondInputAccessType>(
@@ -162,32 +163,32 @@ private:
 template <access_type FirstInputAccessType,
           access_type SecondInputAccessType,
           typename KernelType,
-          typename FunctorType, 
-          template<typename, int> typename InIteratorType, 
-          template<typename, int> typename SecondInIteratorType, 
-          typename FirstInputValueType, 
-          typename SecondInputValueType, 
+          typename FunctorType,
+          template <typename, int> typename InIteratorType,
+          template <typename, int> typename SecondInIteratorType,
+          typename FirstInputValueType,
+          typename SecondInputValueType,
           int Rank>
 auto package_zip(FunctorType functor,
                  InIteratorType<FirstInputValueType, Rank> in_beg,
                  InIteratorType<FirstInputValueType, Rank> in_end,
                  SecondInIteratorType<SecondInputValueType, Rank> second_in_beg)
 {
-    return partially_packaged_zip_2<FunctorType, 
+    return partially_packaged_zip_2<FunctorType,
                                     KernelType,
-                                    InIteratorType<FirstInputValueType, Rank>, 
-                                    SecondInIteratorType<SecondInputValueType, Rank>,  
-                                    Rank, 
-                                    FirstInputAccessType, 
+                                    InIteratorType<FirstInputValueType, Rank>,
+                                    SecondInIteratorType<SecondInputValueType, Rank>,
+                                    Rank,
+                                    FirstInputAccessType,
                                     SecondInputAccessType>(functor, in_beg, in_end, second_in_beg);
 }
 
-// Rename FirstInputIterator to SecondInputIterator 
+// Rename FirstInputIterator to SecondInputIterator
 // we are switching those in this stage
-template <typename FunctorType, 
+template <typename FunctorType,
           typename KernelType,
-          typename FirstInputIteratorType, 
-          int Rank, 
+          typename FirstInputIteratorType,
+          int Rank,
           access_type FirstInputAccessType,
           access_type SecondInputAccessType>
 class partially_packaged_zip_1
@@ -201,7 +202,7 @@ public:
         assert(are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
     }
 
-    template<typename Iterator>
+    template <typename Iterator>
     auto complete(Iterator beg, Iterator end)
     {
         return package_zip<FirstInputAccessType, SecondInputAccessType, KernelType>(
@@ -222,23 +223,23 @@ private:
 template <access_type FirstInputAccessType,
           access_type SecondInputAccessType,
           typename KernelType,
-          typename FunctorType, 
-          template<typename, int> typename InIteratorType, 
+          typename FunctorType,
+          template <typename, int> typename InIteratorType,
           typename FirstInputValueType,
           int Rank>
 auto package_zip(FunctorType functor,
                  InIteratorType<FirstInputValueType, Rank> in_beg,
                  InIteratorType<FirstInputValueType, Rank> in_end)
 {
-    return partially_packaged_zip_1<FunctorType, 
+    return partially_packaged_zip_1<FunctorType,
                                     KernelType,
                                     InIteratorType<FirstInputValueType, Rank>,
-                                    Rank, 
-                                    FirstInputAccessType, 
+                                    Rank,
+                                    FirstInputAccessType,
                                     SecondInputAccessType>(functor, in_beg, in_end);
 }
 
-template <typename FunctorType, 
+template <typename FunctorType,
           typename KernelType,
           access_type FirstInputAccessType,
           access_type SecondInputAccessType>
@@ -248,10 +249,9 @@ public:
     partially_packaged_zip_0(FunctorType functor)
         : functor_(functor)
     {
-
     }
 
-    template<typename Iterator>
+    template <typename Iterator>
     auto complete(Iterator beg, Iterator end)
     {
         return package_zip<FirstInputAccessType, SecondInputAccessType, KernelType>(
@@ -268,69 +268,67 @@ template <access_type FirstInputAccessType,
           typename FunctorType>
 auto package_zip(FunctorType functor)
 {
-    return partially_packaged_zip_0<FunctorType, 
+    return partially_packaged_zip_0<FunctorType,
                                     KernelType,
-                                    FirstInputAccessType, 
+                                    FirstInputAccessType,
                                     SecondInputAccessType>(functor);
 }
 
 namespace detail
 {
 
-
-template <typename FunctorType, 
-          typename FirstInputIteratorType, 
-          typename SecondInputIteratorType, 
-          typename OutputIteratorType, 
-          int Rank, 
-          access_type FirstInputAccessType, 
-          access_type SecondInputAccessType, 
+template <typename FunctorType,
+          typename FirstInputIteratorType,
+          typename SecondInputIteratorType,
+          typename OutputIteratorType,
+          int Rank,
+          access_type FirstInputAccessType,
+          access_type SecondInputAccessType,
           bool Fused>
 struct is_packaged_task<packaged_zip<FunctorType, FirstInputIteratorType, SecondInputIteratorType, OutputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType, Fused>>
     : std::bool_constant<true>
 {
 };
 
-template <typename FunctorType, 
+template <typename FunctorType,
           typename KernelType,
-          typename FirstInputIteratorType, 
-          typename SecondInputIteratorType, 
-          int Rank, 
-          access_type FirstInputAccessType, 
+          typename FirstInputIteratorType,
+          typename SecondInputIteratorType,
+          int Rank,
+          access_type FirstInputAccessType,
           access_type SecondInputAccessType>
 struct is_partially_packaged_task<partially_packaged_zip_2<FunctorType, KernelType, FirstInputIteratorType, SecondInputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType>>
     : std::bool_constant<true>
 {
 };
 
-template <typename FunctorType, 
+template <typename FunctorType,
           typename KernelType,
-          typename FirstInputIteratorType, 
-          int Rank, 
-          access_type FirstInputAccessType, 
+          typename FirstInputIteratorType,
+          int Rank,
+          access_type FirstInputAccessType,
           access_type SecondInputAccessType>
 struct is_partially_packaged_task<partially_packaged_zip_1<FunctorType, KernelType, FirstInputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType>>
     : std::bool_constant<true>
 {
 };
 
-
-template <typename FunctorType, 
+template <typename FunctorType,
           typename KernelType,
-          access_type FirstInputAccessType, 
+          access_type FirstInputAccessType,
           access_type SecondInputAccessType>
 struct is_partially_packaged_task<partially_packaged_zip_0<FunctorType, KernelType, FirstInputAccessType, SecondInputAccessType>>
     : std::bool_constant<true>
 {
 };
 
-template <typename FunctorType, 
-          typename FirstInputIteratorType, 
-          typename SecondInputIteratorType, 
-          typename OutputIteratorType, 
-          int Rank, 
-          access_type FirstInputAccessType, 
-          access_type SecondInputAccessType, 
+template <typename FunctorType,
+          typename FirstInputIteratorType,
+          typename SecondInputIteratorType,
+          typename OutputIteratorType,
+          int Rank,
+          access_type FirstInputAccessType,
+          access_type SecondInputAccessType,
           bool Fused>
 struct packaged_task_traits<packaged_zip<FunctorType, FirstInputIteratorType, SecondInputIteratorType, OutputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType, Fused>>
 {
@@ -345,13 +343,13 @@ struct packaged_task_traits<packaged_zip<FunctorType, FirstInputIteratorType, Se
     using output_iterator_type = OutputIteratorType;
 };
 
-template <typename FunctorType, 
-          typename FirstInputIteratorType, 
-          typename SecondInputIteratorType, 
-          typename OutputIteratorType, 
-          int Rank, 
-          access_type FirstInputAccessType, 
-          access_type SecondInputAccessType, 
+template <typename FunctorType,
+          typename FirstInputIteratorType,
+          typename SecondInputIteratorType,
+          typename OutputIteratorType,
+          int Rank,
+          access_type FirstInputAccessType,
+          access_type SecondInputAccessType,
           bool Fused>
 struct extended_packaged_task_traits<packaged_zip<FunctorType, FirstInputIteratorType, SecondInputIteratorType, OutputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType, Fused>, computation_type::zip>
 {
@@ -361,12 +359,12 @@ struct extended_packaged_task_traits<packaged_zip<FunctorType, FirstInputIterato
     using second_input_iterator_type = SecondInputIteratorType;
 };
 
-template <typename FunctorType, 
+template <typename FunctorType,
           typename KernelType,
-          typename FirstInputIteratorType, 
-          typename SecondInputIteratorType, 
-          int Rank, 
-          access_type FirstInputAccessType, 
+          typename FirstInputIteratorType,
+          typename SecondInputIteratorType,
+          int Rank,
+          access_type FirstInputAccessType,
           access_type SecondInputAccessType>
 struct packaged_task_traits<partially_packaged_zip_2<FunctorType, KernelType, FirstInputIteratorType, SecondInputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType>>
 {
@@ -381,12 +379,12 @@ struct packaged_task_traits<partially_packaged_zip_2<FunctorType, KernelType, Fi
     using output_iterator_type = void;
 };
 
-template <typename FunctorType, 
+template <typename FunctorType,
           typename KernelType,
-          typename FirstInputIteratorType, 
-          typename SecondInputIteratorType, 
-          int Rank, 
-          access_type FirstInputAccessType, 
+          typename FirstInputIteratorType,
+          typename SecondInputIteratorType,
+          int Rank,
+          access_type FirstInputAccessType,
           access_type SecondInputAccessType>
 struct extended_packaged_task_traits<partially_packaged_zip_2<FunctorType, KernelType, FirstInputIteratorType, SecondInputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType>, computation_type::zip>
 {
@@ -396,11 +394,11 @@ struct extended_packaged_task_traits<partially_packaged_zip_2<FunctorType, Kerne
     using second_input_iterator_type = SecondInputIteratorType;
 };
 
-template <typename FunctorType, 
+template <typename FunctorType,
           typename KernelType,
-          typename FirstInputIteratorType, 
-          int Rank, 
-          access_type FirstInputAccessType, 
+          typename FirstInputIteratorType,
+          int Rank,
+          access_type FirstInputAccessType,
           access_type SecondInputAccessType>
 struct packaged_task_traits<partially_packaged_zip_1<FunctorType, KernelType, FirstInputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType>>
 {
@@ -415,11 +413,11 @@ struct packaged_task_traits<partially_packaged_zip_1<FunctorType, KernelType, Fi
     using output_iterator_type = void;
 };
 
-template <typename FunctorType, 
+template <typename FunctorType,
           typename KernelType,
-          typename FirstInputIteratorType, 
-          int Rank, 
-          access_type FirstInputAccessType, 
+          typename FirstInputIteratorType,
+          int Rank,
+          access_type FirstInputAccessType,
           access_type SecondInputAccessType>
 struct extended_packaged_task_traits<partially_packaged_zip_1<FunctorType, KernelType, FirstInputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType>, computation_type::zip>
 {
@@ -429,10 +427,9 @@ struct extended_packaged_task_traits<partially_packaged_zip_1<FunctorType, Kerne
     using second_input_iterator_type = void;
 };
 
-
-template <typename FunctorType, 
+template <typename FunctorType,
           typename KernelType,
-          access_type FirstInputAccessType, 
+          access_type FirstInputAccessType,
           access_type SecondInputAccessType>
 struct packaged_task_traits<partially_packaged_zip_0<FunctorType, KernelType, FirstInputAccessType, SecondInputAccessType>>
 {
@@ -446,9 +443,9 @@ struct packaged_task_traits<partially_packaged_zip_0<FunctorType, KernelType, Fi
     using output_iterator_type = void;
 };
 
-template <typename FunctorType, 
+template <typename FunctorType,
           typename KernelType,
-          access_type FirstInputAccessType, 
+          access_type FirstInputAccessType,
           access_type SecondInputAccessType>
 struct extended_packaged_task_traits<partially_packaged_zip_0<FunctorType, KernelType, FirstInputAccessType, SecondInputAccessType>, computation_type::zip>
 {
@@ -458,33 +455,32 @@ struct extended_packaged_task_traits<partially_packaged_zip_0<FunctorType, Kerne
     using second_input_iterator_type = void;
 };
 
-template <typename FunctorType, 
+template <typename FunctorType,
           typename KernelType,
-          typename FirstInputIteratorType, 
-          typename SecondInputIteratorType, 
-          int Rank, 
-          access_type FirstInputAccessType, 
+          typename FirstInputIteratorType,
+          typename SecondInputIteratorType,
+          int Rank,
+          access_type FirstInputAccessType,
           access_type SecondInputAccessType>
 struct partially_packaged_task_traits<partially_packaged_zip_2<FunctorType, KernelType, FirstInputIteratorType, SecondInputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType>>
 {
     static constexpr auto requirement = stage_requirement::output;
 };
 
-template <typename FunctorType, 
+template <typename FunctorType,
           typename KernelType,
-          typename FirstInputIteratorType, 
-          int Rank, 
-          access_type FirstInputAccessType, 
+          typename FirstInputIteratorType,
+          int Rank,
+          access_type FirstInputAccessType,
           access_type SecondInputAccessType>
 struct partially_packaged_task_traits<partially_packaged_zip_1<FunctorType, KernelType, FirstInputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType>>
 {
     static constexpr auto requirement = stage_requirement::input;
 };
 
-
-template <typename FunctorType, 
+template <typename FunctorType,
           typename KernelType,
-          access_type FirstInputAccessType, 
+          access_type FirstInputAccessType,
           access_type SecondInputAccessType>
 struct partially_packaged_task_traits<partially_packaged_zip_0<FunctorType, KernelType, FirstInputAccessType, SecondInputAccessType>>
 {

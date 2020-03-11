@@ -42,21 +42,20 @@ struct first_element;
 template <typename T>
 using first_element_t = typename first_element<T>::type;
 
-template<typename T>
+template <typename T>
 struct first_result
 {
     using type = T;
 };
 
-template<typename...Ts>
+template <typename... Ts>
 struct first_result<std::tuple<Ts...>>
 {
     using type = std::tuple_element_t<0, std::tuple<Ts...>>;
 };
 
-template<typename T>
+template <typename T>
 using first_result_t = typename first_result<T>::type;
-
 
 } // namespace celerity::algorithm
 

@@ -6,11 +6,7 @@
 #include "../task_sequence.h"
 #include "../accessor_proxy.h"
 #include "../policy.h"
-#include "../scoped_sequence.h"
-#include "../packaged_task.h"
-#include "../placeholder.h"
-#include "../fusion.h"
-
+#include "../sequencing.h"
 namespace celerity::algorithm
 {
 namespace actions
@@ -87,7 +83,7 @@ auto generate(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const 
 template <typename ExecutionPolicy, typename T, int Rank, typename F>
 auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
-    return scoped_sequence{actions::generate<ExecutionPolicy>(beg, end, f), submit_to(p.q)};
+    return std::invoke(actions::generate<ExecutionPolicy>(beg, end, f), p.q);
 }
 
 template <typename KernelName, typename F, int Rank>

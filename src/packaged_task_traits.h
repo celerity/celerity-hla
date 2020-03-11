@@ -1,7 +1,7 @@
 #ifndef PACKAGED_TASK_TRAITS_H
 #define PACKAGED_TASK_TRAITS_H
 
-#include "packaged_tasks/partially_packaged_task.h"
+#include "partially_packaged_task.h"
 #include "computation_type.h"
 
 namespace celerity::algorithm::detail
@@ -37,9 +37,11 @@ struct packaged_task_traits
 };
 
 template <typename T, computation_type Computation>
-struct extended_packaged_task_traits{};
+struct extended_packaged_task_traits
+{
+};
 
-template<typename T>
+template <typename T>
 constexpr access_type get_second_input_access_type()
 {
     if constexpr (packaged_task_traits<T>::computation_type == computation_type::zip)
@@ -52,7 +54,7 @@ constexpr access_type get_second_input_access_type()
     }
 }
 
-template<typename T>
+template <typename T>
 constexpr inline auto second_input_access_type_v = get_second_input_access_type<T>();
 
 template <typename T>

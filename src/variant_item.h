@@ -23,7 +23,7 @@ public:
     }
 
     template <typename F>
-    auto apply(const F &f) const
+    auto apply(F f) const
     {
         switch (rank_)
         {

@@ -3,6 +3,7 @@
 
 #include "policy.h"
 #include "kernel_traits.h"
+#include "task.h"
 
 namespace celerity::algorithm
 {
@@ -26,7 +27,7 @@ template <typename ExecutionPolicy, typename F>
 auto master_task(ExecutionPolicy p, const F &f)
 {
     static_assert(std::is_same_v<non_blocking_master_execution_policy, std::decay_t<ExecutionPolicy>>, "non-blocking master only");
-    return scoped_sequence{actions::master_task(f), submit_to(p.q)};
+    return actions::master_task(f) | submit_to(p.q);
 }
 
 } // namespace celerity::algorithm

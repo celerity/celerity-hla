@@ -1,261 +1,105 @@
 #ifndef FUSION_H
 #define FUSION_H
 
-#include "transient.h"
+#include "fusion_traits.h"
+#include "computation_type_traits.h"
+
+#include "packaged_tasks/packaged_generate.h"
+#include "packaged_tasks/packaged_transform.h"
+#include "packaged_tasks/packaged_zip.h"
+
+#include "task.h"
 
 namespace celerity::algorithm
 {
 
-template <typename Task, typename SecondaryInputSequence>
-struct t_joint
+template <typename ExecutionPolicyA, typename KernelA, typename ExecutionPolicyB, typename KernelB>
+auto fuse(task_t<ExecutionPolicyA, KernelA> a, task_t<ExecutionPolicyB, KernelB> b)
 {
-public:
-    t_joint(Task task, SecondaryInputSequence sequence)
-        : task_(task), secondary_in_(sequence)
-    {
-    }
+    using new_execution_policy = named_distributed_execution_policy<
+        indexed_kernel_name_t<fused<ExecutionPolicyA, ExecutionPolicyB>>>;
 
-    auto operator()(celerity::distr_queue &queue) const
-    {
-        std::invoke(secondary_in_, queue);
-        return std::invoke(task_, queue);
-    }
+    using kernel_type = std::invoke_result_t<decltype(a.get_sequence()), handler &>;
+    using item_type = detail::arg_type_t<kernel_type, 0>;
 
-    auto get_in_beg() const { return task_.get_in_beg(); }
-    auto get_in_end() const { return task_.get_in_end(); }
-    auto get_out_iterator() const { return task_.get_out_iterator(); }
-    auto get_range() const { return task_.get_range(); }
+    auto seq = a.get_sequence() | b.get_sequence();
 
-    auto get_task() { return task_; }
-    auto get_secondary() { return secondary_in_; }
+    auto f = [=](handler &cgh) {
+        auto kernels = sequence(std::invoke(seq, cgh));
 
-private:
-    Task task_;
-    SecondaryInputSequence secondary_in_;
-};
+        return [=](item_type item) {
+            kernels(item);
+        };
+    };
 
-template <typename Task, typename SecondaryInputSequence>
-struct partial_t_joint
-{
-public:
-    partial_t_joint(Task task, SecondaryInputSequence sequence)
-        : task_(task), secondary_in_(sequence)
-    {
-    }
-
-    template <typename IteratorType>
-    auto complete(IteratorType beg, IteratorType end)
-    {
-        auto completed_task = task_.complete(beg, end);
-
-        using completed_task_type = decltype(completed_task);
-
-        if constexpr (detail::is_partially_packaged_task_v<completed_task_type>)
-        {
-            return partial_t_joint<completed_task_type, SecondaryInputSequence>{
-                completed_task, secondary_in_};
-        }
-        else
-        {
-            return t_joint<completed_task_type, SecondaryInputSequence>{
-                completed_task, secondary_in_};
-        }
-    }
-
-    auto get_in_beg() const { return task_.get_in_beg(); }
-    auto get_in_end() const { return task_.get_in_end(); }
-    auto get_range() const { return task_.get_range(); }
-
-private:
-    Task task_;
-    SecondaryInputSequence secondary_in_;
-};
-
-namespace detail
-{
-
-template <typename Task, typename SecondaryInputSequence>
-struct is_packaged_task<t_joint<Task, SecondaryInputSequence>>
-    : std::bool_constant<true>
-{
-};
-
-template <typename Task, typename SecondaryInputSequence>
-struct packaged_task_traits<t_joint<Task, SecondaryInputSequence>>
-{
-    using traits = packaged_task_traits<Task>;
-
-    static constexpr auto rank = traits::rank;
-    static constexpr auto computation_type = traits::computation_type;
-    static constexpr auto access_type = traits::access_type;
-
-    using input_iterator_type = typename traits::input_iterator_type;
-    using input_value_type = typename traits::input_value_type;
-    using output_value_type = typename traits::output_value_type;
-    using output_iterator_type = typename traits::output_iterator_type;
-};
-
-template <typename Task, typename SecondaryInputSequence>
-struct extended_packaged_task_traits<t_joint<Task, SecondaryInputSequence>, computation_type::zip>
-    : extended_packaged_task_traits<Task, computation_type::zip>
-{
-};
-
-template <typename Task, typename SecondaryInputSequence>
-struct is_partially_packaged_task<partial_t_joint<Task, SecondaryInputSequence>>
-    : std::bool_constant<true>
-{
-};
-
-template <typename Task, typename SecondaryInputSequence>
-struct packaged_task_traits<partial_t_joint<Task, SecondaryInputSequence>>
-{
-    using traits = packaged_task_traits<Task>;
-
-    static constexpr auto rank = traits::rank;
-    static constexpr auto computation_type = traits::computation_type;
-    static constexpr auto access_type = traits::access_type;
-
-    using input_iterator_type = typename traits::input_iterator_type;
-    using input_value_type = typename traits::input_value_type;
-    using output_value_type = typename traits::output_value_type;
-    using output_iterator_type = typename traits::output_iterator_type;
-};
-
-template <typename Task, typename SecondaryInputSequence>
-struct extended_packaged_task_traits<partial_t_joint<Task, SecondaryInputSequence>, computation_type::zip>
-    : extended_packaged_task_traits<Task, computation_type::zip>
-{
-};
-
-template <typename Task, typename SecondaryInputSequence>
-struct partially_packaged_task_traits<partial_t_joint<Task, SecondaryInputSequence>>
-    : partially_packaged_task_traits<Task>
-{
-};
-
-template <typename T>
-struct is_t_joint : std::bool_constant<false>
-{
-};
-
-template <typename Task, typename SecondaryInputSequence>
-struct is_t_joint<t_joint<Task, SecondaryInputSequence>>
-    : std::bool_constant<true>
-{
-};
-
-template <typename Task, typename SecondaryInputSequence>
-struct is_t_joint<partial_t_joint<Task, SecondaryInputSequence>>
-    : std::bool_constant<true>
-{
-};
-
-template <typename T>
-constexpr inline bool is_t_joint_v = is_t_joint<T>::value;
-
-template <typename T>
-struct t_joint_traits
-{
-    using task_type = void;
-    using secondary_input_sequence_type = sequence<>;
-};
-
-template <typename Task, typename SecondaryInputSequence>
-struct t_joint_traits<t_joint<Task, SecondaryInputSequence>>
-{
-    using task_type = Task;
-    using secondary_input_sequence_type = SecondaryInputSequence;
-};
-
-} // namespace detail
-
-std::string to_string(access_type type)
-{
-    switch (type)
-    {
-    case access_type::one_to_one:
-        return "one_to_one";
-    case access_type::slice:
-        return "slice";
-    case access_type::chunk:
-        return "chunk";
-    case access_type::all:
-        return "all";
-    case access_type::item:
-        return "item";
-    default:
-        return "none";
-    }
+    return task<new_execution_policy>(f);
 }
 
-std::string to_string(computation_type type)
+template <typename T, typename U, std::enable_if_t<is_fusable_source_v<T> && detail::computation_type_of_v<T, computation_type::transform> && is_fusable_sink_v<U>, int> = 0>
+auto operator|(T lhs, U rhs)
 {
-    switch (type)
-    {
-    case computation_type::generate:
-        return "generate";
-    case computation_type::transform:
-        return "transform";
-    case computation_type::zip:
-        return "zip";
-    case computation_type::reduce:
-        return "reduce";
-    default:
-        return "other";
-    }
+    return sequence(package_transform<access_type::one_to_one, true>(fuse(lhs.get_task(), rhs.get_task()),
+                                                                     lhs.get_in_beg(),
+                                                                     lhs.get_in_end(),
+                                                                     rhs.get_out_iterator()));
+
+    // Results in a linker error. Not sure why -> need further clarification from philip/peter
+    //
+    // return package_transform<access_type::one_to_one, true>(task<new_execution_policy>(seq),
+    //                                                     lhs.get_in_beg(),
+    //                                                     lhs.get_in_end(),
+    //                                                     t.get_out_iterator());
 }
 
-template <typename T>
-std::string to_string()
+template <typename T, typename U, std::enable_if_t<is_fusable_source_v<T> && detail::computation_type_of_v<T, computation_type::generate> && is_fusable_sink_v<U>, int> = 0>
+auto operator|(T lhs, U rhs)
 {
-    return typeid(T).name();
+    using output_value_type = typename detail::packaged_task_traits<U>::output_value_type;
+
+    auto out_beg = rhs.get_out_iterator();
+    auto out_end = end(out_beg.get_buffer());
+
+    return sequence(package_generate<output_value_type, true>(fuse(lhs.get_task(), rhs.get_task()), out_beg, out_end));
 }
 
-template <typename T, std::enable_if_t<detail::is_packaged_task_v<T>, int> = 0>
-void to_string(std::stringstream &ss, T task)
+template <typename T, typename U, std::enable_if_t<is_fusable_source_v<T> && detail::computation_type_of_v<T, computation_type::zip> && is_fusable_sink_v<U>, int> = 0>
+auto operator|(T lhs, U rhs)
 {
-    using traits = detail::packaged_task_traits<T>;
+    constexpr auto first_input_access_type = detail::packaged_task_traits<U>::access_type;
+    constexpr auto second_input_access_type = detail::extended_packaged_task_traits<U, computation_type::zip>::second_access_type;
 
-    ss << "packaged task:\n";
-    ss << "  is t-joint          : " << std::boolalpha << detail::is_t_joint_v<T> << "\n";
-    ss << "  type                : " << to_string(traits::computation_type) << "\n";
-    ss << "  rank                : " << traits::rank << "\n";
-    ss << "  access type         : " << to_string(traits::access_type) << "\n";
-    ss << "  input value type    : " << to_string<typename traits::input_value_type>() << "\n";
-    ss << "  output value type   : " << to_string<typename traits::output_value_type>() << "\n";
-    ss << "  input iterator type : " << to_string<typename traits::input_iterator_type>() << "\n";
-    ss << "  output iterator type: " << to_string<typename traits::output_iterator_type>() << "\n";
-
-    if constexpr (traits::computation_type == computation_type::zip)
-    {
-        using ext_traits = detail::extended_packaged_task_traits<T, computation_type::zip>;
-
-        ss << "\n";
-        ss << "  second input access type  : " << to_string(ext_traits::second_input_access_type) << "\n";
-        ss << "  second input value type   : " << to_string<typename ext_traits::second_input_value_type>() << "\n";
-        ss << "  second input iterator type: " << to_string<typename ext_traits::second_input_iterator_type>() << "\n";
-    }
-
-    ss << "\n\n";
+    return sequence(package_zip<first_input_access_type, second_input_access_type, true>(fuse(lhs.get_task(), rhs.get_task()),
+                                                                                         lhs.get_in_beg(),
+                                                                                         lhs.get_in_end(),
+                                                                                         lhs.get_second_in_beg(),
+                                                                                         rhs.get_out_iterator()));
 }
 
-template <typename T, size_t... Is, std::enable_if_t<is_sequence_v<T>, int> = 0>
-void to_string(std::stringstream &ss, T seq, std::index_sequence<Is...>)
+template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && detail::is_packaged_task_v<U> && (!is_fusable_source_v<T> || !is_fusable_sink_v<U>), int> = 0>
+auto operator|(T lhs, U rhs)
 {
-    ((to_string(ss, std::get<Is>(seq.actions()))), ...);
+    return sequence(lhs, rhs);
 }
 
-template <typename T, std::enable_if_t<detail::is_packaged_task_sequence_v<T>, int> = 0>
-std::string to_string(T seq)
+template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_sequence_v<T> && detail::is_packaged_task_v<U>, int> = 0>
+auto operator|(T lhs, U rhs)
 {
-    std::stringstream ss{};
+    return remove_last_element(lhs) | (get_last_element(lhs) | rhs);
+}
 
-    to_string(ss, seq, std::make_index_sequence<size_v<T>>{});
+template <typename... Actions, size_t... Is>
+auto fuse(const sequence<Actions...> &s, std::index_sequence<Is...>)
+{
+    const auto &actions = s.actions();
+    return (... | (std::get<Is>(actions)));
+}
 
-    return ss.str();
+template <typename... Actions>
+auto fuse(const sequence<Actions...> &s)
+{
+    return fuse(s, std::make_index_sequence<sizeof...(Actions)>{});
 }
 
 } // namespace celerity::algorithm
 
-#endif // FUSION_H
+#endif // FUSION_H`

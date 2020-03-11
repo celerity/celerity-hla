@@ -13,18 +13,6 @@
 namespace celerity::algorithm
 {
 
-template <typename T, std::enable_if_t<!detail::is_kernel_v<T>, int> = 0>
-auto to_kernel(T t)
-{
-	return sequence(t);
-}
-
-template <typename T, std::enable_if_t<detail::is_kernel_v<T>, int> = 0>
-auto to_kernel(T t)
-{
-	return t;
-}
-
 template <typename ExecutionPolicy, typename... Actions>
 class task_t;
 
@@ -51,13 +39,13 @@ public:
 
 		q.submit([seq = sequence_, d, beg](handler &cgh) {
 			const auto r = std::invoke(seq, cgh);
-			
+
 			using first_kernel_type = first_result_t<decltype(r)>;
 			using item_context_type = std::decay_t<detail::arg_type_t<first_kernel_type, 0>>;
-			
-			cgh.template parallel_for<KernelName>(d, *beg, [=](cl::sycl::item<Rank> item){
-				item_context_type ctx{ item };
-				std::invoke(sequence(r), ctx); 
+
+			cgh.template parallel_for<KernelName>(d, *beg, [=](cl::sycl::item<Rank> item) {
+				item_context_type ctx{item};
+				std::invoke(sequence(r), ctx);
 			});
 		});
 	}
@@ -91,7 +79,7 @@ public:
 				for_each_index(beg, end, d, *beg, [r](cl::sycl::item<Rank> item) {
 					item_context_type ctx{item};
 					std::invoke(sequence(r), ctx);
-		});
+				});
 			});
 		});
 	}
@@ -172,31 +160,7 @@ auto task(const sequence<Ts...> &seq)
 	using policy_type = strip_queue_t<ExecutionPolicy>;
 	return task_t<policy_type, Ts...>{seq};
 }
-
-template <typename ExecutionPolicyA, typename KernelA, typename ExecutionPolicyB, typename KernelB>
-auto fuse(task_t<ExecutionPolicyA, KernelA> a, task_t<ExecutionPolicyB, KernelB> b)
-{
-	using new_execution_policy = named_distributed_execution_policy<
-	 	indexed_kernel_name_t<fused<ExecutionPolicyA, ExecutionPolicyB>>>;
-
-	using kernel_type = std::invoke_result_t<decltype(a.get_sequence()), handler&>;
-	using item_type = detail::arg_type_t<kernel_type, 0>;
-
-    auto seq = a.get_sequence() | b.get_sequence();
-
-    auto f = [=](handler& cgh)
-    {
-        auto kernels = sequence(std::invoke(seq, cgh));
-
-        return [=](item_type item)
-        {
-            kernels(item);
-        };
-    };
-
-	return task<new_execution_policy>(f);
-}
-
+ // namespace celerity::algorithm
 template <typename F>
 struct is_task : std::bool_constant<false>
 {

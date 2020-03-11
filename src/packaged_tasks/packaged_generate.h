@@ -6,6 +6,7 @@
 #include "../accessor_type.h"
 #include "../computation_type.h"
 #include "../packaged_task_traits.h"
+#include "../partially_packaged_task.h"
 
 namespace celerity::algorithm
 {
@@ -33,11 +34,11 @@ public:
     OutputIteratorType get_out_beg() const { return out_beg_; }
     OutputIteratorType get_out_end() const { return out_end_; }
 
-    auto get_task() const 
-    { 
-        if constexpr(Fused)
+    auto get_task() const
+    {
+        if constexpr (Fused)
         {
-            return functor_; 
+            return functor_;
         }
         else
         {
@@ -68,15 +69,15 @@ class partially_packaged_generate
 {
 public:
     static_assert(!std::is_void_v<OutputValueType>);
- 
+
     partially_packaged_generate(FunctorType functor, cl::sycl::range<Rank> range)
         : functor_(functor), range_(range)
     {
     }
 
-    template<typename OutIteratorType>
-    auto complete(OutIteratorType beg, OutIteratorType end) const 
-    { 
+    template <typename OutIteratorType>
+    auto complete(OutIteratorType beg, OutIteratorType end) const
+    {
         return package_generate<OutputValueType>(functor_, beg, end);
     }
 
@@ -131,14 +132,14 @@ struct packaged_task_traits<partially_packaged_generate<FunctorType, OutputValue
     using input_value_type = void;
     using input_iterator_type = void;
     using output_value_type = OutputValueType;
-    using output_iterator_type = void;  
+    using output_iterator_type = void;
 };
 
 template <typename FunctorType, typename OutputValueType, int Rank>
-struct partially_packaged_task_traits<partially_packaged_generate<FunctorType, OutputValueType, Rank>> 
+struct partially_packaged_task_traits<partially_packaged_generate<FunctorType, OutputValueType, Rank>>
     : packaged_task_traits<partially_packaged_generate<FunctorType, OutputValueType, Rank>>
 {
-    static constexpr auto requirement = stage_requirement::output; 
+    static constexpr auto requirement = stage_requirement::output;
 };
 
 } // namespace detail

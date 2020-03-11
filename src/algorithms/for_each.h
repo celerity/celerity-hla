@@ -6,9 +6,7 @@
 #include "../task_sequence.h"
 #include "../accessor_proxy.h"
 #include "../policy.h"
-#include "../scoped_sequence.h"
-#include "../packaged_task.h"
-#include "../placeholder.h"
+#include "../sequencing.h"
 
 namespace celerity::algorithm
 {
@@ -47,7 +45,7 @@ template <typename ExecutionPolicy, typename T, int Rank, typename F,
           typename = std::enable_if_t<detail::get_accessor_type<F, 0>() == access_type::item>>
 auto for_each(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
-    return scoped_sequence{actions::for_each<ExecutionPolicy>(beg, end, f), submit_to(p.q)};
+    return std::invoke(actions::for_each<ExecutionPolicy>(beg, end, f), p.q);
 }
 
 template <typename ExecutionPolicy, typename T, int Rank, typename F,

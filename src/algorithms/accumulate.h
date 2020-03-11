@@ -6,9 +6,7 @@
 #include "../task_sequence.h"
 #include "../accessor_proxy.h"
 #include "../policy.h"
-#include "../scoped_sequence.h"
-#include "../packaged_task.h"
-#include "../placeholder.h"
+#include "../sequencing.h"
 
 namespace celerity::algorithm
 {
@@ -49,7 +47,7 @@ auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator
 template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank>
 auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
 {
-	return scoped_sequence{actions::accumulate(p, beg, end, init, op), submit_to(p.q)};
+	return std::invoke(actions::accumulate(p, beg, end, init, op), p.q);
 }
 
 template <typename KernelName, typename BinaryOp, typename T, int Rank>

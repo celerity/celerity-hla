@@ -6,9 +6,7 @@
 #include "../task_sequence.h"
 #include "../accessor_proxy.h"
 #include "../policy.h"
-#include "../scoped_sequence.h"
-#include "../packaged_task.h"
-#include "../placeholder.h"
+#include "../sequencing.h"
 
 namespace celerity::algorithm
 {
@@ -55,7 +53,7 @@ auto fill(cl::sycl::range<Rank> range, const T &value)
 template <typename ExecutionPolicy, typename T, int Rank>
 auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
 {
-    return scoped_sequence{actions::fill<ExecutionPolicy>(beg, end, value), submit_to(p.q)};
+    return std::invoke(actions::fill<ExecutionPolicy>(beg, end, value), p.q);
 }
 
 template <typename KernelName, typename T, int Rank>

@@ -6,9 +6,7 @@
 #include "../task_sequence.h"
 #include "../accessor_proxy.h"
 #include "../policy.h"
-#include "../scoped_sequence.h"
-#include "../packaged_task.h"
-#include "../placeholder.h"
+#include "../sequencing.h"
 
 namespace celerity::algorithm
 {
@@ -34,7 +32,7 @@ auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 		}
 		else
 		{
-			throw std::runtime_error("not supported");
+			static_assert(std::is_void_v<T>, "not supported");
 			//return [=](auto item) mutable { *out_copy++ = in_acc[item]; };
 		}
 	};
@@ -53,7 +51,7 @@ auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
 auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
 {
-	return scoped_sequence{actions::copy(p, beg, end, out), submit_to(p.q)};
+	return std::invoke(actions::copy(p, beg, end, out), p.q);
 }
 
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>

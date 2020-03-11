@@ -8,7 +8,7 @@
 #include "accessor_type.h"
 #include "iterator.h"
 #include "policy.h"
-#include "fusion.h"
+#include "item_context.h"
 
 #include <type_traits>
 #include <cmath>
@@ -121,6 +121,7 @@ public:
 template <typename ExecutionPolicy, cl::sycl::access::mode Mode, typename AccessorType, template <typename, int> typename Iterator, typename T, int Rank>
 auto get_access(celerity::handler &cgh, Iterator<T, Rank> beg, Iterator<T, Rank> end)
 {
+	// TODO: move accessor creation into proxy
 	if constexpr (policy_traits<ExecutionPolicy>::is_distributed)
 	{
 		auto acc = beg.get_buffer().template get_access<Mode>(cgh, detail::accessor_traits<Rank, AccessorType>::range_mapper());

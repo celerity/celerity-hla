@@ -6,7 +6,7 @@
 #include "../accessor_type.h"
 #include "../computation_type.h"
 #include "../packaged_task_traits.h"
-#include "partially_packaged_task.h"
+#include "../partially_packaged_task.h"
 #include "../accessor_type.h"
 
 namespace celerity::algorithm

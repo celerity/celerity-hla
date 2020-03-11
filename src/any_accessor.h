@@ -35,16 +35,6 @@ public:
         placement_copy_construct(&storage_, acc);
     }
 
-    /*any_accessor(const any_accessor &that)
-        : rank_(that.rank_),
-          mode_(that.mode_),
-          target_(that.target_)
-    {
-        that.apply([this](auto acc) {
-            placement_copy_construct(&storage_, acc);
-        });
-    }*/
-
     any_accessor(const any_accessor &that) = delete;
     any_accessor(any_accessor &&) = delete;
     any_accessor &operator=(const any_accessor &) = delete;
