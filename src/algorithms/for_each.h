@@ -34,9 +34,8 @@ auto for_each(InIterator<T, Rank> beg, InIterator<T, Rank> end, const F &f)
 template <typename ExecutionPolicy, typename T, int Rank, typename F>
 auto for_each(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
-    return [=, t = task<ExecutionPolicy>(detail::for_each<ExecutionPolicy>(beg, end, f))](distr_queue q) {
-        return t(q, beg, end);
-    };
+    const auto t = task<ExecutionPolicy>(detail::for_each<ExecutionPolicy>(beg, end, f));
+    return [=](distr_queue q) { t(q, beg, end); };
 }
 
 } // namespace actions

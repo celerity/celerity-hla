@@ -46,11 +46,8 @@ auto generate(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const 
 {
     static_assert(algorithm::detail::get_accessor_type<F, 0>() == access_type::item);
 
-    using value_type = std::invoke_result_t<F, cl::sycl::item<Rank>>;
-
-    return package_generate<value_type>(
-        [f](auto _beg, auto _end) { return task<ExecutionPolicy>(detail::generate<ExecutionPolicy>(_beg, _end, f)); },
-        beg, end);
+    const auto t = task<ExecutionPolicy>(detail::generate<ExecutionPolicy>(beg, end, f));
+    return [=](distr_queue q) { t(q, beg, end); };
 }
 
 template <typename ExecutionPolicy, typename F, int Rank,

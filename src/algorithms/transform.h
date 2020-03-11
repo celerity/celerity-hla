@@ -126,11 +126,8 @@ template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F
                              int> = 0>
 auto transform(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
-    constexpr auto access_type = algorithm::detail::get_accessor_type<F, 0>();
-
-    return package_transform<access_type, true>(
-        task<ExecutionPolicy>(detail::transform<ExecutionPolicy>(beg, end, out, f)),
-        beg, end, out);
+    const auto t = task<ExecutionPolicy>(detail::transform<ExecutionPolicy>(beg, end, out, f));
+    return [=](distr_queue q) { t(q, beg, end); };
 }
 
 template <typename ExecutionPolicy, typename F,
@@ -151,11 +148,8 @@ template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F
                              int> = 0>
 auto transform(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
 {
-    constexpr auto access_type = algorithm::detail::get_accessor_type<F, 1>();
-
-    return package_transform<access_type>(
-        task<ExecutionPolicy>(detail::transform<ExecutionPolicy, true>(beg, end, out, f)),
-        beg, end, out);
+    const auto t = task<ExecutionPolicy>(detail::transform<ExecutionPolicy>(beg, end, out, f));
+    return [=](distr_queue q) { t(q, beg, end); };
 }
 
 template <typename ExecutionPolicy, typename F,
@@ -176,16 +170,8 @@ template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F
                              int> = 0>
 auto transform(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
-    constexpr auto first_access_type = algorithm::detail::get_accessor_type<F, 0>();
-    constexpr auto second_access_type = algorithm::detail::get_accessor_type<F, 1>();
-
     const auto t = task<ExecutionPolicy>(detail::transform<ExecutionPolicy>(beg, end, beg2, out, f));
-
     return [=](distr_queue q) { t(q, beg, end); };
-
-    /*return package_zip<first_access_type, second_access_type, true>(
-        task<ExecutionPolicy>(detail::transform<ExecutionPolicy>(beg, end, beg2, out, f)),
-        beg, end, beg2, out);*/
 }
 
 template <typename ExecutionPolicy, typename F,
@@ -205,12 +191,8 @@ template <typename ExecutionPolicy, typename T, int Rank, typename F, typename U
           ::std::enable_if_t<algorithm::detail::arity_v<F> == 3, int> = 0>
 auto transform(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
 {
-    constexpr auto first_access_type = algorithm::detail::get_accessor_type<F, 1>();
-    constexpr auto second_access_type = algorithm::detail::get_accessor_type<F, 2>();
-
-    return package_zip<first_access_type, second_access_type, true>(
-        task<ExecutionPolicy>(detail::transform<ExecutionPolicy>(beg, end, beg2, out, f)),
-        beg, end, beg2, out);
+    const auto t = task<ExecutionPolicy>(detail::transform<ExecutionPolicy>(beg, end, beg2, out, f));
+    return [=](distr_queue q) { t(q, beg, end); };
 }
 
 template <typename ExecutionPolicy, typename F,

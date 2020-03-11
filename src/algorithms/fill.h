@@ -35,9 +35,8 @@ auto fill(IteratorType<T, Rank> beg, IteratorType<T, Rank> end, const T &value)
 template <typename ExecutionPolicy, typename T, int Rank>
 auto fill(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
 {
-    return package_generate<T>(
-        [value](auto _beg, auto _end) { return task<ExecutionPolicy>(detail::fill<ExecutionPolicy>(_beg, _end, value)); },
-        beg, end);
+    const auto t = task<ExecutionPolicy>(detail::fill<ExecutionPolicy>(beg, end, value));
+    return [=](distr_queue q) { t(q, beg, end); };
 }
 
 template <typename ExecutionPolicy, typename T, int Rank>
