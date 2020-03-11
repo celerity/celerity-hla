@@ -103,9 +103,41 @@ public:
 	template <typename V>
 	chunk<T, Extents...> &operator=(const V &) = delete;
 
+	bool is_on_boundary() const
+	{
+		return dispatch_is_on_boundary(item_.get_range(), std::make_index_sequence<rank>());
+	}
+
 	bool is_on_boundary(cl::sycl::range<rank> range) const
 	{
 		return dispatch_is_on_boundary(range, std::make_index_sequence<rank>());
+	}
+
+	template <typename F, typename G,
+			  std::enable_if_t<std::is_invocable_v<F> && std::is_invocable_v<G>, int> = 0>
+	auto discern(F on_bounds_functor, G in_bounds_functor) const
+	{
+		return is_on_boundary()
+				   ? std::invoke(on_bounds_functor)
+				   : std::invoke(in_bounds_functor);
+	}
+
+	template <typename F, typename G,
+			  std::enable_if_t<std::is_invocable_v<G> && std::is_same_v<F, std::invoke_result_t<G>>, int> = 0>
+	auto discern(F on_bounds_value, G in_bounds_functor) const
+	{
+		return is_on_boundary()
+				   ? on_bounds_value
+				   : std::invoke(in_bounds_functor);
+	}
+
+	template <typename F, typename G,
+			  std::enable_if_t<std::is_invocable_v<F> && std::is_same_v<G, std::invoke_result_t<F>>, int> = 0>
+	auto discern(F on_bounds_functor, G in_bounds_value) const
+	{
+		return is_on_boundary()
+				   ? std::invoke(on_bounds_functor)
+				   : in_bounds_value;
 	}
 
 private:

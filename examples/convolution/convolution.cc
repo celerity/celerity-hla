@@ -51,9 +51,6 @@ int main(int argc, char *argv[])
 	using f = celerity::algorithm::buffer_traits<float, 2>;
 	using f3 = celerity::algorithm::buffer_traits<cl::sycl::float3, 2>;
 
-	cl::sycl::range<2> image_range(image_height, image_width);
-	cl::sycl::range<2> gauss_mat_range(FILTER_SIZE, FILTER_SIZE);
-
 	const auto generate_gaussian_mat = [](cl::sycl::item<2> item) {
 		const auto x = item.get_id(1) - (FILTER_SIZE / 2);
 		const auto y = item.get_id(0) - (FILTER_SIZE / 2);
@@ -61,45 +58,42 @@ int main(int argc, char *argv[])
 		return cl::sycl::exp(-1.f * (x * x + y * y) / (2 * sigma * sigma)) / (2 * PI * sigma * sigma);
 	};
 
-	const auto gaussian_blur = [fs = FILTER_SIZE, image_range](const f3::chunk<FILTER_SIZE, FILTER_SIZE> &in, const f::all &gauss) {
+	const auto gaussian_blur = [fs = FILTER_SIZE](const f3::chunk<FILTER_SIZE, FILTER_SIZE> &in, const f::all &gauss) {
 		using cl::sycl::float3;
 
-		if (in.is_on_boundary(image_range))
-		{
-			return float3(0.f, 0.f, 0.f);
-		}
+		return in.discern(float3(0.f, 0.f, 0.f),
+						  [&]() {
+							  float3 sum = {0.f, 0.f, 0.f};
+							  for (auto y = -(fs / 2); y < fs / 2; ++y)
+							  {
+								  for (auto x = -(fs / 2); x < fs / 2; ++x)
+								  {
+									  sum += gauss[{static_cast<size_t>(fs / 2 + y), static_cast<size_t>(fs / 2 + x)}] * in[{y, x}];
+								  }
+							  }
 
-		float3 sum = {0.f, 0.f, 0.f};
-		for (auto y = -(fs / 2); y < fs / 2; ++y)
-		{
-			for (auto x = -(fs / 2); x < fs / 2; ++x)
-			{
-				sum += gauss[{static_cast<size_t>(fs / 2 + y), static_cast<size_t>(fs / 2 + x)}] * in[{y, x}];
-			}
-		}
-
-		return sum;
+							  return sum;
+						  });
 	};
 
-	const auto sharpening = [image_range](f3::chunk<3, 3> in) {
+	const auto sharpening = [](f3::chunk<3, 3> in) {
 		using cl::sycl::float3;
-		if (in.is_on_boundary(image_range))
-		{
-			return float3(0.f, 0.f, 0.f);
-		}
 
-		float3 sum = 5.f * (*in);
-		sum -= in[{-1, 0}];
-		sum -= in[{1, 0}];
-		sum -= in[{0, -1}];
-		sum -= in[{0, 1}];
+		return in.discern(float3(0.f, 0.f, 0.f),
+						  [&]() {
+							  float3 sum = 5.f * (*in);
+							  sum -= in[{-1, 0}];
+							  sum -= in[{1, 0}];
+							  sum -= in[{0, -1}];
+							  sum -= in[{0, 1}];
 
-		return float3{
-			std::max(0.f, std::min(1.f, sum.x())),
-			std::max(0.f, std::min(1.f, sum.y())),
-			std::max(0.f, std::min(1.f, sum.z()))};
+							  return float3{
+								  std::max(0.f, std::min(1.f, sum.x())),
+								  std::max(0.f, std::min(1.f, sum.y())),
+								  std::max(0.f, std::min(1.f, sum.z()))};
 
-		//return fmax(float3(0, 0, 0), fmin(float3(1.f, 1.f, 1.f), sum)); HIP ERROR 77
+							  //return fmax(float3(0, 0, 0), fmin(float3(1.f, 1.f, 1.f), sum)); HIP ERROR 77
+						  });
 	};
 
 	const auto convert_to_uint8 = [](cl::sycl::float3 c) -> uchar3 {
@@ -110,6 +104,8 @@ int main(int argc, char *argv[])
 	};
 
 	distr_queue queue;
+	cl::sycl::range<2> image_range(image_height, image_width);
+	cl::sycl::range<2> gauss_mat_range(FILTER_SIZE, FILTER_SIZE);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	celerity::experimental::bench::begin("main program");
