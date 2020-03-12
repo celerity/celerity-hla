@@ -104,9 +104,6 @@ int main(int argc, char *argv[])
 	cl::sycl::range<2> image_range(image_height, image_width);
 	cl::sycl::range<2> gauss_range(FILTER_SIZE, FILTER_SIZE);
 
-	MPI_Barrier(MPI_COMM_WORLD);
-	celerity::experimental::bench::begin("main program");
-
 	auto out_buf = make_buffer(image_input.data(), image_range) |
 				   transform<class _1>(kernels::blur) << generate<class _2>(gauss_range, kernels::gen_gauss) |
 				   transform<class _3>(kernels::sharpen) |
