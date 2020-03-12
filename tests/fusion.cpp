@@ -10,6 +10,7 @@ using namespace celerity::algorithm;
 #pragma clang diagnostic warning "-Wall"
 
 #include "../src/actions.h"
+#include "../src/fusion_helper.h"
 
 SCENARIO("Fusing two tasks", "[fusion::simple]")
 {
