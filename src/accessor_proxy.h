@@ -71,13 +71,16 @@ class accessor_proxy<T, Rank, AccessorType, all<T, Rank>>
 public:
 	using base = accessor_proxy_base<AccessorType>;
 
-	explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank>)
-		: base(acc) {}
+	explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank> range)
+		: base(acc), range_(range) {}
 
 	all<T, Rank> operator[](const cl::sycl::item<Rank>) const
 	{
-		return {base::get_accessor()};
+		return {base::get_accessor(), range_};
 	}
+
+private:
+	cl::sycl::range<Rank> range_;
 };
 
 template <typename T, int Rank, typename AccessorType, size_t Dim>
