@@ -48,23 +48,25 @@ int main(int argc, char *argv[])
 		distr_queue queue;
 		const auto mat_range = cl::sycl::range<2>{MAT_SIZE, MAT_SIZE};
 
+		MPI_Barrier(MPI_COMM_WORLD);
+		celerity::experimental::bench::begin("main program");
+
 		auto mat_b =
-			generate<class gen_b>(mat_range, kernels::gen_b) |
+			generate<class _1>(mat_range, kernels::gen_b) |
 			submit_to(queue);
 
 		auto out_buf =
-			generate<class gen_a>(mat_range, kernels::gen_a) |
-			transform<class mul_a_b>(kernels::multiply) << mat_b |
-			transform<class mul_ab_b>(kernels::multiply) << mat_b |
+			generate<class _2>(mat_range, kernels::gen_a) |
+			transform<class _3>(kernels::multiply) << mat_b |
+			transform<class _4>(kernels::multiply) << mat_b |
 			submit_to(queue);
-
-		MPI_Barrier(MPI_COMM_WORLD);
-		celerity::experimental::bench::begin("main program");
 
 		master_task(algorithm::master(queue), [=, &verification_passed](auto &cgh) {
 			auto r_d = out_buf.get_access<cl::sycl::access::mode::read>(cgh, out_buf.get_range());
 
 			return [=, &verification_passed]() {
+				celerity::experimental::bench::end("main program");
+
 				for (size_t i = 0; i < MAT_SIZE; ++i)
 				{
 					for (size_t j = 0; j < MAT_SIZE; ++j)
