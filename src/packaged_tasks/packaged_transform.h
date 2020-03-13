@@ -12,7 +12,7 @@
 namespace celerity::algorithm
 {
 
-template <int Rank, access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType, bool Fused = false>
+template <int Rank, access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType>
 class packaged_transform
 {
 public:
@@ -33,18 +33,7 @@ public:
         return out_beg_.get_buffer();
     }
 
-    auto get_task() const
-    {
-        if constexpr (Fused)
-            return functor_;
-        else
-            return functor_(in_beg_, in_end_, out_beg_);
-    }
-
-    Functor get_computation_functor() const
-    {
-        return functor_;
-    }
+    auto get_task() const { return functor_; }
 
     InputIteratorType get_in_beg() const { return in_beg_; }
     InputIteratorType get_in_end() const { return in_end_; }
@@ -57,22 +46,14 @@ private:
     OutputIteratorType out_beg_;
 };
 
-template <access_type InputAccessType, bool Fused, typename FunctorType, template <typename, int> typename InIteratorType, template <typename, int> typename OutIteratorType, typename InputValueType, typename OutputValueType, int Rank>
-auto package_transform(FunctorType task,
-                       InIteratorType<InputValueType, Rank> in_beg,
-                       InIteratorType<InputValueType, Rank> in_end,
-                       OutIteratorType<OutputValueType, Rank> out_beg)
-{
-    return packaged_transform<Rank, InputAccessType, FunctorType, InIteratorType<InputValueType, Rank>, OutIteratorType<OutputValueType, Rank>, Fused>(task, in_beg, in_end, out_beg);
-}
-
 template <access_type InputAccessType, typename FunctorType, template <typename, int> typename InIteratorType, template <typename, int> typename OutIteratorType, typename InputValueType, typename OutputValueType, int Rank>
 auto package_transform(FunctorType task,
                        InIteratorType<InputValueType, Rank> in_beg,
                        InIteratorType<InputValueType, Rank> in_end,
                        OutIteratorType<OutputValueType, Rank> out_beg)
 {
-    return packaged_transform<Rank, InputAccessType, FunctorType, InIteratorType<InputValueType, Rank>, OutIteratorType<OutputValueType, Rank>, false>(task, in_beg, in_end, out_beg);
+    return packaged_transform<Rank, InputAccessType, FunctorType, InIteratorType<InputValueType, Rank>, OutIteratorType<OutputValueType, Rank>>(
+        task, in_beg, in_end, out_beg);
 }
 
 template <int Rank, access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputIteratorType>
@@ -87,7 +68,8 @@ public:
     template <typename Iterator>
     auto complete(Iterator beg, Iterator) const
     {
-        return package_transform<InputAccessType>(f_, in_beg_, in_end_, beg);
+        const auto f = std::invoke(f_, in_beg_, in_end_, beg);
+        return package_transform<InputAccessType>(f, in_beg_, in_end_, beg);
     }
 
     InputIteratorType get_in_beg() const { return in_beg_; }
@@ -133,8 +115,8 @@ auto package_transform(FunctorType functor)
 namespace detail
 {
 
-template <int Rank, access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType, bool Fused>
-struct is_packaged_task<packaged_transform<Rank, InputAccessType, Functor, InputIteratorType, OutputIteratorType, Fused>>
+template <int Rank, access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType>
+struct is_packaged_task<packaged_transform<Rank, InputAccessType, Functor, InputIteratorType, OutputIteratorType>>
     : std::true_type
 {
 };
@@ -151,8 +133,8 @@ struct is_partially_packaged_task<partially_packaged_transform_0<InputAccessType
 {
 };
 
-template <int Rank, access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType, bool Fused>
-struct packaged_task_traits<packaged_transform<Rank, InputAccessType, Functor, InputIteratorType, OutputIteratorType, Fused>>
+template <int Rank, access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType>
+struct packaged_task_traits<packaged_transform<Rank, InputAccessType, Functor, InputIteratorType, OutputIteratorType>>
 {
     static constexpr auto rank = Rank;
     static constexpr auto computation_type = computation_type::transform;

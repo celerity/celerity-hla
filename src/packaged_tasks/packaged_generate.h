@@ -11,13 +11,11 @@
 namespace celerity::algorithm
 {
 
-template <typename FunctorType, typename OutputValueType, typename OutputIteratorType, int Rank, bool Fused>
+template <typename FunctorType, typename OutputValueType, typename OutputIteratorType, int Rank>
 class packaged_generate
 {
 public:
     static_assert(!std::is_void_v<OutputValueType>);
-
-    // static_assert(std::is_convertible_v<input_value_type, output_value_type>);
 
     packaged_generate(FunctorType functor, OutputIteratorType out_beg, OutputIteratorType out_end)
         : functor_(functor), out_beg_(out_beg), out_end_(out_end)
@@ -34,17 +32,7 @@ public:
     OutputIteratorType get_out_beg() const { return out_beg_; }
     OutputIteratorType get_out_end() const { return out_end_; }
 
-    auto get_task() const
-    {
-        if constexpr (Fused)
-        {
-            return functor_;
-        }
-        else
-        {
-            return functor_(out_beg_, out_end_);
-        }
-    }
+    auto get_task() const { return functor_; }
 
 private:
     FunctorType functor_;
@@ -55,13 +43,7 @@ private:
 template <typename InputValueType, typename FunctorType, template <typename, int> typename OutIteratorType, typename OutputValueType, int Rank>
 auto package_generate(FunctorType functor, OutIteratorType<OutputValueType, Rank> out_beg, OutIteratorType<OutputValueType, Rank> out_end)
 {
-    return packaged_generate<FunctorType, InputValueType, OutIteratorType<OutputValueType, Rank>, Rank, false>(functor, out_beg, out_end);
-}
-
-template <typename InputValueType, bool Fused, typename FunctorType, template <typename, int> typename OutIteratorType, typename OutputValueType, int Rank>
-auto package_generate(FunctorType functor, OutIteratorType<OutputValueType, Rank> out_beg, OutIteratorType<OutputValueType, Rank> out_end)
-{
-    return packaged_generate<FunctorType, InputValueType, OutIteratorType<OutputValueType, Rank>, Rank, Fused>(functor, out_beg, out_end);
+    return packaged_generate<FunctorType, InputValueType, OutIteratorType<OutputValueType, Rank>, Rank>(functor, out_beg, out_end);
 }
 
 template <typename FunctorType, typename OutputValueType, int Rank>
@@ -78,7 +60,8 @@ public:
     template <typename OutIteratorType>
     auto complete(OutIteratorType beg, OutIteratorType end) const
     {
-        return package_generate<OutputValueType>(functor_, beg, end);
+        const auto f = std::invoke(functor_, beg, end);
+        return package_generate<OutputValueType>(f, beg, end);
     }
 
     cl::sycl::range<Rank> get_range() { return range_; }
@@ -97,8 +80,8 @@ auto package_generate(FunctorType functor, cl::sycl::range<Rank> range)
 namespace detail
 {
 
-template <typename FunctorType, typename InputValueType, typename OutputIteratorType, int Rank, bool Fused>
-struct is_packaged_task<packaged_generate<FunctorType, InputValueType, OutputIteratorType, Rank, Fused>>
+template <typename FunctorType, typename InputValueType, typename OutputIteratorType, int Rank>
+struct is_packaged_task<packaged_generate<FunctorType, InputValueType, OutputIteratorType, Rank>>
     : std::true_type
 {
 };
@@ -109,8 +92,8 @@ struct is_partially_packaged_task<partially_packaged_generate<FunctorType, Input
 {
 };
 
-template <typename FunctorType, typename OutputValueType, typename OutputIteratorType, int Rank, bool Fused>
-struct packaged_task_traits<packaged_generate<FunctorType, OutputValueType, OutputIteratorType, Rank, Fused>>
+template <typename FunctorType, typename OutputValueType, typename OutputIteratorType, int Rank>
+struct packaged_task_traits<packaged_generate<FunctorType, OutputValueType, OutputIteratorType, Rank>>
 {
     static constexpr auto rank = Rank;
     static constexpr auto computation_type = computation_type::generate;

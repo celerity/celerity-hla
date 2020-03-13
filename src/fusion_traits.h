@@ -20,6 +20,9 @@ inline constexpr bool is_fusable_source_v = detail::is_packaged_task_v<T> &&has_
 template <typename T>
 inline constexpr bool is_fusable_sink_v = detail::is_packaged_task_v<T> &&has_transient_input_v<T> && !detail::is_t_joint_v<T>;
 
+template <typename T, typename U>
+inline constexpr bool are_fusable_v = is_fusable_source_v<T> &&is_fusable_sink_v<U>;
+
 } // namespace celerity::algorithm
 
 #endif // FUSION_TRAITS_H
