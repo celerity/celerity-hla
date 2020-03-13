@@ -6,6 +6,8 @@
 #include "accessors.h"
 #include "accessor_traits.h"
 #include "accessor_type.h"
+#include "accessor_iterator.h"
+
 #include "iterator.h"
 #include "policy.h"
 #include "item_context.h"
