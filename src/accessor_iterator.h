@@ -2,6 +2,7 @@
 #define ACCESSOR_ITERATOR_H
 
 #include "accessors.h"
+#include "iterator.h"
 
 namespace celerity::algorithm
 {
