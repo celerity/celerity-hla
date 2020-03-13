@@ -7,10 +7,27 @@
 #include "../../src/actions.h"
 #include "../../src/buffer_traits.h"
 
+#include <numeric>
+
 constexpr auto MAT_SIZE = 1024;
 
 using namespace celerity;
 using namespace algorithm;
+
+namespace kernels
+{
+constexpr auto gen_a = [](cl::sycl::item<2> item) {
+	return static_cast<float>(item.get_id(0) == item.get_id(1));
+};
+
+constexpr auto gen_b = [](cl::sycl::item<2> item) {
+	return gen_a(item) * 2;
+};
+
+constexpr auto multiply = [](const slice_f<1> &a, const slice_f<0> &b) {
+	return std::inner_product(begin(a), end(a), begin(b), 0.f);
+};
+} // namespace kernels
 
 int main(int argc, char *argv[])
 {
@@ -29,53 +46,20 @@ int main(int argc, char *argv[])
 		using t = celerity::algorithm::buffer_traits<float, 2>;
 
 		distr_queue queue;
-
-		auto gen_a = [](cl::sycl::item<2> item) {
-			return static_cast<float>(item.get_id(0) == item.get_id(1));
-		};
-
-		auto gen_b = [gen_a](cl::sycl::item<2> item) {
-			return gen_a(item) * 2;
-		};
-
-		auto multiply = [](const t::slice<1> &a, const t::slice<0> &b) {
-			auto sum = 0.f;
-
-			for (auto k = 0; k < MAT_SIZE; ++k)
-			{
-				const auto a_ik = a[k];
-				const auto b_kj = b[k];
-				sum += a_ik * b_kj;
-			}
-
-			return sum;
-		};
-
 		const auto mat_range = cl::sycl::range<2>{MAT_SIZE, MAT_SIZE};
 
 		auto mat_b =
-			generate<class gen_b>(mat_range, gen_b) |
+			generate<class gen_b>(mat_range, kernels::gen_b) |
 			submit_to(queue);
 
-		// auto out_buf =
-		// 	generate<class gen_a>(mat_range, gen_a) |
-		// 	transform<class mul_a_b>(multiply) << mat_b |
-		// 	transform<class mul_ab_b>(multiply) << mat_b |
-		// 	submit_to(queue);
-
-		auto seq = generate<class gen_a>(cl::sycl::range<2>{MAT_SIZE, MAT_SIZE}, gen_a) |
-				   transform<class mul_a_b>(multiply) << mat_b |
-				   transform<class mul_ab_b>(multiply) << mat_b;
-
-		auto fused = fuse(terminate(seq));
+		auto out_buf =
+			generate<class gen_a>(mat_range, kernels::gen_a) |
+			transform<class mul_a_b>(kernels::multiply) << mat_b |
+			transform<class mul_ab_b>(kernels::multiply) << mat_b |
+			submit_to(queue);
 
 		MPI_Barrier(MPI_COMM_WORLD);
 		celerity::experimental::bench::begin("main program");
-
-		auto out_buf = std::get<2>(fused(queue));
-
-		// static_assert(size_v<decltype(terminate(seq))> == 3);
-		// static_assert(size_v<decltype(fuse(terminate(seq)))> == 3);
 
 		master_task(algorithm::master(queue), [=, &verification_passed](auto &cgh) {
 			auto r_d = out_buf.get_access<cl::sycl::access::mode::read>(cgh, out_buf.get_range());
