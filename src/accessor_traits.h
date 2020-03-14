@@ -9,7 +9,7 @@ template <int Rank, typename AccessorType>
 struct accessor_traits;
 
 template <int Rank>
-struct accessor_traits<Rank, one_to_one>
+struct accessor_traits<Rank, detail::one_to_one>
 {
     static auto range_mapper()
     {

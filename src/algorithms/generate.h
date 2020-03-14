@@ -10,13 +10,12 @@
 
 namespace celerity::algorithm
 {
-namespace actions
-{
+
 namespace detail
 {
 
 template <typename ExecutionPolicy, typename F, template <typename, int> typename IteratorType, typename T, int Rank>
-auto generate(IteratorType<T, Rank> beg, IteratorType<T, Rank> end, const F &f)
+auto generate_impl(IteratorType<T, Rank> beg, IteratorType<T, Rank> end, const F &f)
 {
     using namespace traits;
     using namespace cl::sycl::access;
@@ -41,15 +40,13 @@ auto generate(IteratorType<T, Rank> beg, IteratorType<T, Rank> end, const F &f)
     };
 }
 
-} // namespace detail
-
 template <typename ExecutionPolicy, typename F, typename T, int Rank,
           require<traits::arity_v<F> == 1> = yes>
 auto generate(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
     static_assert(traits::get_accessor_type<F, 0>() == access_type::item);
 
-    const auto t = task<ExecutionPolicy>(detail::generate<ExecutionPolicy>(beg, end, f));
+    const auto t = task<ExecutionPolicy>(generate_impl<ExecutionPolicy>(beg, end, f));
     return [=](distr_queue q) { t(q, beg, end); };
 }
 
@@ -62,7 +59,7 @@ auto generate(cl::sycl::range<Rank> range, const F &f)
     using value_type = std::invoke_result_t<F, cl::sycl::item<Rank>>;
 
     return package_generate<value_type>(
-        [f](auto beg, auto end) { return task<ExecutionPolicy>(detail::generate<ExecutionPolicy>(beg, end, f)); },
+        [f](auto beg, auto end) { return task<ExecutionPolicy>(generate_impl<ExecutionPolicy>(beg, end, f)); },
         range);
 }
 
@@ -75,22 +72,22 @@ auto generate(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const 
                   "Disabled as there is no real use cases as long as functors are required to be immutable");
 
     using value_type = std::invoke_result_t<F>;
-    return package_generate<value_type>(task<ExecutionPolicy>(detail::generate<ExecutionPolicy>(beg, end, f)), beg, end);
+    return package_generate<value_type>(task<ExecutionPolicy>(generate_impl<ExecutionPolicy>(beg, end, f)), beg, end);
 }
 
-} // namespace actions
+} // namespace detail
 
 template <typename ExecutionPolicy, typename T, int Rank, typename F>
 auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
-    return std::invoke(actions::generate<ExecutionPolicy>(beg, end, f), p.q);
+    return std::invoke(detail::generate<ExecutionPolicy>(beg, end, f), p.q);
 }
 
 template <typename KernelName, typename F, int Rank>
 auto generate(cl::sycl::range<Rank> range, const F &f)
 {
-    using execution_policy = named_distributed_execution_policy<KernelName>;
-    return actions::generate<execution_policy>(range, f);
+    using execution_policy = detail::named_distributed_execution_policy<KernelName>;
+    return detail::generate<execution_policy>(range, f);
 }
 
 template <typename KernelName, typename T, int Rank, typename F>

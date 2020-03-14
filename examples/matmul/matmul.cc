@@ -13,6 +13,7 @@ constexpr auto MAT_SIZE = 1024;
 
 using namespace celerity;
 using namespace algorithm;
+using namespace aliases;
 
 namespace kernels
 {

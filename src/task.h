@@ -14,6 +14,9 @@
 namespace celerity::algorithm
 {
 
+namespace detail
+{
+
 template <typename ExecutionPolicy, typename... Actions>
 class task_t;
 
@@ -25,10 +28,10 @@ public:
 
 	static_assert(((traits::is_compute_task_v<Actions>)&&...), "task can only contain compute task functors");
 
-	explicit task_t(algorithm::sequence<Actions...> &&s)
+	explicit task_t(sequence<Actions...> &&s)
 		: sequence_(std::move(s)) {}
 
-	explicit task_t(const algorithm::sequence<Actions...> &s)
+	explicit task_t(const sequence<Actions...> &s)
 		: sequence_(s) {}
 
 	task_t(Actions... f) : sequence_(std::move(f)...) {}
@@ -57,7 +60,7 @@ public:
 	auto get_sequence() const { return sequence_; }
 
 private:
-	algorithm::sequence<Actions...> sequence_;
+	sequence<Actions...> sequence_;
 };
 
 template <typename F>
@@ -101,7 +104,7 @@ public:
 	auto get_sequence() const { return sequence_; }
 
 private:
-	algorithm::sequence<F> sequence_;
+	sequence<F> sequence_;
 };
 
 template <typename F>
@@ -149,7 +152,7 @@ public:
 	auto get_sequence() const { return sequence_; }
 
 private:
-	algorithm::sequence<F> sequence_;
+	sequence<F> sequence_;
 };
 
 template <typename ExecutionPolicy, typename T>
@@ -160,7 +163,7 @@ auto task(const task_t<ExecutionPolicy, T> &t)
 
 template <typename ExecutionPolicy, typename T,
 		  require<!traits::is_sequence_v<T>,
-				   traits::is_master_task_v<T>> = yes>
+				  traits::is_master_task_v<T>> = yes>
 auto task(const T &invocable)
 {
 	return task_t<traits::strip_queue_t<ExecutionPolicy>, T>{invocable};
@@ -173,6 +176,8 @@ auto task(const sequence<Ts...> &seq)
 	return task_t<policy_type, Ts...>{seq};
 }
 
+} // namespace detail
+
 namespace traits
 {
 
@@ -182,7 +187,7 @@ struct is_task : std::bool_constant<false>
 };
 
 template <typename ExecutionPolicy, typename... Actions>
-struct is_task<task_t<ExecutionPolicy, Actions...>> : std::bool_constant<true>
+struct is_task<detail::task_t<ExecutionPolicy, Actions...>> : std::bool_constant<true>
 {
 };
 
@@ -190,6 +195,9 @@ template <typename F>
 inline constexpr bool is_task_v = is_task<F>::value;
 
 } // namespace traits
+
+namespace detail
+{
 
 template <typename F>
 decltype(auto) operator|(task_t<non_blocking_master_execution_policy, F> lhs, celerity::distr_queue queue)
@@ -202,6 +210,8 @@ decltype(auto) operator|(task_t<blocking_master_execution_policy, F> lhs, celeri
 {
 	return std::invoke(lhs, queue);
 }
+
+} // namespace detail
 
 } // namespace celerity::algorithm
 

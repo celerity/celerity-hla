@@ -10,13 +10,12 @@
 
 namespace celerity::algorithm
 {
-namespace actions
-{
+
 namespace detail
 {
 template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank,
 		  require<traits::get_accessor_type<BinaryOp, 1>() == access_type::one_to_one> = yes>
-auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
+auto accumulate_impl(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
 {
 	/*using policy_type = strip_queue_t<ExecutionPolicy>;
 
@@ -35,20 +34,19 @@ auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator
 		return sum;
 	};*/
 }
+
+template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank>
+auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
+{
+	return task<ExecutionPolicy>(accumulate_impl(p, beg, end, init, op));
+}
+
 } // namespace detail
 
 template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank>
 auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
 {
-	return task<ExecutionPolicy>(detail::accumulate(p, beg, end, init, op));
-}
-
-} // namespace actions
-
-template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank>
-auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
-{
-	return std::invoke(actions::accumulate(p, beg, end, init, op), p.q);
+	return std::invoke(detail::accumulate(p, beg, end, init, op), p.q);
 }
 
 template <typename KernelName, typename BinaryOp, typename T, int Rank>

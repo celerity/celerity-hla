@@ -16,6 +16,8 @@
 namespace celerity::algorithm
 {
 
+namespace detail
+{
 template <typename ExecutionPolicyA, typename KernelA, typename ExecutionPolicyB, typename KernelB>
 auto fuse(task_t<ExecutionPolicyA, KernelA> a, task_t<ExecutionPolicyB, KernelB> b)
 {
@@ -81,10 +83,13 @@ auto fuse(T lhs, U rhs)
                                                                           rhs.get_out_iterator());
 }
 
+} // namespace detail
+
 template <typename T, typename U,
           require<traits::are_fusable_v<T, U>> = yes>
 auto operator|(T lhs, U rhs)
 {
+    using namespace detail;
     return sequence(fuse(lhs, rhs));
 }
 
@@ -94,6 +99,7 @@ template <typename T, typename U,
                   !traits::are_fusable_v<T, U>> = yes>
 auto operator|(T lhs, U rhs)
 {
+    using namespace detail;
     return sequence(lhs, rhs);
 }
 
@@ -102,8 +108,12 @@ template <typename T, typename U,
                   traits::is_packaged_task_v<U>> = yes>
 auto operator|(T lhs, U rhs)
 {
+    using namespace detail;
     return apply_append(lhs, rhs);
 }
+
+namespace detail
+{
 
 template <typename... Actions, size_t... Is>
 auto fuse(const sequence<Actions...> &s, std::index_sequence<Is...>)
@@ -117,6 +127,8 @@ auto fuse(const sequence<Actions...> &s)
 {
     return fuse(s, std::make_index_sequence<sizeof...(Actions)>{});
 }
+
+} // namespace detail
 
 } // namespace celerity::algorithm
 

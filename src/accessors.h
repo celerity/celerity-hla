@@ -9,6 +9,9 @@
 namespace celerity::algorithm
 {
 
+namespace detail
+{
+
 struct sycl_marker
 {
 	cl::sycl::id<0> _;
@@ -17,6 +20,8 @@ struct sycl_marker
 struct one_to_one
 {
 };
+
+}
 
 template <typename T, size_t Dim>
 class slice
@@ -181,10 +186,13 @@ public:
 	auto get_range() const { return range_; }
 
 private:
-	const sycl_marker _ = {};
+	const detail::sycl_marker _ = {};
 	const detail::any_accessor<T> accessor_;
 	const cl::sycl::range<Rank> range_;
 };
+
+namespace aliases
+{
 
 template <int Dim>
 using slice_f = slice<float, Dim>;
@@ -294,5 +302,8 @@ using all_3d3 = all<cl::sycl::double3, 3>;
 
 using all_3i3 = all<cl::sycl::int3, 3>;
 
+} // namespace aliases
+
 } // namespace celerity::algorithm
+
 #endif // ACCESSORS_H

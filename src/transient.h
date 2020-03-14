@@ -10,6 +10,9 @@
 namespace celerity::algorithm
 {
 
+namespace detail
+{
+
 template <typename T, int Rank, cl::sycl::access::mode Mode>
 struct transient_accessor
 {
@@ -77,26 +80,6 @@ private:
     transient_buffer<T, Rank> buffer_;
 };
 
-namespace traits
-{
-template <typename T, int Rank>
-struct is_transient<transient_iterator<T, Rank>> : std::true_type
-{
-};
-} // namespace traits
-
-template <typename T, int Rank>
-transient_iterator<T, Rank> begin(transient_buffer<T, Rank> buffer)
-{
-    return algorithm::transient_iterator<T, Rank>(cl::sycl::id<Rank>{}, buffer);
-}
-
-template <typename T, int Rank>
-transient_iterator<T, Rank> end(transient_buffer<T, Rank> buffer)
-{
-    return algorithm::transient_iterator<T, Rank>(buffer.get_range(), buffer);
-}
-
 template <typename ElementTypeA, int RankA,
           typename ElementTypeB, int RankB>
 bool are_equal(buffer<ElementTypeA, RankA> a, transient_buffer<ElementTypeB, RankB> b)
@@ -116,6 +99,28 @@ bool are_equal(transient_buffer<ElementType, Rank> a, transient_buffer<ElementTy
 {
     return a.get_id() == b.get_id();
 }
+
+template <typename T, int Rank>
+transient_iterator<T, Rank> begin(transient_buffer<T, Rank> buffer)
+{
+    return transient_iterator<T, Rank>(cl::sycl::id<Rank>{}, buffer);
+}
+
+template <typename T, int Rank>
+transient_iterator<T, Rank> end(transient_buffer<T, Rank> buffer)
+{
+    return transient_iterator<T, Rank>(buffer.get_range(), buffer);
+}
+
+} // namespace detail
+
+namespace traits
+{
+template <typename T, int Rank>
+struct is_transient<detail::transient_iterator<T, Rank>> : std::true_type
+{
+};
+} // namespace traits
 
 } // namespace celerity::algorithm
 

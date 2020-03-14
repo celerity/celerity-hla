@@ -6,6 +6,9 @@
 namespace celerity::algorithm
 {
 
+namespace detail
+{
+
 template <typename Task, typename SecondaryInputSequence>
 struct t_joint
 {
@@ -71,17 +74,19 @@ private:
     SecondaryInputSequence secondary_in_;
 };
 
+} // namespace detail
+
 namespace traits
 {
 
 template <typename Task, typename SecondaryInputSequence>
-struct is_packaged_task<t_joint<Task, SecondaryInputSequence>>
+struct is_packaged_task<detail::t_joint<Task, SecondaryInputSequence>>
     : std::bool_constant<true>
 {
 };
 
 template <typename Task, typename SecondaryInputSequence>
-struct packaged_task_traits<t_joint<Task, SecondaryInputSequence>>
+struct packaged_task_traits<detail::t_joint<Task, SecondaryInputSequence>>
 {
     using traits = packaged_task_traits<Task>;
 
@@ -96,19 +101,19 @@ struct packaged_task_traits<t_joint<Task, SecondaryInputSequence>>
 };
 
 template <typename Task, typename SecondaryInputSequence>
-struct extended_packaged_task_traits<t_joint<Task, SecondaryInputSequence>, computation_type::zip>
-    : extended_packaged_task_traits<Task, computation_type::zip>
+struct extended_packaged_task_traits<detail::t_joint<Task, SecondaryInputSequence>, detail::computation_type::zip>
+    : extended_packaged_task_traits<Task, detail::computation_type::zip>
 {
 };
 
 template <typename Task, typename SecondaryInputSequence>
-struct is_partially_packaged_task<partial_t_joint<Task, SecondaryInputSequence>>
+struct is_partially_packaged_task<detail::partial_t_joint<Task, SecondaryInputSequence>>
     : std::bool_constant<true>
 {
 };
 
 template <typename Task, typename SecondaryInputSequence>
-struct packaged_task_traits<partial_t_joint<Task, SecondaryInputSequence>>
+struct packaged_task_traits<detail::partial_t_joint<Task, SecondaryInputSequence>>
 {
     using traits = packaged_task_traits<Task>;
 
@@ -123,13 +128,13 @@ struct packaged_task_traits<partial_t_joint<Task, SecondaryInputSequence>>
 };
 
 template <typename Task, typename SecondaryInputSequence>
-struct extended_packaged_task_traits<partial_t_joint<Task, SecondaryInputSequence>, computation_type::zip>
-    : extended_packaged_task_traits<Task, computation_type::zip>
+struct extended_packaged_task_traits<detail::partial_t_joint<Task, SecondaryInputSequence>, detail::computation_type::zip>
+    : extended_packaged_task_traits<Task, detail::computation_type::zip>
 {
 };
 
 template <typename Task, typename SecondaryInputSequence>
-struct partially_packaged_task_traits<partial_t_joint<Task, SecondaryInputSequence>>
+struct partially_packaged_task_traits<detail::partial_t_joint<Task, SecondaryInputSequence>>
     : partially_packaged_task_traits<Task>
 {
 };
@@ -140,13 +145,13 @@ struct is_t_joint : std::bool_constant<false>
 };
 
 template <typename Task, typename SecondaryInputSequence>
-struct is_t_joint<t_joint<Task, SecondaryInputSequence>>
+struct is_t_joint<detail::t_joint<Task, SecondaryInputSequence>>
     : std::bool_constant<true>
 {
 };
 
 template <typename Task, typename SecondaryInputSequence>
-struct is_t_joint<partial_t_joint<Task, SecondaryInputSequence>>
+struct is_t_joint<detail::partial_t_joint<Task, SecondaryInputSequence>>
     : std::bool_constant<true>
 {
 };
@@ -158,11 +163,11 @@ template <typename T>
 struct t_joint_traits
 {
     using task_type = void;
-    using secondary_input_sequence_type = sequence<>;
+    using secondary_input_sequence_type = detail::sequence<>;
 };
 
 template <typename Task, typename SecondaryInputSequence>
-struct t_joint_traits<t_joint<Task, SecondaryInputSequence>>
+struct t_joint_traits<detail::t_joint<Task, SecondaryInputSequence>>
 {
     using task_type = Task;
     using secondary_input_sequence_type = SecondaryInputSequence;

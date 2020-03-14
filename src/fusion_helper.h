@@ -4,11 +4,13 @@
 #include "computation_type.h"
 #include "packaged_task_traits.h"
 
-namespace celerity::algorithm
+namespace celerity::algorithm::util
 {
 
-std::string to_string(access_type type)
+std::string to_string(detail::access_type type)
 {
+    using namespace detail;
+
     switch (type)
     {
     case access_type::one_to_one:
@@ -26,8 +28,10 @@ std::string to_string(access_type type)
     }
 }
 
-std::string to_string(computation_type type)
+std::string to_string(detail::computation_type type)
 {
+    using namespace detail;
+
     switch (type)
     {
     case computation_type::generate:
@@ -65,9 +69,9 @@ void to_string(std::stringstream &ss, T task)
     ss << "  input iterator type : " << to_string<typename t::input_iterator_type>() << "\n";
     ss << "  output iterator type: " << to_string<typename t::output_iterator_type>() << "\n";
 
-    if constexpr (t::computation_type == computation_type::zip)
+    if constexpr (t::computation_type == detail::computation_type::zip)
     {
-        using ext_t = traits::extended_packaged_task_traits<T, computation_type::zip>;
+        using ext_t = traits::extended_packaged_task_traits<T, detail::computation_type::zip>;
 
         ss << "\n";
         ss << "  second input access type  : " << to_string(ext_t::second_input_access_type) << "\n";
@@ -91,11 +95,11 @@ std::string to_string(T seq)
 {
     std::stringstream ss{};
 
-    to_string(ss, seq, std::make_index_sequence<size_v<T>>{});
+    to_string(ss, seq, std::make_index_sequence<traits::size_v<T>>{});
 
     return ss.str();
 }
 
-} // namespace celerity::algorithm
+} // namespace celerity::algorithm::util
 
 #endif // FUSION_HELPER_H

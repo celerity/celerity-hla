@@ -12,7 +12,9 @@
 namespace celerity::algorithm
 {
 
-template <int Rank, access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType>
+namespace detail
+{
+template <int Rank, detail::access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType>
 class packaged_transform
 {
 public:
@@ -46,7 +48,7 @@ private:
     OutputIteratorType out_beg_;
 };
 
-template <access_type InputAccessType, typename FunctorType, template <typename, int> typename InIteratorType, template <typename, int> typename OutIteratorType, typename InputValueType, typename OutputValueType, int Rank>
+template <detail::access_type InputAccessType, typename FunctorType, template <typename, int> typename InIteratorType, template <typename, int> typename OutIteratorType, typename InputValueType, typename OutputValueType, int Rank>
 auto package_transform(FunctorType task,
                        InIteratorType<InputValueType, Rank> in_beg,
                        InIteratorType<InputValueType, Rank> in_end,
@@ -56,7 +58,7 @@ auto package_transform(FunctorType task,
         task, in_beg, in_end, out_beg);
 }
 
-template <int Rank, access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputIteratorType>
+template <int Rank, detail::access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputIteratorType>
 class partially_packaged_transform_1
 {
 public:
@@ -83,13 +85,13 @@ private:
     InputIteratorType in_end_;
 };
 
-template <access_type InputAccessType, typename KernelFunctor, typename FunctorType, int Rank, template <typename, int> typename InIteratorType, typename InputValueType>
+template <detail::access_type InputAccessType, typename KernelFunctor, typename FunctorType, int Rank, template <typename, int> typename InIteratorType, typename InputValueType>
 auto package_transform(FunctorType functor, InIteratorType<InputValueType, Rank> beg, InIteratorType<InputValueType, Rank> end)
 {
     return partially_packaged_transform_1<Rank, InputAccessType, FunctorType, KernelFunctor, InIteratorType<InputValueType, Rank>>(functor, beg, end);
 }
 
-template <access_type InputAccessType, typename Functor, typename KernelFunctor>
+template <detail::access_type InputAccessType, typename Functor, typename KernelFunctor>
 class partially_packaged_transform_0
 {
 public:
@@ -112,32 +114,34 @@ auto package_transform(FunctorType functor)
     return partially_packaged_transform_0<InputAccessType, FunctorType, KernelFunctor>(functor);
 }
 
+} // namespace detail
+
 namespace traits
 {
 
-template <int Rank, access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType>
-struct is_packaged_task<packaged_transform<Rank, InputAccessType, Functor, InputIteratorType, OutputIteratorType>>
+template <int Rank, detail::access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType>
+struct is_packaged_task<detail::packaged_transform<Rank, InputAccessType, Functor, InputIteratorType, OutputIteratorType>>
     : std::true_type
 {
 };
 
-template <int Rank, access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputValueType>
-struct is_partially_packaged_task<partially_packaged_transform_1<Rank, InputAccessType, Functor, KernelFunctor, InputValueType>>
+template <int Rank, detail::access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputValueType>
+struct is_partially_packaged_task<detail::partially_packaged_transform_1<Rank, InputAccessType, Functor, KernelFunctor, InputValueType>>
     : std::true_type
 {
 };
 
-template <access_type InputAccessType, typename Functor, typename KernelFunctor>
-struct is_partially_packaged_task<partially_packaged_transform_0<InputAccessType, Functor, KernelFunctor>>
+template <detail::access_type InputAccessType, typename Functor, typename KernelFunctor>
+struct is_partially_packaged_task<detail::partially_packaged_transform_0<InputAccessType, Functor, KernelFunctor>>
     : std::true_type
 {
 };
 
-template <int Rank, access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType>
-struct packaged_task_traits<packaged_transform<Rank, InputAccessType, Functor, InputIteratorType, OutputIteratorType>>
+template <int Rank, detail::access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType>
+struct packaged_task_traits<detail::packaged_transform<Rank, InputAccessType, Functor, InputIteratorType, OutputIteratorType>>
 {
     static constexpr auto rank = Rank;
-    static constexpr auto computation_type = computation_type::transform;
+    static constexpr auto computation_type = detail::computation_type::transform;
     static constexpr auto access_type = InputAccessType;
 
     using input_iterator_type = InputIteratorType;
@@ -146,11 +150,11 @@ struct packaged_task_traits<packaged_transform<Rank, InputAccessType, Functor, I
     using output_iterator_type = OutputIteratorType;
 };
 
-template <int Rank, access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputIteratorType>
-struct packaged_task_traits<partially_packaged_transform_1<Rank, InputAccessType, Functor, KernelFunctor, InputIteratorType>>
+template <int Rank, detail::access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputIteratorType>
+struct packaged_task_traits<detail::partially_packaged_transform_1<Rank, InputAccessType, Functor, KernelFunctor, InputIteratorType>>
 {
     static constexpr auto rank = Rank;
-    static constexpr auto computation_type = computation_type::transform;
+    static constexpr auto computation_type = detail::computation_type::transform;
     static constexpr auto access_type = InputAccessType;
 
     using input_iterator_type = InputIteratorType;
@@ -159,17 +163,17 @@ struct packaged_task_traits<partially_packaged_transform_1<Rank, InputAccessType
     using output_iterator_type = void;
 };
 
-template <int Rank, access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputIteratorType>
-struct partially_packaged_task_traits<partially_packaged_transform_1<Rank, InputAccessType, Functor, KernelFunctor, InputIteratorType>>
+template <int Rank, detail::access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputIteratorType>
+struct partially_packaged_task_traits<detail::partially_packaged_transform_1<Rank, InputAccessType, Functor, KernelFunctor, InputIteratorType>>
 {
-    static constexpr auto requirement = stage_requirement::output;
+    static constexpr auto requirement = detail::stage_requirement::output;
 };
 
-template <access_type InputAccessType, typename Functor, typename KernelFunctor>
-struct packaged_task_traits<partially_packaged_transform_0<InputAccessType, Functor, KernelFunctor>>
+template <detail::access_type InputAccessType, typename Functor, typename KernelFunctor>
+struct packaged_task_traits<detail::partially_packaged_transform_0<InputAccessType, Functor, KernelFunctor>>
 {
     static constexpr auto rank = -1;
-    static constexpr auto computation_type = computation_type::transform;
+    static constexpr auto computation_type = detail::computation_type::transform;
     static constexpr auto access_type = InputAccessType;
 
     using input_iterator_type = void;
@@ -178,10 +182,10 @@ struct packaged_task_traits<partially_packaged_transform_0<InputAccessType, Func
     using output_iterator_type = void;
 };
 
-template <access_type InputAccessType, typename Functor, typename KernelFunctor>
-struct partially_packaged_task_traits<partially_packaged_transform_0<InputAccessType, Functor, KernelFunctor>>
+template <detail::access_type InputAccessType, typename Functor, typename KernelFunctor>
+struct partially_packaged_task_traits<detail::partially_packaged_transform_0<InputAccessType, Functor, KernelFunctor>>
 {
-    static constexpr auto requirement = stage_requirement::input;
+    static constexpr auto requirement = detail::stage_requirement::input;
 };
 
 } // namespace traits

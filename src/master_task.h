@@ -7,12 +7,9 @@
 
 namespace celerity::algorithm
 {
-namespace actions
-{
+
 namespace detail
 {
-
-} // namespace detail
 
 template <typename F>
 auto master_task(const F &f)
@@ -21,13 +18,13 @@ auto master_task(const F &f)
     return task<non_blocking_master_execution_policy>(f);
 }
 
-} // namespace actions
+} // namespace detail
 
 template <typename ExecutionPolicy, typename F>
 auto master_task(ExecutionPolicy p, const F &f)
 {
-    static_assert(std::is_same_v<non_blocking_master_execution_policy, std::decay_t<ExecutionPolicy>>, "non-blocking master only");
-    return actions::master_task(f) | submit_to(p.q);
+    static_assert(std::is_same_v<detail::non_blocking_master_execution_policy, std::decay_t<ExecutionPolicy>>, "non-blocking master only");
+    return std::invoke(detail::master_task(f), p.q);
 }
 
 } // namespace celerity::algorithm

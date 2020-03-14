@@ -28,8 +28,8 @@ template <typename T>
 struct packaged_task_traits
 {
     static constexpr auto rank = 0;
-    static constexpr auto computation_type = computation_type::none;
-    static constexpr auto access_type = access_type::invalid;
+    static constexpr auto computation_type = detail::computation_type::none;
+    static constexpr auto access_type = detail::access_type::invalid;
 
     using input_value_type = void;
     using input_iterator_type = void;
@@ -37,21 +37,21 @@ struct packaged_task_traits
     using output_iterator_type = void;
 };
 
-template <typename T, computation_type Computation>
+template <typename T, detail::computation_type Computation>
 struct extended_packaged_task_traits
 {
 };
 
 template <typename T>
-constexpr access_type get_second_input_access_type()
+constexpr detail::access_type get_second_input_access_type()
 {
-    if constexpr (packaged_task_traits<T>::computation_type == computation_type::zip)
+    if constexpr (packaged_task_traits<T>::computation_type == detail::computation_type::zip)
     {
-        return extended_packaged_task_traits<T, computation_type::zip>::second_input_access_type;
+        return extended_packaged_task_traits<T, detail::computation_type::zip>::second_input_access_type;
     }
     else
     {
-        return access_type::invalid;
+        return detail::access_type::invalid;
     }
 }
 
@@ -61,7 +61,7 @@ constexpr inline auto second_input_access_type_v = get_second_input_access_type<
 template <typename T>
 struct partially_packaged_task_traits : packaged_task_traits<T>
 {
-    static constexpr auto requirement = stage_requirement::invalid;
+    static constexpr auto requirement = detail::stage_requirement::invalid;
 };
 
 template <typename F>

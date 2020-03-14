@@ -52,15 +52,18 @@ private:
 	cl::sycl::range<Rank> range_;
 };
 
-struct celerity_iterator_tag // : contiguous_iterator_tag
+namespace detail
 {
-};
+struct celerity_iterator_tag
+{
+}; // : contiguous_iterator_tag
+} // namespace detail
 
 template <typename T, int Rank>
 class buffer_iterator : public iterator<Rank>
 {
 public:
-	using iterator_category = celerity_iterator_tag;
+	using iterator_category = detail::celerity_iterator_tag;
 	using value_type = T;
 	using difference_type = long;
 	using pointer = std::add_pointer_t<T>;
@@ -99,7 +102,7 @@ namespace traits
 {
 
 template <typename T>
-constexpr bool is_celerity_iterator_v = std::is_same_v<celerity_iterator_tag, typename std::iterator_traits<T>::iterator_category>;
+constexpr bool is_celerity_iterator_v = std::is_same_v<detail::celerity_iterator_tag, typename std::iterator_traits<T>::iterator_category>;
 
 template <typename T>
 constexpr bool is_contiguous_iterator()

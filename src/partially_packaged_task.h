@@ -1,7 +1,7 @@
 #ifndef PARTIALLY_PACKAGED_TASK_H
 #define PARTIALLY_PACKAGED_TASK_H
 
-namespace celerity::algorithm
+namespace celerity::algorithm::detail
 {
 
 enum stage_requirement

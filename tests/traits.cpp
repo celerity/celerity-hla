@@ -12,6 +12,7 @@ void static_assert_accessor_types()
 {
     using namespace celerity::algorithm;
     using namespace celerity::algorithm::traits;
+    using namespace celerity::algorithm::detail;
 
     auto access_one = [](int, int) {};
     using access_one_t = decltype(access_one);
@@ -79,6 +80,7 @@ void static_assert_kernel_traits()
 {
     using namespace celerity::algorithm;
     using namespace celerity::algorithm::traits;
+    using namespace celerity::algorithm::detail;
 
     auto one_d = [](item_context<1, int> &) {};
     auto two_d = [](item_context<2, int> &) {};
@@ -98,7 +100,7 @@ void static_assert_kernel_traits()
     static_assert(is_master_task_v<decltype(master_task)>);
     static_assert(!is_compute_task_v<decltype(master_task)>);
 
-    celerity::algorithm::sequence seq{[](celerity::distr_queue &) {}};
+    sequence seq{[](celerity::distr_queue &) {}};
     static_assert(!is_packaged_task_v<decltype(seq)>);
     static_assert(!is_placeholder_task_v<decltype(seq), void>);
 

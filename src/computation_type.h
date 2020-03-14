@@ -3,7 +3,7 @@
 
 #include "kernel_traits.h"
 
-namespace celerity::algorithm
+namespace celerity::algorithm::detail
 {
 
 enum class computation_type
@@ -15,6 +15,6 @@ enum class computation_type
     none
 };
 
-} // namespace celerity::algorithm
+} // namespace celerity::algorithm::detail
 
 #endif // COMPUTATION_TYPE_H

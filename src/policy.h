@@ -7,6 +7,9 @@
 namespace celerity::algorithm
 {
 
+namespace detail
+{
+
 struct distributed_execution_policy
 {
 };
@@ -33,59 +36,61 @@ struct blocking_master_execution_policy
 	::celerity::distr_queue q;
 };
 
-template <typename KernelName>
-auto distr(::celerity::distr_queue q) { return named_distributed_execution_and_queue_policy<KernelName>{q}; }
+} // namespace detail
 
 template <typename KernelName>
-auto distr() { return named_distributed_execution_policy<KernelName>{}; }
+auto distr(::celerity::distr_queue q) { return detail::named_distributed_execution_and_queue_policy<KernelName>{q}; }
 
-inline auto master(celerity::distr_queue q) { return non_blocking_master_execution_policy{q}; }
-inline auto master_blocking(celerity::distr_queue q) { return blocking_master_execution_policy{q}; }
+template <typename KernelName>
+auto distr() { return detail::named_distributed_execution_policy<KernelName>{}; }
+
+inline auto master(celerity::distr_queue q) { return detail::non_blocking_master_execution_policy{q}; }
+inline auto master_blocking(celerity::distr_queue q) { return detail::blocking_master_execution_policy{q}; }
 
 namespace traits
 {
 
 template <typename KernelName>
-struct decay_policy<named_distributed_execution_policy<KernelName>>
+struct decay_policy<detail::named_distributed_execution_policy<KernelName>>
 {
-	using type = distributed_execution_policy;
+	using type = detail::distributed_execution_policy;
 };
 
 template <typename KernelName>
-struct decay_policy<named_distributed_execution_and_queue_policy<KernelName>>
+struct decay_policy<detail::named_distributed_execution_and_queue_policy<KernelName>>
 {
-	using type = named_distributed_execution_policy<KernelName>;
+	using type = detail::named_distributed_execution_policy<KernelName>;
 };
 
 template <typename KernelName>
-struct strip_queue<named_distributed_execution_and_queue_policy<KernelName>>
+struct strip_queue<detail::named_distributed_execution_and_queue_policy<KernelName>>
 {
-	using type = decay_policy_t<named_distributed_execution_and_queue_policy<KernelName>>;
+	using type = traits::decay_policy_t<detail::named_distributed_execution_and_queue_policy<KernelName>>;
 };
 
 template <>
-struct policy_traits<non_blocking_master_execution_policy>
+struct policy_traits<detail::non_blocking_master_execution_policy>
 {
 	static constexpr bool is_distributed = false;
 	static constexpr bool is_blocking = false;
 };
 
 template <>
-struct policy_traits<blocking_master_execution_policy>
+struct policy_traits<detail::blocking_master_execution_policy>
 {
 	static constexpr bool is_distributed = false;
 	static constexpr bool is_blocking = true;
 };
 
 template <>
-struct policy_traits<distributed_execution_policy>
+struct policy_traits<detail::distributed_execution_policy>
 {
 	static constexpr bool is_distributed = true;
 	static constexpr bool is_blocking = false;
 };
 
 template <typename KernelName>
-struct policy_traits<named_distributed_execution_policy<KernelName>>
+struct policy_traits<detail::named_distributed_execution_policy<KernelName>>
 {
 	static constexpr bool is_distributed = true;
 	using kernel_name = KernelName;

@@ -15,7 +15,7 @@
 #include <type_traits>
 #include <cmath>
 
-namespace celerity::algorithm
+namespace celerity::algorithm::detail
 {
 
 template <typename AccessorType>
@@ -141,6 +141,6 @@ auto get_access(celerity::handler &cgh, Iterator<T, Rank> beg, Iterator<T, Rank>
 	}
 }
 
-} // namespace celerity::algorithm
+} // namespace celerity::algorithm::detail
 
 #endif // ACCESSOR_PROXY_H

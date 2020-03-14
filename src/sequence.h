@@ -35,6 +35,9 @@ inline constexpr bool is_empty_result_v = (is_no_result_v<std::tuple_element_t<I
 
 } // namespace traits
 
+namespace detail
+{
+
 template <typename... Actions>
 class sequence
 {
@@ -159,40 +162,45 @@ sequence<Actions..., T> append(const sequence<Actions...> &seq, const T &a)
 					  actions);
 }
 
+} // namespace detail
+
 namespace traits
 {
 template <typename... Actions>
-struct sequence_traits<algorithm::sequence<Actions...>>
+struct sequence_traits<algorithm::detail::sequence<Actions...>>
 	: std::integral_constant<bool, true>
 {
 };
 
 template <typename T, typename... Ts>
-struct last_element<algorithm::sequence<T, Ts...>>
-	: std::tuple_element<algorithm::sequence<T, Ts...>::num_actions - 1,
-						 typename algorithm::sequence<T, Ts...>::actions_t>
+struct last_element<algorithm::detail::sequence<T, Ts...>>
+	: std::tuple_element<algorithm::detail::sequence<T, Ts...>::num_actions - 1,
+						 typename algorithm::detail::sequence<T, Ts...>::actions_t>
 {
 };
 
 template <>
-struct last_element<algorithm::sequence<>>
+struct last_element<algorithm::detail::sequence<>>
 {
 	using type = void;
 };
 
 template <typename T, typename... Ts>
-struct first_element<algorithm::sequence<T, Ts...>>
-	: std::tuple_element<0, typename algorithm::sequence<T, Ts...>::actions_t>
+struct first_element<algorithm::detail::sequence<T, Ts...>>
+	: std::tuple_element<0, typename algorithm::detail::sequence<T, Ts...>::actions_t>
 {
 };
 
 template <>
-struct first_element<algorithm::sequence<>>
+struct first_element<algorithm::detail::sequence<>>
 {
 	using type = void;
 };
 
 } // namespace traits
+
+namespace detail
+{
 
 template <typename... Ts, typename... Us>
 auto operator|(sequence<Ts...> lhs, sequence<Us...> rhs)
@@ -245,6 +253,8 @@ auto apply_append(const sequence<Actions...> &seq, const T &a)
 {
 	return remove_last_element(seq) | (get_last_element(seq) | a);
 }
+
+} // namespace detail
 
 } // namespace celerity::algorithm
 

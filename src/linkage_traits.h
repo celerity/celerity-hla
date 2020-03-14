@@ -9,22 +9,22 @@ namespace celerity::algorithm::traits
 {
 
 template <typename T>
-inline constexpr bool is_source_v = computation_type_of_v<T, computation_type::generate>;
+inline constexpr bool is_source_v = computation_type_of_v<T, detail::computation_type::generate>;
 
 template <typename T>
-inline constexpr bool single_element_access_v = (computation_type_of_v<T, computation_type::transform> &&
-                                                 access_type_v<T> == access_type::one_to_one) ||
-                                                (computation_type_of_v<T, computation_type::zip> &&
-                                                 access_type_v<T> == access_type::one_to_one &&
-                                                 second_input_access_type_v<T> == access_type::one_to_one);
+inline constexpr bool single_element_access_v = (computation_type_of_v<T, detail::computation_type::transform> &&
+                                                 access_type_v<T> == detail::access_type::one_to_one) ||
+                                                (computation_type_of_v<T, detail::computation_type::zip> &&
+                                                 access_type_v<T> == detail::access_type::one_to_one &&
+                                                 second_input_access_type_v<T> == detail::access_type::one_to_one);
 
 template <typename T>
 inline constexpr bool is_linkable_source_v = is_partially_packaged_task_v<T> &&
-                                             stage_requirement_v<T> == stage_requirement::output;
+                                                 stage_requirement_v<T> == detail::stage_requirement::output;
 
 template <typename T>
 inline constexpr bool is_linkable_sink_v = is_partially_packaged_task_v<T> &&
-                                           stage_requirement_v<T> == stage_requirement::input;
+                                               stage_requirement_v<T> == detail::stage_requirement::input;
 
 template <typename T>
 inline constexpr bool is_transiently_linkable_source_v = is_linkable_source_v<T> && !is_t_joint_v<T>;

@@ -9,12 +9,10 @@
 
 namespace celerity::algorithm
 {
-namespace actions
-{
 namespace detail
 {
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
-auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
+auto copy_impl(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
 {
 	using namespace traits;
 	using namespace cl::sycl::access;
@@ -40,20 +38,18 @@ auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 	};
 }
 
+template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
+auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out, int)
+{
+	return task<ExecutionPolicy>(copy_impl(p, beg, end, out));
+}
+
 } // namespace detail
 
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
 auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
 {
-	return task<ExecutionPolicy>(detail::copy(p, beg, end, out));
-}
-
-} // namespace actions
-
-template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>
-auto copy(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, IteratorType out)
-{
-	return std::invoke(actions::copy(p, beg, end, out), p.q);
+	return std::invoke(detail::copy(p, beg, end, out, 0), p.q);
 }
 
 template <typename ExecutionPolicy, typename IteratorType, typename T, int Rank>

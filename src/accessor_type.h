@@ -3,7 +3,7 @@
 
 #include <type_traits>
 
-namespace celerity::algorithm
+namespace celerity::algorithm::detail
 {
 
 enum class access_type
@@ -102,36 +102,36 @@ using result_type_t = typename result_type<T, has_call_operator_v<T>>::type;
 template <typename ArgType, typename ElementType>
 struct accessor_type
 {
-	using type = std::conditional_t<std::is_same_v<ArgType, ElementType>, one_to_one, ArgType>;
+	using type = std::conditional_t<std::is_same_v<ArgType, ElementType>, detail::one_to_one, ArgType>;
 };
 
 template <typename F, int I, typename ElementType>
 using accessor_type_t = typename accessor_type<std::decay_t<arg_type_t<F, I>>, ElementType>::type;
 
 template <typename ArgType>
-constexpr access_type get_accessor_type_()
+constexpr detail::access_type get_accessor_type_()
 {
 	using decayed_type = std::decay_t<ArgType>;
 
 	if constexpr (traits::is_slice_v<decayed_type>)
 	{
-		return access_type::slice;
+		return detail::access_type::slice;
 	}
 	else if constexpr (traits::is_chunk_v<decayed_type>)
 	{
-		return access_type::chunk;
+		return detail::access_type::chunk;
 	}
 	else if constexpr (traits::is_item_v<decayed_type>)
 	{
-		return access_type::item;
+		return detail::access_type::item;
 	}
 	else if constexpr (traits::is_all_v<decayed_type>)
 	{
-		return access_type::all;
+		return detail::access_type::all;
 	}
 	else
 	{
-		return access_type::one_to_one;
+		return detail::access_type::one_to_one;
 	}
 }
 
@@ -142,16 +142,16 @@ constexpr bool in_bounds()
 }
 
 template <typename F, int I>
-constexpr std::enable_if_t<has_call_operator_v<F>, access_type> get_accessor_type()
+constexpr std::enable_if_t<has_call_operator_v<F>, detail::access_type> get_accessor_type()
 {
 	return get_accessor_type_<arg_type_t<F, I>>();
 }
 
 template <typename F, int>
-constexpr std::enable_if_t<!has_call_operator_v<F>, access_type> get_accessor_type()
+constexpr std::enable_if_t<!has_call_operator_v<F>, detail::access_type> get_accessor_type()
 {
 	static_assert(std::is_void_v<F>, "invalid functor");
-	return access_type::invalid;
+	return detail::access_type::invalid;
 }
 
 template <typename F, size_t... Is>

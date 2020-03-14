@@ -6,6 +6,7 @@
 
 using namespace celerity;
 using namespace celerity::algorithm;
+using namespace celerity::algorithm::aliases;
 
 #include "../src/actions.h"
 
@@ -374,7 +375,7 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
         {
             buffer<int, 1> buf_out(buf.get_range());
 
-            const auto double_it = [](cl::sycl::item<1> it, const celerity::detail::any_accessor<int> &in) {
+            const auto double_it = [](cl::sycl::item<1> it, const celerity::algorithm::detail::any_accessor<int> &in) {
                 return in.get(it.get_id()) * 2;
             };
 
@@ -383,7 +384,7 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
                 auto out = buf_out.get_access<cl::sycl::access::mode::write>(cgh, celerity::access::one_to_one<1>());
 
                 cgh.parallel_for<class doubling_any>(buf_out.get_range(), [=](cl::sycl::item<1> it) {
-                    auto any_in = celerity::detail::any_accessor<int>(in);
+                    auto any_in = celerity::algorithm::detail::any_accessor<int>(in);
                     out[it] = double_it(it, any_in);
                 });
             });
@@ -450,8 +451,8 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
                     //auto any_in_a = celerity::detail::any_accessor<int, std::array<std::byte, 128>>(in_a);
                     //auto any_in_b = celerity::detail::any_accessor<int, std::array<std::byte, 128>>(in_b);
                     out[it] = add(it,
-                                  celerity::detail::any_accessor<int, std::array<std::byte, 128>>(in_a),
-                                  celerity::detail::any_accessor<int, std::array<std::byte, 128>>(in_b));
+                                  algorithm::detail::any_accessor<int, std::array<std::byte, 128>>(in_a),
+                                  algorithm::detail::any_accessor<int, std::array<std::byte, 128>>(in_b));
                 });
             });
 
@@ -511,12 +512,14 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
                 return *a + *b;
             };
 
-            const auto initialize = [=](handler &c) {
-                auto in_a = celerity::algorithm::get_access<distributed_execution_policy,
-                                                            cl::sycl::access::mode::read, chunk_i<3>>(c, begin(buf_a), end(buf_a));
+            using namespace celerity::algorithm::detail;
 
-                auto in_b = celerity::algorithm::get_access<distributed_execution_policy,
-                                                            cl::sycl::access::mode::read, chunk_i<3>>(c, begin(buf_b), end(buf_b));
+            const auto initialize = [=](handler &c) {
+                auto in_a = get_access<distributed_execution_policy,
+                                       cl::sycl::access::mode::read, chunk_i<3>>(c, begin(buf_a), end(buf_a));
+
+                auto in_b = get_access<distributed_execution_policy,
+                                       cl::sycl::access::mode::read, chunk_i<3>>(c, begin(buf_b), end(buf_b));
 
                 auto out = buf_out.get_access<cl::sycl::access::mode::write>(c, celerity::access::one_to_one<1>());
 
@@ -530,7 +533,7 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
                 };
             };
 
-            auto t = celerity::algorithm::task<named_distributed_execution_and_queue_policy<class adding_ab_proxy>>(initialize);
+            auto t = task<named_distributed_execution_and_queue_policy<class adding_ab_proxy>>(initialize);
 
             t(q, begin(buf_out), end(buf_out));
 

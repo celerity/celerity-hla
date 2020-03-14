@@ -8,11 +8,16 @@
 namespace celerity::algorithm
 {
 
+namespace detail
+{
+
 template <typename T, int Rank, cl::sycl::access::mode Mode>
 using host_accessor = cl::sycl::accessor<T, Rank, Mode, cl::sycl::access::target::host_buffer>;
 
 template <typename T, int Rank, cl::sycl::access::mode Mode, cl::sycl::access::target Target>
 using device_accessor = cl::sycl::accessor<T, Rank, Mode, Target, cl::sycl::access::placeholder::true_t>;
+
+} // namespace detail
 
 namespace traits
 {
@@ -21,13 +26,13 @@ template <class T>
 struct is_host_accessor;
 
 template <typename T, int Rank, cl::sycl::access::mode Mode>
-struct is_host_accessor<host_accessor<T, Rank, Mode>>
+struct is_host_accessor<detail::host_accessor<T, Rank, Mode>>
     : std::bool_constant<true>
 {
 };
 
 template <typename T, int Rank, cl::sycl::access::mode Mode, cl::sycl::access::target Target>
-struct is_host_accessor<device_accessor<T, Rank, Mode, Target>>
+struct is_host_accessor<detail::device_accessor<T, Rank, Mode, Target>>
     : std::bool_constant<false>
 {
 };
@@ -42,14 +47,14 @@ template <class T>
 struct accessor_target;
 
 template <typename T, int Rank, cl::sycl::access::mode Mode>
-struct accessor_target<host_accessor<T, Rank, Mode>>
+struct accessor_target<detail::host_accessor<T, Rank, Mode>>
     : std::integral_constant<cl::sycl::access::target,
                              cl::sycl::access::target::host_buffer>
 {
 };
 
 template <typename T, int Rank, cl::sycl::access::mode Mode, cl::sycl::access::target Target>
-struct accessor_target<device_accessor<T, Rank, Mode, Target>>
+struct accessor_target<detail::device_accessor<T, Rank, Mode, Target>>
     : std::integral_constant<cl::sycl::access::target, Target>
 {
 };
@@ -61,13 +66,13 @@ template <class T>
 struct accessor_mode;
 
 template <typename T, int Rank, cl::sycl::access::mode Mode>
-struct accessor_mode<host_accessor<T, Rank, Mode>>
+struct accessor_mode<detail::host_accessor<T, Rank, Mode>>
     : std::integral_constant<cl::sycl::access::mode, Mode>
 {
 };
 
 template <typename T, int Rank, cl::sycl::access::mode Mode, cl::sycl::access::target Target>
-struct accessor_mode<device_accessor<T, Rank, Mode, Target>>
+struct accessor_mode<detail::device_accessor<T, Rank, Mode, Target>>
     : std::integral_constant<cl::sycl::access::mode, Mode>
 {
 };
@@ -79,13 +84,13 @@ template <class T>
 struct accessor_rank;
 
 template <typename T, int Rank, cl::sycl::access::mode Mode>
-struct accessor_rank<host_accessor<T, Rank, Mode>>
+struct accessor_rank<detail::host_accessor<T, Rank, Mode>>
     : std::integral_constant<int, Rank>
 {
 };
 
 template <typename T, int Rank, cl::sycl::access::mode Mode, cl::sycl::access::target Target>
-struct accessor_rank<device_accessor<T, Rank, Mode, Target>>
+struct accessor_rank<detail::device_accessor<T, Rank, Mode, Target>>
     : std::integral_constant<int, Rank>
 {
 };
@@ -97,13 +102,13 @@ template <class T>
 struct accessor_value_type;
 
 template <typename T, int Rank, cl::sycl::access::mode Mode>
-struct accessor_value_type<host_accessor<T, Rank, Mode>>
+struct accessor_value_type<detail::host_accessor<T, Rank, Mode>>
 {
     using type = T;
 };
 
 template <typename T, int Rank, cl::sycl::access::mode Mode, cl::sycl::access::target Target>
-struct accessor_value_type<device_accessor<T, Rank, Mode, Target>>
+struct accessor_value_type<detail::device_accessor<T, Rank, Mode, Target>>
 {
     using type = T;
 };

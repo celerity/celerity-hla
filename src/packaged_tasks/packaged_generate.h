@@ -11,6 +11,9 @@
 namespace celerity::algorithm
 {
 
+namespace detail
+{
+
 template <typename FunctorType, typename OutputValueType, typename OutputIteratorType, int Rank>
 class packaged_generate
 {
@@ -77,27 +80,29 @@ auto package_generate(FunctorType functor, cl::sycl::range<Rank> range)
     return partially_packaged_generate<FunctorType, OutputValueType, Rank>(functor, range);
 }
 
+} // namespace detail
+
 namespace traits
 {
 
 template <typename FunctorType, typename InputValueType, typename OutputIteratorType, int Rank>
-struct is_packaged_task<packaged_generate<FunctorType, InputValueType, OutputIteratorType, Rank>>
+struct is_packaged_task<detail::packaged_generate<FunctorType, InputValueType, OutputIteratorType, Rank>>
     : std::true_type
 {
 };
 
 template <typename FunctorType, typename InputValueType, int Rank>
-struct is_partially_packaged_task<partially_packaged_generate<FunctorType, InputValueType, Rank>>
+struct is_partially_packaged_task<detail::partially_packaged_generate<FunctorType, InputValueType, Rank>>
     : std::true_type
 {
 };
 
 template <typename FunctorType, typename OutputValueType, typename OutputIteratorType, int Rank>
-struct packaged_task_traits<packaged_generate<FunctorType, OutputValueType, OutputIteratorType, Rank>>
+struct packaged_task_traits<detail::packaged_generate<FunctorType, OutputValueType, OutputIteratorType, Rank>>
 {
     static constexpr auto rank = Rank;
-    static constexpr auto computation_type = computation_type::generate;
-    static constexpr auto access_type = access_type::invalid;
+    static constexpr auto computation_type = detail::computation_type::generate;
+    static constexpr auto access_type = detail::access_type::invalid;
 
     using input_value_type = void;
     using input_iterator_type = void;
@@ -106,11 +111,11 @@ struct packaged_task_traits<packaged_generate<FunctorType, OutputValueType, Outp
 };
 
 template <typename FunctorType, typename OutputValueType, int Rank>
-struct packaged_task_traits<partially_packaged_generate<FunctorType, OutputValueType, Rank>>
+struct packaged_task_traits<detail::partially_packaged_generate<FunctorType, OutputValueType, Rank>>
 {
     static constexpr auto rank = Rank;
-    static constexpr auto computation_type = computation_type::generate;
-    static constexpr auto access_type = access_type::invalid;
+    static constexpr auto computation_type = detail::computation_type::generate;
+    static constexpr auto access_type = detail::access_type::invalid;
 
     using input_value_type = void;
     using input_iterator_type = void;
@@ -119,10 +124,10 @@ struct packaged_task_traits<partially_packaged_generate<FunctorType, OutputValue
 };
 
 template <typename FunctorType, typename OutputValueType, int Rank>
-struct partially_packaged_task_traits<partially_packaged_generate<FunctorType, OutputValueType, Rank>>
-    : packaged_task_traits<partially_packaged_generate<FunctorType, OutputValueType, Rank>>
+struct partially_packaged_task_traits<detail::partially_packaged_generate<FunctorType, OutputValueType, Rank>>
+    : packaged_task_traits<detail::partially_packaged_generate<FunctorType, OutputValueType, Rank>>
 {
-    static constexpr auto requirement = stage_requirement::output;
+    static constexpr auto requirement = detail::stage_requirement::output;
 };
 
 } // namespace traits

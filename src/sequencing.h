@@ -27,17 +27,19 @@ auto operator|(T lhs, distr_queue q)
 }
 
 template <typename T, require<traits::is_partially_packaged_task_v<T>,
-                              traits::stage_requirement_v<T> == stage_requirement::output> = yes>
+                              traits::stage_requirement_v<T> == detail::stage_requirement::output> = yes>
 auto operator|(T lhs, distr_queue q)
 {
+    using namespace detail;
     return terminate(sequence(lhs)) | q;
 }
 
 template <typename T, require<traits::is_sequence_v<T>,
                               traits::is_partially_packaged_task_v<traits::last_element_t<T>>,
-                              traits::stage_requirement_v<traits::last_element_t<T>> == stage_requirement::output> = yes>
+                              traits::stage_requirement_v<traits::last_element_t<T>> == detail::stage_requirement::output> = yes>
 auto operator|(T lhs, distr_queue q)
 {
+    using namespace detail;
     return fuse(terminate(lhs)) | q;
 }
 
