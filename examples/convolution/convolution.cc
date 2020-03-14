@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 	std::vector<std::array<uint8_t, 3>>
 		image_output(image_width * image_height);
 	copy(master_blocking(queue), begin(out_buf), end(out_buf), image_output.data());
-	stbi_write_png("./output.png", image_width, image_height, image_channels, image_output.data(), 0);
+	stbi_write_png("./output.png", image_width, image_height, 3, image_output.data(), 0);
 
 	return EXIT_SUCCESS;
 }
