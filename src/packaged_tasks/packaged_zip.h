@@ -34,7 +34,7 @@ public:
         assert(are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
         assert(!are_equal(in_beg_.get_buffer(), out_beg_.get_buffer()));
         assert(!are_equal(second_in_beg_.get_buffer(), out_beg_.get_buffer()));
-        assert(distance(in_beg_, in_end_) <= distance(out_beg_, end(out_beg_.get_buffer())));
+        //assert(distance(in_beg_, in_end_) <= distance(out_beg_, end(out_beg_.get_buffer())));
     }
 
     auto operator()(celerity::distr_queue &queue) const
