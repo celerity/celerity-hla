@@ -174,9 +174,24 @@ auto begin(const all<T, Rank> &all)
 template <typename T, int Rank>
 auto end(const all<T, Rank> &all)
 {
-    return all_iterator{all, all.get_range(), all.get_range()};
+    return all_iterator{all, cl::sycl::id<Rank>{all.get_range()}, all.get_range()};
 }
 
+
 } // namespace celerity::algorithm
+
+namespace std
+{
+template <typename AllType, int Rank>
+struct iterator_traits<celerity::algorithm::all_iterator<AllType, Rank>>
+{
+    using difference_type = long;
+    using value_type = typename AllType::value_type;
+    using pointer = std::add_pointer_t<value_type>;
+    using reference = std::add_lvalue_reference_t<value_type>;
+    using iterator_category = std::forward_iterator_tag;
+};
+
+} // namespace std
 
 #endif // ACCESSOR_ITERATOR_H

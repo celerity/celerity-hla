@@ -359,4 +359,34 @@ SCENARIO("iterating a buffer on the master", "[celerity::algorithm]")
             }
         }
     }
+
+    GIVEN("A one-dimensional buffer of 100 1s")
+    {
+        constexpr auto size = 100;
+
+        buffer<int, 1> buf(cl::sycl::range<1>{size});
+
+        fill<class fill_x_3>(q, buf, 1);
+
+        WHEN("checking if all are 1 using master all<> access")
+        {
+            auto all_one = false;
+            auto checked = 0;
+
+            master_task(
+                master(q), [&](all<int, 1> b) {
+                    checked = 1000;
+                    all_one = std::all_of(begin(b), end(b), [](int x) { return x == 1; });
+                },
+                buf);
+
+            q.slow_full_sync();
+
+            THEN("the outcome is true")
+            {
+                REQUIRE(checked == 1000);
+                REQUIRE(all_one);
+            }
+        }
+    }
 }

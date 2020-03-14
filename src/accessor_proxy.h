@@ -134,7 +134,7 @@ auto get_access(celerity::handler &cgh, Iterator<T, Rank> beg, Iterator<T, Rank>
 	}
 	else
 	{
-		static_assert(std::is_same_v<one_to_one, AccessorType>, "range mappers not supported for host access");
+		static_assert(std::is_same_v<one_to_one, AccessorType> || traits::is_all_v<AccessorType>, "range mappers not supported for host access");
 
 		auto acc = beg.get_buffer().template get_access<Mode>(cgh, beg.get_buffer().get_range());
 		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{acc, beg.get_buffer().get_range()};
