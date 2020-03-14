@@ -3,6 +3,7 @@
 
 #include "partially_packaged_task.h"
 #include "computation_type.h"
+#include "require.h"
 
 namespace celerity::algorithm::detail
 {
@@ -72,14 +73,16 @@ constexpr bool dispatch_is_packaged_task_sequence(std::index_sequence<Is...>)
     return ((is_packaged_task_v<std::tuple_element_t<Is, typename T::actions_t>>)&&...);
 }
 
-template <typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
+template <typename T,
+          require<is_sequence_v<T>> = yes>
 constexpr bool is_packaged_task_sequence()
 {
     constexpr auto size = T::num_actions;
     return dispatch_is_packaged_task_sequence<T>(std::make_index_sequence<size>{}) && size > 0;
 }
 
-template <typename T, std::enable_if_t<!is_sequence_v<T>, int> = 0>
+template <typename T,
+          require<!is_sequence_v<T>> = yes>
 constexpr bool is_packaged_task_sequence()
 {
     return false;

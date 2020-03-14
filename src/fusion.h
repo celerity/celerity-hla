@@ -9,14 +9,10 @@
 #include "packaged_tasks/packaged_zip.h"
 
 #include "task.h"
+#include "require.h"
 
 namespace celerity::algorithm
 {
-
-template <bool... Requirements>
-using require = std::enable_if_t<((Requirements) && ...), int>;
-
-inline constexpr int yes{};
 
 template <typename ExecutionPolicyA, typename KernelA, typename ExecutionPolicyB, typename KernelB>
 auto fuse(task_t<ExecutionPolicyA, KernelA> a, task_t<ExecutionPolicyB, KernelB> b)

@@ -2,8 +2,8 @@
 #define LINKAGE_H
 
 #include "linkage_traits.h"
-
 #include "transient.h"
+#include "require.h"
 
 namespace celerity::algorithm
 {
@@ -36,7 +36,8 @@ auto link(T lhs, U rhs)
     return sequence(t_left, t_right);
 }
 
-template <typename T, typename U, std::enable_if_t<is_linkable_source_v<T> && is_linkable_sink_v<U>, int> = 0>
+template <typename T, typename U,
+          require<is_linkable_source_v<T>, is_linkable_sink_v<U>> = yes>
 auto operator|(T lhs, U rhs)
 {
     if constexpr (is_transiently_linkable_source_v<T> &&
@@ -50,13 +51,17 @@ auto operator|(T lhs, U rhs)
     }
 }
 
-template <typename T, typename U, std::enable_if_t<is_sequence_v<T> && is_linkable_source_v<last_element_t<T>> && is_linkable_sink_v<U>, int> = 0>
+template <typename T, typename U,
+          require<is_sequence_v<T>, is_linkable_source_v<last_element_t<T>>, is_linkable_sink_v<U>> = yes>
 auto operator|(T lhs, U rhs)
 {
     return remove_last_element(lhs) | (get_last_element(lhs) | rhs);
 }
 
-template <typename T, typename U, std::enable_if_t<detail::is_packaged_task_v<T> && detail::is_partially_packaged_task_v<U> && detail::stage_requirement_v<U> == stage_requirement::input, int> = 0>
+template <typename T, typename U,
+          require<detail::is_packaged_task_v<T>,
+                  detail::is_partially_packaged_task_v<U>,
+                  detail::stage_requirement_v<U> == stage_requirement::input> = yes>
 auto operator|(T lhs, U rhs)
 {
     auto t_right = rhs.complete(lhs.get_out_iterator(), lhs.get_out_iterator());
@@ -64,13 +69,18 @@ auto operator|(T lhs, U rhs)
     return sequence(lhs, t_right);
 }
 
-template <typename T, typename U, std::enable_if_t<is_sequence_v<T> && detail::is_packaged_task_v<last_element_t<T>> && detail::is_partially_packaged_task_v<U> && detail::stage_requirement_v<U> == stage_requirement::input, int> = 0>
+template <typename T, typename U,
+          require<is_sequence_v<T>,
+                  detail::is_packaged_task_v<last_element_t<T>>,
+                  detail::is_partially_packaged_task_v<U>,
+                  detail::stage_requirement_v<U> == stage_requirement::input> = yes>
 auto operator|(T lhs, U rhs)
 {
     return remove_last_element(lhs) | (get_last_element(lhs) | rhs);
 }
 
-template <typename T, typename U, std::enable_if_t<is_linkable_source_v<last_element_t<U>> && is_sequence_v<U> && is_linkable_sink_v<T>, int> = 0>
+template <typename T, typename U,
+          require<is_linkable_source_v<last_element_t<U>>, is_sequence_v<U>, is_linkable_sink_v<T>> = yes>
 auto operator<<(T lhs, U rhs)
 {
     auto linked_sequence = link(get_last_element(rhs), lhs);
@@ -81,7 +91,11 @@ auto operator<<(T lhs, U rhs)
     return partial_t_joint{linked_lhs, append(remove_last_element(rhs), linked_last_rhs)};
 }
 
-template <typename T, typename U, std::enable_if_t<is_sequence_v<U> && is_linkable_source_v<last_element_t<U>> && is_sequence_v<T> && is_linkable_sink_v<last_element_t<T>>, int> = 0>
+template <typename T, typename U,
+          require<is_sequence_v<U>,
+                  is_linkable_source_v<last_element_t<U>>,
+                  is_sequence_v<T>,
+                  is_linkable_sink_v<last_element_t<T>>> = 0>
 auto operator<<(T lhs, U rhs)
 {
     auto linked_sequence = link(get_last_element(rhs), get_last_element(lhs));
@@ -94,16 +108,18 @@ auto operator<<(T lhs, U rhs)
     return append(remove_last_element(lhs), joint);
 }
 
-template <typename T, typename U, std::enable_if_t<algorithm::is_linkable_sink_v<T> && algorithm::is_linkable_source_v<U>, int> = 0>
+template <typename T, typename U,
+          require<algorithm::is_linkable_sink_v<T>,
+                  algorithm::is_linkable_source_v<U>> = yes>
 auto operator<<(T lhs, U rhs)
 {
     return lhs << sequence(rhs);
 }
 
-template <typename T, std::enable_if_t<is_sequence_v<T> &&
-                                           detail::is_partially_packaged_task_v<last_element_t<T>> &&
-                                           detail::stage_requirement_v<last_element_t<T>> == stage_requirement::output,
-                                       int> = 0>
+template <typename T,
+          require<is_sequence_v<T>,
+                  detail::is_partially_packaged_task_v<last_element_t<T>>,
+                  detail::stage_requirement_v<last_element_t<T>> == stage_requirement::output> = yes>
 auto terminate(T seq)
 {
     using last_element_type = last_element_t<T>;
@@ -124,31 +140,31 @@ auto terminate(T seq)
 namespace celerity
 {
 template <typename T, int Rank, typename U,
-          std::enable_if_t<algorithm::is_linkable_sink_v<U>, int> = 0>
+          algorithm::require<algorithm::is_linkable_sink_v<U>> = algorithm::yes>
 auto operator|(celerity::buffer<T, Rank> lhs, U rhs)
 {
     return rhs.complete(begin(lhs), end(lhs));
 }
 
 template <typename T, int Rank, typename U,
-          std::enable_if_t<algorithm::is_linkable_sink_v<T>, int> = 0>
+          algorithm::require<algorithm::is_linkable_sink_v<T>> = algorithm::yes>
 auto operator<<(T lhs, celerity::buffer<U, Rank> rhs)
 {
     return lhs.complete(begin(rhs), end(rhs));
 }
 
 template <typename T, int Rank, typename U,
-          std::enable_if_t<algorithm::is_linkable_source_v<T> && algorithm::detail::partially_packaged_task_traits<T>::requirement == algorithm::stage_requirement::output, int> = 0>
+          algorithm::require<algorithm::is_linkable_source_v<T>,
+                             algorithm::detail::partially_packaged_task_traits<T>::requirement == algorithm::stage_requirement::output> = algorithm::yes>
 auto operator|(T lhs, celerity::buffer<U, Rank> rhs)
 {
     return lhs.complete(begin(rhs), end(rhs));
 }
 
 template <typename T, int Rank, typename U,
-          std::enable_if_t<algorithm::is_sequence_v<T> &&
-                               algorithm::is_linkable_source_v<algorithm::last_element_t<T>> &&
-                               algorithm::detail::partially_packaged_task_traits<algorithm::last_element_t<T>>::requirement == algorithm::stage_requirement::output,
-                           int> = 0>
+          algorithm::require<algorithm::is_sequence_v<T>,
+                             algorithm::is_linkable_source_v<algorithm::last_element_t<T>>,
+                             algorithm::detail::partially_packaged_task_traits<algorithm::last_element_t<T>>::requirement == algorithm::stage_requirement::output> = algorithm::yes>
 auto operator|(T lhs, celerity::buffer<U, Rank> rhs)
 {
     return remove_last_element(lhs) | (get_last_element(lhs) | rhs);

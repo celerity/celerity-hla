@@ -3,10 +3,11 @@
 
 #include "../iterator.h"
 #include "../task.h"
-#include "../task_sequence.h"
 #include "../accessor_proxy.h"
 #include "../policy.h"
 #include "../sequencing.h"
+#include "../require.h"
+
 namespace celerity::algorithm
 {
 namespace actions
@@ -41,7 +42,7 @@ auto generate(IteratorType<T, Rank> beg, IteratorType<T, Rank> end, const F &f)
 } // namespace detail
 
 template <typename ExecutionPolicy, typename F, typename T, int Rank,
-          std::enable_if_t<algorithm::detail::arity_v<F> == 1, int> = 0>
+          require<algorithm::detail::arity_v<F> == 1> = yes>
 auto generate(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
     static_assert(algorithm::detail::get_accessor_type<F, 0>() == access_type::item);
@@ -51,7 +52,7 @@ auto generate(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const 
 }
 
 template <typename ExecutionPolicy, typename F, int Rank,
-          std::enable_if_t<algorithm::detail::arity_v<F> == 1, int> = 0>
+          require<algorithm::detail::arity_v<F> == 1> = yes>
 auto generate(cl::sycl::range<Rank> range, const F &f)
 {
     static_assert(algorithm::detail::get_accessor_type<F, 0>() == access_type::item);
@@ -65,7 +66,7 @@ auto generate(cl::sycl::range<Rank> range, const F &f)
 
 // DISABLED
 template <typename ExecutionPolicy, typename F, typename T, int Rank,
-          std::enable_if_t<algorithm::detail::arity_v<F> == 0, int> = 0>
+          require<algorithm::detail::arity_v<F> == 0> = yes>
 auto generate(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
     static_assert(std::is_void_v<F>,

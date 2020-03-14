@@ -10,6 +10,7 @@
 #include <assert.h>
 
 #include "sequence_traits.h"
+#include "require.h"
 
 namespace celerity::algorithm
 {
@@ -183,7 +184,8 @@ auto operator|(sequence<Ts...> lhs, sequence<Us...> rhs)
 	return sequence<Ts..., Us...>{std::tuple_cat(lhs.actions(), rhs.actions())};
 }
 
-template <typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
+template <typename T,
+		  require<is_sequence_v<T>> = yes>
 constexpr auto get_last_element(const T &s)
 {
 	return std::get<size_v<T> - 1>(s.actions());
@@ -195,13 +197,15 @@ constexpr auto dispatch_remove_last_element(const T &s, std::index_sequence<Is..
 	return sequence(std::get<Is>(s.actions())...);
 }
 
-template <typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
+template <typename T,
+		  require<is_sequence_v<T>> = yes>
 constexpr auto remove_last_element(const T &s)
 {
 	return dispatch_remove_last_element(s, std::make_index_sequence<size_v<T> - 1>{});
 }
 
-template <typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
+template <typename T,
+		  require<is_sequence_v<T>> = yes>
 constexpr auto get_first_element(const T &s)
 {
 	return std::get<0>(s.actions());
@@ -213,7 +217,8 @@ constexpr auto dispatch_remove_first_element(const T &s, std::index_sequence<Is.
 	return sequence(std::get<Is + 1>(s.actions())...);
 }
 
-template <typename T, std::enable_if_t<is_sequence_v<T>, int> = 0>
+template <typename T,
+		  require<is_sequence_v<T>> = yes>
 constexpr auto remove_first_element(const T &s)
 {
 	return dispatch_remove_first_element(s, std::make_index_sequence<size_v<T> - 1>{});

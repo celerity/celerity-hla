@@ -7,6 +7,7 @@
 #include "kernel_traits.h"
 #include "iterator.h"
 #include "accessor_type.h"
+#include "require.h"
 
 #include <future>
 
@@ -148,7 +149,8 @@ auto task(const task_t<ExecutionPolicy, T> &t)
 	return t;
 }
 
-template <typename ExecutionPolicy, typename T, std::enable_if_t<!is_sequence_v<T> && detail::is_master_task_v<T>, int> = 0>
+template <typename ExecutionPolicy, typename T,
+		  require<!is_sequence_v<T>, detail::is_master_task_v<T>> = yes>
 auto task(const T &invocable)
 {
 	return task_t<strip_queue_t<ExecutionPolicy>, T>{invocable};
@@ -160,7 +162,7 @@ auto task(const sequence<Ts...> &seq)
 	using policy_type = strip_queue_t<ExecutionPolicy>;
 	return task_t<policy_type, Ts...>{seq};
 }
- // namespace celerity::algorithm
+
 template <typename F>
 struct is_task : std::bool_constant<false>
 {
@@ -173,6 +175,18 @@ struct is_task<task_t<ExecutionPolicy, Actions...>> : std::bool_constant<true>
 
 template <typename F>
 inline constexpr bool is_task_v = is_task<F>::value;
+
+template <typename F>
+decltype(auto) operator|(task_t<non_blocking_master_execution_policy, F> lhs, celerity::distr_queue queue)
+{
+	return std::invoke(lhs, queue);
+}
+
+template <typename F>
+decltype(auto) operator|(task_t<blocking_master_execution_policy, F> lhs, celerity::distr_queue queue)
+{
+	return std::invoke(lhs, queue);
+}
 
 } // namespace celerity::algorithm
 

@@ -3,7 +3,6 @@
 
 #include "../iterator.h"
 #include "../task.h"
-#include "../task_sequence.h"
 #include "../accessor_proxy.h"
 #include "../policy.h"
 #include "../sequencing.h"
