@@ -24,17 +24,17 @@ public:
 
 	bool operator==(const iterator &rhs)
 	{
-		return equals(pos_, rhs.pos_);
+		return detail::equals(pos_, rhs.pos_);
 	}
 
 	bool operator!=(const iterator &rhs)
 	{
-		return !equals(pos_, rhs.pos_);
+		return !detail::equals(pos_, rhs.pos_);
 	}
 
 	iterator &operator++()
 	{
-		pos_ = celerity::next(pos_, range_);
+		pos_ = next(pos_, range_);
 
 		if (pos_[0] != range_[0])
 			return *this;
@@ -86,17 +86,31 @@ private:
 	celerity::buffer<T, Rank> buffer_;
 };
 
+namespace detail
+{
+
 template <int Rank>
 cl::sycl::range<Rank> distance(iterator<Rank> from, iterator<Rank> to)
 {
-	return celerity::distance(*from, *to);
+	return distance(*from, *to);
 }
 
 template <typename T, int Rank>
 cl::sycl::range<Rank> distance(buffer_iterator<T, Rank> from, buffer_iterator<T, Rank> to)
 {
-	return celerity::distance(*from, *to);
+	return distance(*from, *to);
 }
+
+template <int Rank, typename Iterator, typename F>
+void for_each_index(Iterator beg, Iterator end, cl::sycl::range<Rank> r, cl::sycl::id<Rank> offset, const F &f)
+{
+	std::for_each(algorithm::iterator<Rank>{*beg, r}, algorithm::iterator<Rank>{*end, r},
+				  [&](auto i) {
+					  f(cl::sycl::detail::make_item(i + offset, r, offset));
+				  });
+}
+
+} // namespace detail
 
 namespace traits
 {
@@ -130,6 +144,7 @@ buffer_iterator<T, Rank> next(buffer_iterator<T, Rank> it)
 {
 	return ++it;
 }
+
 } // namespace celerity::algorithm
 
 namespace celerity
@@ -146,14 +161,6 @@ algorithm::buffer_iterator<T, Rank> end(celerity::buffer<T, Rank> buffer)
 	return algorithm::buffer_iterator<T, Rank>(buffer.get_range(), buffer);
 }
 
-template <int Rank, typename Iterator, typename F>
-void for_each_index(Iterator beg, Iterator end, cl::sycl::range<Rank> r, cl::sycl::id<Rank> offset, const F &f)
-{
-	std::for_each(algorithm::iterator<Rank>{*beg, r}, algorithm::iterator<Rank>{*end, r},
-				  [&](auto i) {
-					  f(cl::sycl::detail::make_item(i + offset, r, offset));
-				  });
-}
 } // namespace celerity
 
 #endif

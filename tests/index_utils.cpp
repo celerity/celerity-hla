@@ -3,6 +3,8 @@
 #include "../src/sycl.h"
 
 using namespace celerity;
+using namespace celerity::algorithm;
+using namespace celerity::algorithm::detail;
 using namespace cl::sycl;
 
 SCENARIO("ranges can be counted", "[cl::sycl::range]")

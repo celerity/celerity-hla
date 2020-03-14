@@ -28,7 +28,7 @@ auto copy_impl(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 		if constexpr (traits::is_contiguous_iterator<IteratorType>() &&
 					  sizeof(T) == sizeof(typename std::iterator_traits<IteratorType>::value_type))
 		{
-			return [=]() { memcpy(out, in_acc.get_accessor().get_pointer(), distance(beg, end).size() * sizeof(T)); };
+			return [=]() { memcpy(out, in_acc.get_accessor().get_pointer(), detail::distance(beg, end).size() * sizeof(T)); };
 		}
 		else
 		{

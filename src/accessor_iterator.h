@@ -21,12 +21,12 @@ public:
 
     bool operator==(const slice_iterator &rhs)
     {
-        return equals(get_id(), rhs.get_id());
+        return detail::equals(get_id(), rhs.get_id());
     }
 
     bool operator!=(const slice_iterator &rhs)
     {
-        return !equals(get_id(), rhs.get_id());
+        return !detail::equals(get_id(), rhs.get_id());
     }
 
     slice_iterator &operator++()
@@ -77,12 +77,12 @@ public:
 
     bool operator==(const chunk_iterator &rhs)
     {
-        return equals(get_id(), rhs.get_id());
+        return detail::equals(get_id(), rhs.get_id());
     }
 
     bool operator!=(const chunk_iterator &rhs)
     {
-        return !equals(get_id(), rhs.get_id());
+        return !detail::equals(get_id(), rhs.get_id());
     }
 
     chunk_iterator &operator++()
@@ -136,12 +136,12 @@ public:
 
     bool operator==(const all_iterator &rhs)
     {
-        return equals(get_id(), rhs.get_id());
+        return detail::equals(get_id(), rhs.get_id());
     }
 
     bool operator!=(const all_iterator &rhs)
     {
-        return !equals(get_id(), rhs.get_id());
+        return !detail::equals(get_id(), rhs.get_id());
     }
 
     all_iterator &operator++()

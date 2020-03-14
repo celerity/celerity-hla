@@ -5,7 +5,7 @@
 #include <celerity.h>
 #include "require.h"
 
-namespace celerity
+namespace celerity::algorithm::detail
 {
 template <typename ElementTypeA, int RankA,
           typename ElementTypeB, int RankB,
@@ -20,6 +20,6 @@ bool are_equal(buffer<ElementType, Rank> a, buffer<ElementType, Rank> b)
 {
     return a.get_id() == b.get_id();
 }
-} // namespace celerity
+} // namespace celerity::algorithm::detail
 
 #endif

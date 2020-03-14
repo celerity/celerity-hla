@@ -49,7 +49,7 @@ template <int Dimensions>
 using rel_id = std::array<int, Dimensions>;
 }
 
-namespace celerity
+namespace celerity::algorithm
 {
 namespace detail
 {
@@ -114,7 +114,44 @@ cl::sycl::id<1> linearize(cl::sycl::id<3> idx, cl::sycl::range<3> r)
 {
 	return {idx[0] * r[1] * r[2] + idx[1] * r[2] + idx[2]};
 }
-} // namespace detail
+
+template <int Rank>
+constexpr cl::sycl::id<Rank> max_id(cl::sycl::range<Rank> r)
+{
+	cl::sycl::id<Rank> offset{};
+
+	for (int i = 0; i < Rank; ++i)
+	{
+		offset[i] += r[i] - 1;
+	}
+
+	return offset;
+}
+
+template <int Rank>
+constexpr cl::sycl::range<Rank> distance(cl::sycl::id<Rank> from, cl::sycl::id<Rank> to)
+{
+	cl::sycl::range<Rank> dist{};
+
+	for (int i = 0; i < Rank; ++i)
+	{
+		dist[i] = to[i] - from[i];
+	}
+
+	return dist;
+}
+
+template <int Rank>
+constexpr bool equals(cl::sycl::id<Rank> lhs, cl::sycl::id<Rank> rhs)
+{
+	return detail::dispatch_equals(lhs, rhs, std::make_index_sequence<Rank>{});
+}
+
+template <int Rank>
+constexpr bool equals(cl::sycl::range<Rank> lhs, cl::sycl::range<Rank> rhs)
+{
+	return detail::dispatch_equals(lhs, rhs, std::make_index_sequence<Rank>{});
+}
 
 template <int Rank>
 cl::sycl::id<1> linearize(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> r)
@@ -127,6 +164,8 @@ constexpr size_t count(cl::sycl::range<Rank> r)
 {
 	return detail::dispatch_count(r, std::make_index_sequence<Rank>{});
 }
+
+} // namespace detail
 
 template <int Rank>
 constexpr cl::sycl::id<Rank> next(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> max_id, int distance = 1)
@@ -144,17 +183,6 @@ constexpr cl::sycl::id<Rank> next(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> 
 }
 
 template <int Rank>
-constexpr cl::sycl::id<Rank> max_id(cl::sycl::range<Rank> r, cl::sycl::id<Rank> offset = {})
-{
-	for (int i = 0; i < Rank; ++i)
-	{
-		offset[i] += r[i] - 1;
-	}
-
-	return offset;
-}
-
-template <int Rank>
 constexpr cl::sycl::id<Rank> prev(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> r, int distance = 1)
 {
 	cl::sycl::id<Rank> out = idx;
@@ -163,11 +191,14 @@ constexpr cl::sycl::id<Rank> prev(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> 
 
 	if constexpr (Rank > 1)
 	{
-		detail::dispatch_prev_n(out, max_id(r), std::make_index_sequence<Rank - 1>{});
+		detail::dispatch_prev_n(out, detail::max_id(r), std::make_index_sequence<Rank - 1>{});
 	}
 
 	return out;
 }
+
+namespace detail
+{
 
 template <int Rank>
 constexpr std::tuple<cl::sycl::id<Rank>, bool> try_next(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> r, int distance = 1)
@@ -176,30 +207,8 @@ constexpr std::tuple<cl::sycl::id<Rank>, bool> try_next(cl::sycl::id<Rank> idx, 
 	return {out, equal(out, idx)};
 }
 
-template <int Rank>
-constexpr bool equals(cl::sycl::id<Rank> lhs, cl::sycl::id<Rank> rhs)
-{
-	return detail::dispatch_equals(lhs, rhs, std::make_index_sequence<Rank>{});
-}
+} // namespace detail
 
-template <int Rank>
-constexpr bool equals(cl::sycl::range<Rank> lhs, cl::sycl::range<Rank> rhs)
-{
-	return detail::dispatch_equals(lhs, rhs, std::make_index_sequence<Rank>{});
-}
-
-template <int Rank>
-constexpr cl::sycl::range<Rank> distance(cl::sycl::id<Rank> from, cl::sycl::id<Rank> to)
-{
-	cl::sycl::range<Rank> dist{};
-
-	for (int i = 0; i < Rank; ++i)
-	{
-		dist[i] = to[i] - from[i];
-	}
-
-	return dist;
-}
-} // namespace celerity
+} // namespace celerity::algorithm
 
 #endif // SYCL_HELPER_H
