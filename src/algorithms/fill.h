@@ -17,8 +17,10 @@ namespace detail
 template <typename ExecutionPolicy, template <typename, int> typename IteratorType, typename T, int Rank>
 auto fill(IteratorType<T, Rank> beg, IteratorType<T, Rank> end, const T &value)
 {
-    using policy_type = strip_queue_t<ExecutionPolicy>;
+    using namespace traits;
     using namespace cl::sycl::access;
+
+    using policy_type = strip_queue_t<ExecutionPolicy>;
 
     return [=](celerity::handler &cgh) {
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, beg, end);

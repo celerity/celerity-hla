@@ -5,7 +5,7 @@
 
 #include <utility>
 
-namespace celerity::algorithm
+namespace celerity::algorithm::traits
 {
 
 template <typename T>
@@ -57,6 +57,6 @@ struct first_result<std::tuple<Ts...>>
 template <typename T>
 using first_result_t = typename first_result<T>::type;
 
-} // namespace celerity::algorithm
+} // namespace celerity::algorithm::traits
 
 #endif

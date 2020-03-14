@@ -5,7 +5,7 @@
 #include "computation_type.h"
 #include "require.h"
 
-namespace celerity::algorithm::detail
+namespace celerity::algorithm::traits
 {
 
 template <typename T>
@@ -91,6 +91,6 @@ constexpr bool is_packaged_task_sequence()
 template <typename F>
 constexpr inline bool is_packaged_task_sequence_v = is_packaged_task_sequence<F>();
 
-} // namespace celerity::algorithm::detail
+} // namespace celerity::algorithm::traits
 
 #endif // PACKAGED_TASK_TRAITS_H

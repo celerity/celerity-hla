@@ -45,8 +45,8 @@ std::vector<cl::sycl::float3> load_image(std::string filename, int &width, int &
 namespace kernels
 {
 
-using f = celerity::algorithm::buffer_traits<float, 2>;
-using f3 = celerity::algorithm::buffer_traits<cl::sycl::float3, 2>;
+using f = celerity::algorithm::traits::buffer_traits<float, 2>;
+using f3 = celerity::algorithm::traits::buffer_traits<cl::sycl::float3, 2>;
 
 constexpr auto gen_gauss = [](cl::sycl::item<2> item) {
 	const auto x = item.get_id(1) - (FILTER_SIZE / 2);
@@ -122,7 +122,8 @@ int main(int argc, char *argv[])
 
 	// auto out_buf = seq | submit_to(queue);
 
-	std::vector<std::array<uint8_t, 3>> image_output(image_width * image_height);
+	std::vector<std::array<uint8_t, 3>>
+		image_output(image_width * image_height);
 	copy(master_blocking(queue), begin(out_buf), end(out_buf), image_output.data());
 	stbi_write_png("./output.png", image_width, image_height, image_channels, image_output.data(), 0);
 

@@ -6,6 +6,7 @@
 #include "../accessor_proxy.h"
 #include "../policy.h"
 #include "../sequencing.h"
+#include "../require.h"
 
 namespace celerity::algorithm
 {
@@ -13,7 +14,8 @@ namespace actions
 {
 namespace detail
 {
-template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank, typename = ::std::enable_if_t<algorithm::detail::get_accessor_type<BinaryOp, 1>() == access_type::one_to_one>>
+template <typename ExecutionPolicy, typename BinaryOp, typename T, int Rank,
+		  require<traits::get_accessor_type<BinaryOp, 1>() == access_type::one_to_one> = yes>
 auto accumulate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, T init, const BinaryOp &op)
 {
 	/*using policy_type = strip_queue_t<ExecutionPolicy>;

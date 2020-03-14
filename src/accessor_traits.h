@@ -3,7 +3,7 @@
 
 #include "accessors.h"
 
-namespace celerity::algorithm::detail
+namespace celerity::algorithm::traits
 {
 template <int Rank, typename AccessorType>
 struct accessor_traits;
@@ -96,6 +96,6 @@ struct is_all<all<T, Rank>> : std::true_type
 template <typename T>
 inline constexpr auto is_all_v = is_all<T>::value;
 
-} // namespace celerity::algorithm::detail
+} // namespace celerity::algorithm::traits
 
 #endif // ACCESSOR_TRAITS_H

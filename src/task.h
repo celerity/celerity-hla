@@ -23,7 +23,7 @@ class task_t<named_distributed_execution_policy<KernelName>, Actions...>
 public:
 	using execution_policy_type = named_distributed_execution_policy<KernelName>;
 
-	static_assert(((detail::is_compute_task_v<Actions>)&&...), "task can only contain compute task functors");
+	static_assert(((traits::is_compute_task_v<Actions>)&&...), "task can only contain compute task functors");
 
 	explicit task_t(algorithm::sequence<Actions...> &&s)
 		: sequence_(std::move(s)) {}
@@ -36,17 +36,20 @@ public:
 	template <int Rank>
 	void operator()(distr_queue &q, iterator<Rank> beg, iterator<Rank> end) const
 	{
+		using namespace traits;
+		using namespace std;
+
 		const auto d = distance(beg, end);
 
 		q.submit([seq = sequence_, d, beg](handler &cgh) {
-			const auto r = std::invoke(seq, cgh);
+			const auto r = invoke(seq, cgh);
 
 			using first_kernel_type = first_result_t<decltype(r)>;
-			using item_context_type = std::decay_t<detail::arg_type_t<first_kernel_type, 0>>;
+			using item_context_type = decay_t<arg_type_t<first_kernel_type, 0>>;
 
 			cgh.template parallel_for<KernelName>(d, *beg, [=](cl::sycl::item<Rank> item) {
 				item_context_type ctx{item};
-				std::invoke(sequence(r), ctx);
+				invoke(sequence(r), ctx);
 			});
 		});
 	}
@@ -61,25 +64,28 @@ template <typename F>
 class task_t<non_blocking_master_execution_policy, F>
 {
 public:
-	static_assert(detail::is_master_task_v<F>, "task can only contain master task functors");
+	static_assert(traits::is_master_task_v<F>, "task can only contain master task functors");
 
 	explicit task_t(F f) : sequence_(std::move(f)) {}
 
 	template <int Rank>
 	void operator()(distr_queue &q, iterator<Rank> beg, iterator<Rank> end) const
 	{
+		using namespace traits;
+		using namespace std;
+
 		const auto d = distance(beg, end);
 
 		q.with_master_access([seq = sequence_, d, beg, end](handler &cgh) {
-			const auto r = std::invoke(seq, cgh);
+			const auto r = invoke(seq, cgh);
 
 			using first_kernel_type = first_result_t<decltype(r)>;
-			using item_context_type = std::decay_t<detail::arg_type_t<first_kernel_type, 0>>;
+			using item_context_type = decay_t<arg_type_t<first_kernel_type, 0>>;
 
 			cgh.run([&]() {
 				for_each_index(beg, end, d, *beg, [r](cl::sycl::item<Rank> item) {
 					item_context_type ctx{item};
-					std::invoke(sequence(r), ctx);
+					invoke(sequence(r), ctx);
 				});
 			});
 		});
@@ -102,25 +108,28 @@ template <typename F>
 class task_t<blocking_master_execution_policy, F>
 {
 public:
-	static_assert(detail::is_master_task_v<F>, "task can only contain master task functors");
+	static_assert(traits::is_master_task_v<F>, "task can only contain master task functors");
 
 	explicit task_t(F f) : sequence_(std::move(f)) {}
 
 	template <int Rank>
 	void operator()(distr_queue &q, iterator<Rank> beg, iterator<Rank> end) const
 	{
+		using namespace traits;
+		using namespace std;
+
 		const auto d = distance(beg, end);
 
 		q.with_master_access([seq = sequence_, d, beg, end](handler &cgh) {
-			const auto r = std::invoke(seq, cgh);
+			const auto r = invoke(seq, cgh);
 
 			using first_kernel_type = first_result_t<decltype(r)>;
-			using item_context_type = std::decay_t<detail::arg_type_t<first_kernel_type, 0>>;
+			using item_context_type = decay_t<arg_type_t<first_kernel_type, 0>>;
 
 			cgh.run([&]() {
 				for_each_index(beg, end, d, *beg, [r](cl::sycl::item<Rank> item) {
 					item_context_type ctx{item};
-					std::invoke(sequence(r), ctx);
+					invoke(sequence(r), ctx);
 				});
 			});
 		});
@@ -150,18 +159,22 @@ auto task(const task_t<ExecutionPolicy, T> &t)
 }
 
 template <typename ExecutionPolicy, typename T,
-		  require<!is_sequence_v<T>, detail::is_master_task_v<T>> = yes>
+		  require<!traits::is_sequence_v<T>,
+				   traits::is_master_task_v<T>> = yes>
 auto task(const T &invocable)
 {
-	return task_t<strip_queue_t<ExecutionPolicy>, T>{invocable};
+	return task_t<traits::strip_queue_t<ExecutionPolicy>, T>{invocable};
 }
 
 template <typename ExecutionPolicy, typename... Ts>
 auto task(const sequence<Ts...> &seq)
 {
-	using policy_type = strip_queue_t<ExecutionPolicy>;
+	using policy_type = traits::strip_queue_t<ExecutionPolicy>;
 	return task_t<policy_type, Ts...>{seq};
 }
+
+namespace traits
+{
 
 template <typename F>
 struct is_task : std::bool_constant<false>
@@ -175,6 +188,8 @@ struct is_task<task_t<ExecutionPolicy, Actions...>> : std::bool_constant<true>
 
 template <typename F>
 inline constexpr bool is_task_v = is_task<F>::value;
+
+} // namespace traits
 
 template <typename F>
 decltype(auto) operator|(task_t<non_blocking_master_execution_policy, F> lhs, celerity::distr_queue queue)

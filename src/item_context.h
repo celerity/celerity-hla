@@ -6,11 +6,6 @@
 namespace celerity::algorithm
 {
 
-template <typename T>
-struct is_item_context : std::bool_constant<false>
-{
-};
-
 template <int Rank, typename T>
 class item_shared_data
 {
@@ -56,6 +51,14 @@ private:
     std::array<ContextType, 2> shared_data_;
 };
 
+namespace traits
+{
+
+template <typename T>
+struct is_item_context : std::bool_constant<false>
+{
+};
+
 template <int Rank, typename ContextType>
 struct is_item_context<item_context<Rank, ContextType>> : std::bool_constant<true>
 {
@@ -63,6 +66,8 @@ struct is_item_context<item_context<Rank, ContextType>> : std::bool_constant<tru
 
 template <typename T>
 inline constexpr bool is_item_context_v = is_item_context<T>::value;
+
+} // namespace traits
 
 } // namespace celerity::algorithm
 

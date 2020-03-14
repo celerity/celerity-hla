@@ -18,13 +18,15 @@ namespace detail
 template <typename ExecutionPolicy, typename F, template <typename, int> typename IteratorType, typename T, int Rank>
 auto generate(IteratorType<T, Rank> beg, IteratorType<T, Rank> end, const F &f)
 {
-    using policy_type = strip_queue_t<ExecutionPolicy>;
+    using namespace traits;
     using namespace cl::sycl::access;
+
+    using policy_type = strip_queue_t<ExecutionPolicy>;
 
     return [=](celerity::handler &cgh) {
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, beg, end);
 
-        if constexpr (algorithm::detail::arity_v<F> == 1)
+        if constexpr (traits::arity_v<F> == 1)
         {
             return [=](item_context<Rank, T> &ctx) {
                 out_acc[ctx[0]] = f(ctx[0]);
@@ -42,20 +44,20 @@ auto generate(IteratorType<T, Rank> beg, IteratorType<T, Rank> end, const F &f)
 } // namespace detail
 
 template <typename ExecutionPolicy, typename F, typename T, int Rank,
-          require<algorithm::detail::arity_v<F> == 1> = yes>
+          require<traits::arity_v<F> == 1> = yes>
 auto generate(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
-    static_assert(algorithm::detail::get_accessor_type<F, 0>() == access_type::item);
+    static_assert(traits::get_accessor_type<F, 0>() == access_type::item);
 
     const auto t = task<ExecutionPolicy>(detail::generate<ExecutionPolicy>(beg, end, f));
     return [=](distr_queue q) { t(q, beg, end); };
 }
 
 template <typename ExecutionPolicy, typename F, int Rank,
-          require<algorithm::detail::arity_v<F> == 1> = yes>
+          require<traits::arity_v<F> == 1> = yes>
 auto generate(cl::sycl::range<Rank> range, const F &f)
 {
-    static_assert(algorithm::detail::get_accessor_type<F, 0>() == access_type::item);
+    static_assert(traits::get_accessor_type<F, 0>() == access_type::item);
 
     using value_type = std::invoke_result_t<F, cl::sycl::item<Rank>>;
 
@@ -66,7 +68,7 @@ auto generate(cl::sycl::range<Rank> range, const F &f)
 
 // DISABLED
 template <typename ExecutionPolicy, typename F, typename T, int Rank,
-          require<algorithm::detail::arity_v<F> == 0> = yes>
+          require<traits::arity_v<F> == 0> = yes>
 auto generate(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
 {
     static_assert(std::is_void_v<F>,

@@ -5,6 +5,7 @@
 
 namespace celerity::algorithm
 {
+
 enum class access_type
 {
 	one_to_one,
@@ -14,9 +15,10 @@ enum class access_type
 	all,
 	invalid,
 };
+
 }
 
-namespace celerity::algorithm::detail
+namespace celerity::algorithm::traits
 {
 
 template <typename T, typename = std::void_t<>>
@@ -47,7 +49,7 @@ struct function_traits<ReturnType (ClassType::*)(Args...) const>
 
 	template <size_t I, bool OutOfBounds>
 	struct arg;
-	
+
 	template <size_t I>
 	struct arg<I, true>
 	{
@@ -60,8 +62,9 @@ struct function_traits<ReturnType (ClassType::*)(Args...) const>
 		using type = typename std::tuple_element<I, std::tuple<Args...>>::type;
 	};
 
-	template<size_t I>
-	using arg_t = typename arg<I, I < 0 || I >= arity>::type;
+	template <size_t I>
+	using arg_t = typename arg < I,
+		  I<0 || I >= arity>::type;
 };
 
 template <typename T>
@@ -110,19 +113,19 @@ constexpr access_type get_accessor_type_()
 {
 	using decayed_type = std::decay_t<ArgType>;
 
-	if constexpr (detail::is_slice_v<decayed_type>)
+	if constexpr (traits::is_slice_v<decayed_type>)
 	{
 		return access_type::slice;
 	}
-	else if constexpr (detail::is_chunk_v<decayed_type>)
+	else if constexpr (traits::is_chunk_v<decayed_type>)
 	{
 		return access_type::chunk;
 	}
-	else if constexpr (detail::is_item_v<decayed_type>)
+	else if constexpr (traits::is_item_v<decayed_type>)
 	{
 		return access_type::item;
 	}
-	else if constexpr (detail::is_all_v<decayed_type>)
+	else if constexpr (traits::is_all_v<decayed_type>)
 	{
 		return access_type::all;
 	}
@@ -161,7 +164,6 @@ template <typename F>
 using kernel_result_t = std::conditional_t<has_call_operator_v<F>,
 										   result_type_t<F>,
 										   void>;
-
-} // namespace celerity::algorithm::detail
+} // namespace celerity::algorithm::traits
 
 #endif

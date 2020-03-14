@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	try
 	{
 		using buffer_type = celerity::buffer<float, 2>;
-		using t = celerity::algorithm::buffer_traits<float, 2>;
+		using t = celerity::algorithm::traits::buffer_traits<float, 2>;
 
 		distr_queue queue;
 		const auto mat_range = cl::sycl::range<2>{MAT_SIZE, MAT_SIZE};

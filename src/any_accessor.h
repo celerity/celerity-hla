@@ -4,7 +4,7 @@
 #include "sycl.h"
 #include "celerity_accessor_traits.h"
 
-namespace celerity::detail
+namespace celerity::algorithm::detail
 {
 
 template <class T>
@@ -26,10 +26,10 @@ public:
     using storage_type = Storage;
 
     template <typename AccessorType,
-              std::enable_if_t<std::is_same_v<T, accessor_value_type_t<AccessorType>>, int> = 0>
-    explicit any_accessor(const AccessorType &acc) : rank_(accessor_rank_v<AccessorType>),
-                                                     mode_(accessor_mode_v<AccessorType>),
-                                                     target_(accessor_target_v<AccessorType>)
+              std::enable_if_t<std::is_same_v<T, traits::accessor_value_type_t<AccessorType>>, int> = 0>
+    explicit any_accessor(const AccessorType &acc) : rank_(traits::accessor_rank_v<AccessorType>),
+                                                     mode_(traits::accessor_mode_v<AccessorType>),
+                                                     target_(traits::accessor_target_v<AccessorType>)
     {
         static_assert(sizeof(AccessorType) <= sizeof(storage_type));
         placement_copy_construct(&storage_, acc);
@@ -188,6 +188,6 @@ private:
     storage_type storage_;
 };
 
-} // namespace celerity::detail
+} // namespace celerity::algorithm::detail
 
 #endif

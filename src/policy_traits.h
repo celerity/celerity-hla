@@ -1,7 +1,7 @@
 #ifndef POLICY_TRAITS_H
 #define POLICY_TRAITS_H
 
-namespace celerity::algorithm
+namespace celerity::algorithm::traits
 {
 
 template <typename Policy>
@@ -25,6 +25,6 @@ struct strip_queue
 template <typename T>
 using strip_queue_t = typename strip_queue<T>::type;
 
-} // namespace celerity::algorithm
+} // namespace celerity::algorithm::traits
 
 #endif // POLICY_TRAITS_H

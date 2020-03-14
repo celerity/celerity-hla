@@ -5,6 +5,7 @@
 #include "packaged_task_traits.h"
 #include "item_context.h"
 #include "sequence.h"
+#include "transient_traits.h"
 
 namespace celerity::algorithm
 {
@@ -54,11 +55,6 @@ private:
 template <typename T, int Rank>
 unsigned long long transient_buffer<T, Rank>::curr_id = 0;
 
-template <typename T>
-struct is_transient : std::false_type
-{
-};
-
 template <typename T, int Rank>
 struct transient_iterator : iterator<Rank>
 {
@@ -81,13 +77,13 @@ private:
     transient_buffer<T, Rank> buffer_;
 };
 
+namespace traits
+{
 template <typename T, int Rank>
 struct is_transient<transient_iterator<T, Rank>> : std::true_type
 {
 };
-
-template <typename T>
-inline constexpr bool is_transient_v = is_transient<T>::value;
+} // namespace traits
 
 template <typename T, int Rank>
 transient_iterator<T, Rank> begin(transient_buffer<T, Rank> buffer)

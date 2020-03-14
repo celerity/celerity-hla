@@ -3,7 +3,7 @@
 
 #include "accessors.h"
 
-namespace celerity::algorithm
+namespace celerity::algorithm::traits
 {
 
 template <typename ElementType, int Rank>
@@ -22,6 +22,6 @@ struct buffer_traits
     using item = cl::sycl::item<Rank>;
 };
 
-} // namespace celerity::algorithm
+} // namespace celerity::algorithm::traits
 
 #endif

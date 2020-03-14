@@ -5,7 +5,7 @@
 
 #include <type_traits>
 
-namespace celerity::detail
+namespace celerity::algorithm
 {
 
 template <typename T, int Rank, cl::sycl::access::mode Mode>
@@ -13,6 +13,9 @@ using host_accessor = cl::sycl::accessor<T, Rank, Mode, cl::sycl::access::target
 
 template <typename T, int Rank, cl::sycl::access::mode Mode, cl::sycl::access::target Target>
 using device_accessor = cl::sycl::accessor<T, Rank, Mode, Target, cl::sycl::access::placeholder::true_t>;
+
+namespace traits
+{
 
 template <class T>
 struct is_host_accessor;
@@ -108,6 +111,6 @@ struct accessor_value_type<device_accessor<T, Rank, Mode, Target>>
 template <class T>
 using accessor_value_type_t = typename accessor_value_type<T>::type;
 
-} // namespace celerity::detail
-
+} // namespace traits
+} // namespace celerity::algorithm
 #endif // CELERITY_ACCESSOR_TRAITS_H

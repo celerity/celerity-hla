@@ -49,41 +49,44 @@ std::string to_string()
     return typeid(T).name();
 }
 
-template <typename T, std::enable_if_t<detail::is_packaged_task_v<T>, int> = 0>
+template <typename T,
+          require<traits::is_packaged_task_v<T>> = yes>
 void to_string(std::stringstream &ss, T task)
 {
-    using traits = detail::packaged_task_traits<T>;
+    using t = traits::packaged_task_traits<T>;
 
     ss << "packaged task:\n";
-    ss << "  is t-joint          : " << std::boolalpha << detail::is_t_joint_v<T> << "\n";
-    ss << "  type                : " << to_string(traits::computation_type) << "\n";
-    ss << "  rank                : " << traits::rank << "\n";
-    ss << "  access type         : " << to_string(traits::access_type) << "\n";
-    ss << "  input value type    : " << to_string<typename traits::input_value_type>() << "\n";
-    ss << "  output value type   : " << to_string<typename traits::output_value_type>() << "\n";
-    ss << "  input iterator type : " << to_string<typename traits::input_iterator_type>() << "\n";
-    ss << "  output iterator type: " << to_string<typename traits::output_iterator_type>() << "\n";
+    ss << "  is t-joint          : " << std::boolalpha << traits::is_t_joint_v<T> << "\n";
+    ss << "  type                : " << to_string(t::computation_type) << "\n";
+    ss << "  rank                : " << t::rank << "\n";
+    ss << "  access type         : " << to_string(t::access_type) << "\n";
+    ss << "  input value type    : " << to_string<typename t::input_value_type>() << "\n";
+    ss << "  output value type   : " << to_string<typename t::output_value_type>() << "\n";
+    ss << "  input iterator type : " << to_string<typename t::input_iterator_type>() << "\n";
+    ss << "  output iterator type: " << to_string<typename t::output_iterator_type>() << "\n";
 
-    if constexpr (traits::computation_type == computation_type::zip)
+    if constexpr (t::computation_type == computation_type::zip)
     {
-        using ext_traits = detail::extended_packaged_task_traits<T, computation_type::zip>;
+        using ext_t = traits::extended_packaged_task_traits<T, computation_type::zip>;
 
         ss << "\n";
-        ss << "  second input access type  : " << to_string(ext_traits::second_input_access_type) << "\n";
-        ss << "  second input value type   : " << to_string<typename ext_traits::second_input_value_type>() << "\n";
-        ss << "  second input iterator type: " << to_string<typename ext_traits::second_input_iterator_type>() << "\n";
+        ss << "  second input access type  : " << to_string(ext_t::second_input_access_type) << "\n";
+        ss << "  second input value type   : " << to_string<typename ext_t::second_input_value_type>() << "\n";
+        ss << "  second input iterator type: " << to_string<typename ext_t::second_input_iterator_type>() << "\n";
     }
 
     ss << "\n\n";
 }
 
-template <typename T, size_t... Is, std::enable_if_t<is_sequence_v<T>, int> = 0>
+template <typename T, size_t... Is,
+          require<traits::is_sequence_v<T>> = yes>
 void to_string(std::stringstream &ss, T seq, std::index_sequence<Is...>)
 {
     ((to_string(ss, std::get<Is>(seq.actions()))), ...);
 }
 
-template <typename T, std::enable_if_t<detail::is_packaged_task_sequence_v<T>, int> = 0>
+template <typename T,
+          require<traits::is_packaged_task_sequence_v<T>> = yes>
 std::string to_string(T seq)
 {
     std::stringstream ss{};

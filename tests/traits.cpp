@@ -11,7 +11,7 @@
 void static_assert_accessor_types()
 {
     using namespace celerity::algorithm;
-    using namespace celerity::algorithm::detail;
+    using namespace celerity::algorithm::traits;
 
     auto access_one = [](int, int) {};
     using access_one_t = decltype(access_one);
@@ -51,8 +51,8 @@ void static_assert_iterator_traits()
 
     const vector<float> v;
 
-    static_assert(!is_contiguous_iterator<decltype(begin(v))>());
-    static_assert(is_contiguous_iterator<decltype(v.data())>());
+    static_assert(!traits::is_contiguous_iterator<decltype(begin(v))>());
+    static_assert(traits::is_contiguous_iterator<decltype(v.data())>());
 }
 
 void static_assert_call_operator_detection()
@@ -69,16 +69,16 @@ void static_assert_call_operator_detection()
     using goo_t = decltype(goo);
     using hoo_t = decltype(hoo);
 
-    static_assert(!algorithm::detail::has_call_operator_v<int>, "no call operator");
-    static_assert(algorithm::detail::has_call_operator_v<goo_t>, "call operator");
-    static_assert(algorithm::detail::has_call_operator_v<foo_t>, "call operator");
-    static_assert(!algorithm::detail::has_call_operator_v<hoo_t>, "can not detect call operator templates");
+    static_assert(!algorithm::traits::has_call_operator_v<int>, "no call operator");
+    static_assert(algorithm::traits::has_call_operator_v<goo_t>, "call operator");
+    static_assert(algorithm::traits::has_call_operator_v<foo_t>, "call operator");
+    static_assert(!algorithm::traits::has_call_operator_v<hoo_t>, "can not detect call operator templates");
 }
 
 void static_assert_kernel_traits()
 {
     using namespace celerity::algorithm;
-    using namespace celerity::algorithm::detail;
+    using namespace celerity::algorithm::traits;
 
     auto one_d = [](item_context<1, int> &) {};
     auto two_d = [](item_context<2, int> &) {};

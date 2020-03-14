@@ -50,7 +50,7 @@ public:
 
         using completed_task_type = decltype(completed_task);
 
-        if constexpr (detail::is_partially_packaged_task_v<completed_task_type>)
+        if constexpr (traits::is_partially_packaged_task_v<completed_task_type>)
         {
             return partial_t_joint<completed_task_type, SecondaryInputSequence>{
                 completed_task, secondary_in_};
@@ -71,7 +71,7 @@ private:
     SecondaryInputSequence secondary_in_;
 };
 
-namespace detail
+namespace traits
 {
 
 template <typename Task, typename SecondaryInputSequence>
@@ -168,7 +168,7 @@ struct t_joint_traits<t_joint<Task, SecondaryInputSequence>>
     using secondary_input_sequence_type = SecondaryInputSequence;
 };
 
-} // namespace detail
+} // namespace traits
 
 } // namespace celerity::algorithm
 

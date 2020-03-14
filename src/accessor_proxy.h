@@ -127,9 +127,9 @@ template <typename ExecutionPolicy, cl::sycl::access::mode Mode, typename Access
 auto get_access(celerity::handler &cgh, Iterator<T, Rank> beg, Iterator<T, Rank> end)
 {
 	// TODO: move accessor creation into proxy
-	if constexpr (policy_traits<ExecutionPolicy>::is_distributed)
+	if constexpr (traits::policy_traits<ExecutionPolicy>::is_distributed)
 	{
-		auto acc = beg.get_buffer().template get_access<Mode>(cgh, detail::accessor_traits<Rank, AccessorType>::range_mapper());
+		auto acc = beg.get_buffer().template get_access<Mode>(cgh, traits::accessor_traits<Rank, AccessorType>::range_mapper());
 		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{acc, beg.get_buffer().get_range()};
 	}
 	else

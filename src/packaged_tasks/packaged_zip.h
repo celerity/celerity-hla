@@ -237,7 +237,7 @@ auto package_zip(FunctorType functor)
                                     SecondInputAccessType>(functor);
 }
 
-namespace detail
+namespace traits
 {
 
 template <typename FunctorType,

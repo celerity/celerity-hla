@@ -11,8 +11,8 @@ namespace celerity::algorithm
 template <typename T, typename U>
 auto link_transiently(T lhs, U rhs)
 {
-    using value_type = typename detail::packaged_task_traits<T>::output_value_type;
-    constexpr auto rank = detail::packaged_task_traits<T>::rank;
+    using value_type = typename traits::packaged_task_traits<T>::output_value_type;
+    constexpr auto rank = traits::packaged_task_traits<T>::rank;
 
     transient_buffer<value_type, rank> out_buf{lhs.get_range()};
 
@@ -25,8 +25,8 @@ auto link_transiently(T lhs, U rhs)
 template <typename T, typename U>
 auto link(T lhs, U rhs)
 {
-    using value_type = typename detail::packaged_task_traits<T>::output_value_type;
-    constexpr auto rank = detail::packaged_task_traits<T>::rank;
+    using value_type = typename traits::packaged_task_traits<T>::output_value_type;
+    constexpr auto rank = traits::packaged_task_traits<T>::rank;
 
     buffer<value_type, rank> out_buf{lhs.get_range()};
 
@@ -37,9 +37,11 @@ auto link(T lhs, U rhs)
 }
 
 template <typename T, typename U,
-          require<is_linkable_source_v<T>, is_linkable_sink_v<U>> = yes>
+          require<traits::is_linkable_source_v<T>, traits::is_linkable_sink_v<U>> = yes>
 auto operator|(T lhs, U rhs)
 {
+    using namespace traits;
+
     if constexpr (is_transiently_linkable_source_v<T> &&
                   is_transiently_linkable_sink_v<U>)
     {
@@ -52,16 +54,18 @@ auto operator|(T lhs, U rhs)
 }
 
 template <typename T, typename U,
-          require<is_sequence_v<T>, is_linkable_source_v<last_element_t<T>>, is_linkable_sink_v<U>> = yes>
+          require<traits::is_sequence_v<T>,
+                  traits::is_linkable_source_v<traits::last_element_t<T>>,
+                  traits::is_linkable_sink_v<U>> = yes>
 auto operator|(T lhs, U rhs)
 {
-    return remove_last_element(lhs) | (get_last_element(lhs) | rhs);
+    return apply_append(lhs, rhs);
 }
 
 template <typename T, typename U,
-          require<detail::is_packaged_task_v<T>,
-                  detail::is_partially_packaged_task_v<U>,
-                  detail::stage_requirement_v<U> == stage_requirement::input> = yes>
+          require<traits::is_packaged_task_v<T>,
+                  traits::is_partially_packaged_task_v<U>,
+                  traits::stage_requirement_v<U> == stage_requirement::input> = yes>
 auto operator|(T lhs, U rhs)
 {
     auto t_right = rhs.complete(lhs.get_out_iterator(), lhs.get_out_iterator());
@@ -70,17 +74,19 @@ auto operator|(T lhs, U rhs)
 }
 
 template <typename T, typename U,
-          require<is_sequence_v<T>,
-                  detail::is_packaged_task_v<last_element_t<T>>,
-                  detail::is_partially_packaged_task_v<U>,
-                  detail::stage_requirement_v<U> == stage_requirement::input> = yes>
+          require<traits::is_sequence_v<T>,
+                  traits::is_packaged_task_v<traits::last_element_t<T>>,
+                  traits::is_partially_packaged_task_v<U>,
+                  traits::stage_requirement_v<U> == stage_requirement::input> = yes>
 auto operator|(T lhs, U rhs)
 {
-    return remove_last_element(lhs) | (get_last_element(lhs) | rhs);
+    return apply_append(lhs, rhs);
 }
 
 template <typename T, typename U,
-          require<is_linkable_source_v<last_element_t<U>>, is_sequence_v<U>, is_linkable_sink_v<T>> = yes>
+          require<traits::is_linkable_source_v<traits::last_element_t<U>>,
+                  traits::is_sequence_v<U>,
+                  traits::is_linkable_sink_v<T>> = yes>
 auto operator<<(T lhs, U rhs)
 {
     auto linked_sequence = link(get_last_element(rhs), lhs);
@@ -92,10 +98,10 @@ auto operator<<(T lhs, U rhs)
 }
 
 template <typename T, typename U,
-          require<is_sequence_v<U>,
-                  is_linkable_source_v<last_element_t<U>>,
-                  is_sequence_v<T>,
-                  is_linkable_sink_v<last_element_t<T>>> = 0>
+          require<traits::is_sequence_v<U>,
+                  traits::is_linkable_source_v<traits::last_element_t<U>>,
+                  traits::is_sequence_v<T>,
+                  traits::is_linkable_sink_v<traits::last_element_t<T>>> = 0>
 auto operator<<(T lhs, U rhs)
 {
     auto linked_sequence = link(get_last_element(rhs), get_last_element(lhs));
@@ -109,21 +115,21 @@ auto operator<<(T lhs, U rhs)
 }
 
 template <typename T, typename U,
-          require<algorithm::is_linkable_sink_v<T>,
-                  algorithm::is_linkable_source_v<U>> = yes>
+          require<algorithm::traits::is_linkable_sink_v<T>,
+                  algorithm::traits::is_linkable_source_v<U>> = yes>
 auto operator<<(T lhs, U rhs)
 {
     return lhs << sequence(rhs);
 }
 
 template <typename T,
-          require<is_sequence_v<T>,
-                  detail::is_partially_packaged_task_v<last_element_t<T>>,
-                  detail::stage_requirement_v<last_element_t<T>> == stage_requirement::output> = yes>
+          require<traits::is_sequence_v<T>,
+                  traits::is_partially_packaged_task_v<traits::last_element_t<T>>,
+                  traits::stage_requirement_v<traits::last_element_t<T>> == stage_requirement::output> = yes>
 auto terminate(T seq)
 {
-    using last_element_type = last_element_t<T>;
-    using traits = detail::packaged_task_traits<last_element_type>;
+    using last_element_type = traits::last_element_t<T>;
+    using traits = traits::packaged_task_traits<last_element_type>;
 
     using value_type = typename traits::output_value_type;
     constexpr auto rank = traits::rank;
@@ -140,34 +146,34 @@ auto terminate(T seq)
 namespace celerity
 {
 template <typename T, int Rank, typename U,
-          algorithm::require<algorithm::is_linkable_sink_v<U>> = algorithm::yes>
+          algorithm::require<algorithm::traits::is_linkable_sink_v<U>> = algorithm::yes>
 auto operator|(celerity::buffer<T, Rank> lhs, U rhs)
 {
     return rhs.complete(begin(lhs), end(lhs));
 }
 
 template <typename T, int Rank, typename U,
-          algorithm::require<algorithm::is_linkable_sink_v<T>> = algorithm::yes>
+          algorithm::require<algorithm::traits::is_linkable_sink_v<T>> = algorithm::yes>
 auto operator<<(T lhs, celerity::buffer<U, Rank> rhs)
 {
     return lhs.complete(begin(rhs), end(rhs));
 }
 
 template <typename T, int Rank, typename U,
-          algorithm::require<algorithm::is_linkable_source_v<T>,
-                             algorithm::detail::partially_packaged_task_traits<T>::requirement == algorithm::stage_requirement::output> = algorithm::yes>
+          algorithm::require<algorithm::traits::is_linkable_source_v<T>,
+                             algorithm::traits::partially_packaged_task_traits<T>::requirement == algorithm::stage_requirement::output> = algorithm::yes>
 auto operator|(T lhs, celerity::buffer<U, Rank> rhs)
 {
     return lhs.complete(begin(rhs), end(rhs));
 }
 
 template <typename T, int Rank, typename U,
-          algorithm::require<algorithm::is_sequence_v<T>,
-                             algorithm::is_linkable_source_v<algorithm::last_element_t<T>>,
-                             algorithm::detail::partially_packaged_task_traits<algorithm::last_element_t<T>>::requirement == algorithm::stage_requirement::output> = algorithm::yes>
+          algorithm::require<algorithm::traits::is_sequence_v<T>,
+                             algorithm::traits::is_linkable_source_v<algorithm::traits::last_element_t<T>>,
+                             algorithm::traits::partially_packaged_task_traits<algorithm::traits::last_element_t<T>>::requirement == algorithm::stage_requirement::output> = algorithm::yes>
 auto operator|(T lhs, celerity::buffer<U, Rank> rhs)
 {
-    return remove_last_element(lhs) | (get_last_element(lhs) | rhs);
+    return apply_append(lhs, rhs);
 }
 
 } // namespace celerity

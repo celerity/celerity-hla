@@ -14,15 +14,26 @@
 
 namespace celerity::algorithm
 {
+
+namespace detail
+{
+
 struct no_result_t
 {
 };
 
+} // namespace detail
+
+namespace traits
+{
+
 template <typename T>
-inline constexpr bool is_no_result_v = std::is_same_v<no_result_t, T>;
+inline constexpr bool is_no_result_v = std::is_same_v<detail::no_result_t, T>;
 
 template <typename T, size_t... Is>
 inline constexpr bool is_empty_result_v = (is_no_result_v<std::tuple_element_t<Is, T>> && ...);
+
+} // namespace traits
 
 template <typename... Actions>
 class sequence
@@ -88,7 +99,7 @@ private:
 
 		using tuple_t = decltype(result_tuple);
 
-		if constexpr (is_empty_result_v<tuple_t, Is...>)
+		if constexpr (traits::is_empty_result_v<tuple_t, Is...>)
 		{
 			return;
 		}
@@ -110,7 +121,7 @@ private:
 			if constexpr (std::is_void_v<std::invoke_result_t<Invocable, Args...>>)
 			{
 				std::invoke(invocable, std::forward<Args>(args)...);
-				return no_result_t{};
+				return detail::no_result_t{};
 			}
 			else
 			{
@@ -122,7 +133,7 @@ private:
 			if constexpr (std::is_void_v<std::invoke_result_t<Invocable>>)
 			{
 				std::invoke(invocable);
-				return no_result_t{};
+				return detail::no_result_t{};
 			}
 			else
 			{
@@ -148,6 +159,8 @@ sequence<Actions..., T> append(const sequence<Actions...> &seq, const T &a)
 					  actions);
 }
 
+namespace traits
+{
 template <typename... Actions>
 struct sequence_traits<algorithm::sequence<Actions...>>
 	: std::integral_constant<bool, true>
@@ -178,6 +191,9 @@ struct first_element<algorithm::sequence<>>
 {
 	using type = void;
 };
+
+} // namespace traits
+
 template <typename... Ts, typename... Us>
 auto operator|(sequence<Ts...> lhs, sequence<Us...> rhs)
 {
@@ -185,10 +201,10 @@ auto operator|(sequence<Ts...> lhs, sequence<Us...> rhs)
 }
 
 template <typename T,
-		  require<is_sequence_v<T>> = yes>
+		  require<traits::is_sequence_v<T>> = yes>
 constexpr auto get_last_element(const T &s)
 {
-	return std::get<size_v<T> - 1>(s.actions());
+	return std::get<traits::size_v<T> - 1>(s.actions());
 }
 
 template <typename T, size_t... Is>
@@ -198,14 +214,14 @@ constexpr auto dispatch_remove_last_element(const T &s, std::index_sequence<Is..
 }
 
 template <typename T,
-		  require<is_sequence_v<T>> = yes>
+		  require<traits::is_sequence_v<T>> = yes>
 constexpr auto remove_last_element(const T &s)
 {
-	return dispatch_remove_last_element(s, std::make_index_sequence<size_v<T> - 1>{});
+	return dispatch_remove_last_element(s, std::make_index_sequence<traits::size_v<T> - 1>{});
 }
 
 template <typename T,
-		  require<is_sequence_v<T>> = yes>
+		  require<traits::is_sequence_v<T>> = yes>
 constexpr auto get_first_element(const T &s)
 {
 	return std::get<0>(s.actions());
@@ -218,10 +234,16 @@ constexpr auto dispatch_remove_first_element(const T &s, std::index_sequence<Is.
 }
 
 template <typename T,
-		  require<is_sequence_v<T>> = yes>
+		  require<traits::is_sequence_v<T>> = yes>
 constexpr auto remove_first_element(const T &s)
 {
-	return dispatch_remove_first_element(s, std::make_index_sequence<size_v<T> - 1>{});
+	return dispatch_remove_first_element(s, std::make_index_sequence<traits::size_v<T> - 1>{});
+}
+
+template <class... Actions, class T>
+auto apply_append(const sequence<Actions...> &seq, const T &a)
+{
+	return remove_last_element(seq) | (get_last_element(seq) | a);
 }
 
 } // namespace celerity::algorithm

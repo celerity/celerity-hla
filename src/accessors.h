@@ -57,7 +57,7 @@ private:
 	const int idx_;
 	const int range_;
 	const variant_item<2, 3> item_;
-	const celerity::detail::any_accessor<T> accessor_;
+	const detail::any_accessor<T> accessor_;
 };
 
 template <typename T, size_t... Extents>
@@ -143,7 +143,7 @@ public:
 
 private:
 	const cl::sycl::item<rank> item_;
-	const celerity::detail::any_accessor<T> accessor_;
+	const detail::any_accessor<T> accessor_;
 
 	template <size_t... Is>
 	bool dispatch_is_on_boundary(cl::sycl::range<rank> range, std::index_sequence<Is...>) const
@@ -182,7 +182,7 @@ public:
 
 private:
 	const sycl_marker _ = {};
-	const celerity::detail::any_accessor<T> accessor_;
+	const detail::any_accessor<T> accessor_;
 	const cl::sycl::range<Rank> range_;
 };
 

@@ -77,7 +77,7 @@ auto package_generate(FunctorType functor, cl::sycl::range<Rank> range)
     return partially_packaged_generate<FunctorType, OutputValueType, Rank>(functor, range);
 }
 
-namespace detail
+namespace traits
 {
 
 template <typename FunctorType, typename InputValueType, typename OutputIteratorType, int Rank>
@@ -125,7 +125,7 @@ struct partially_packaged_task_traits<partially_packaged_generate<FunctorType, O
     static constexpr auto requirement = stage_requirement::output;
 };
 
-} // namespace detail
+} // namespace traits
 
 } // namespace celerity::algorithm
 

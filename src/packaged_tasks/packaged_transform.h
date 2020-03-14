@@ -112,7 +112,7 @@ auto package_transform(FunctorType functor)
     return partially_packaged_transform_0<InputAccessType, FunctorType, KernelFunctor>(functor);
 }
 
-namespace detail
+namespace traits
 {
 
 template <int Rank, access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType>
@@ -155,7 +155,7 @@ struct packaged_task_traits<partially_packaged_transform_1<Rank, InputAccessType
 
     using input_iterator_type = InputIteratorType;
     using input_value_type = typename std::iterator_traits<InputIteratorType>::value_type;
-    using output_value_type = detail::kernel_result_t<KernelFunctor>;
+    using output_value_type = kernel_result_t<KernelFunctor>;
     using output_iterator_type = void;
 };
 
@@ -174,7 +174,7 @@ struct packaged_task_traits<partially_packaged_transform_0<InputAccessType, Func
 
     using input_iterator_type = void;
     using input_value_type = void;
-    using output_value_type = detail::kernel_result_t<KernelFunctor>;
+    using output_value_type = kernel_result_t<KernelFunctor>;
     using output_iterator_type = void;
 };
 
@@ -184,7 +184,7 @@ struct partially_packaged_task_traits<partially_packaged_transform_0<InputAccess
     static constexpr auto requirement = stage_requirement::input;
 };
 
-} // namespace detail
+} // namespace traits
 
 } // namespace celerity::algorithm
 

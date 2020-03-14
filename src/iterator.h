@@ -79,7 +79,8 @@ public:
 
 	[[nodiscard]] buffer<T, Rank> get_buffer() const { return buffer_; }
 
-	private : celerity::buffer<T, Rank> buffer_;
+private:
+	celerity::buffer<T, Rank> buffer_;
 };
 
 template <int Rank>
@@ -93,6 +94,9 @@ cl::sycl::range<Rank> distance(buffer_iterator<T, Rank> from, buffer_iterator<T,
 {
 	return celerity::distance(*from, *to);
 }
+
+namespace traits
+{
 
 template <typename T>
 constexpr bool is_celerity_iterator_v = std::is_same_v<celerity_iterator_tag, typename std::iterator_traits<T>::iterator_category>;
@@ -109,6 +113,8 @@ constexpr bool is_contiguous_iterator()
 		   std::is_pointer_v<iterator_t> &&
 		   std::is_same_v<pointer_t, iterator_t>;
 }
+
+} // namespace traits
 
 template <int Rank>
 iterator<Rank> next(iterator<Rank> it)
