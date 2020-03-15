@@ -43,7 +43,7 @@ Provide a user-friendly interface using C++ Standard Library paradigms and conce
   in the callback function (see [Multi-dimensional Buffer Support](#multi-dimensional-buffer-support)).
 - [ ] `copy`, `copy_if`, `copy_n`, `transform` for copying data from/to STD containers
 - [ ] ~~STD-like constructors for celerity buffers (using ranges or iterator-pairs)~~
--     would affect the public interface of celerity buffers. Maybe a dedicated buffer type will be implemented to support this (as originally planned)
+      would affect the public interface of celerity buffers. Maybe a dedicated buffer type will be implemented to support this (as originally planned)
 
 ### Algorithms
 
