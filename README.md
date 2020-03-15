@@ -82,7 +82,7 @@ Provide a user-friendly interface using C++ Standard Library paradigms and conce
 - [x] multi-dimensional ~~`one_to_one_iterator`~~ single-element accessor
 - [x] multi-dimensional ~~`neighbour_iterator`~~ `chunk<>` accessor
 - [x] ~~multi-dimensional `clamping_neighbour_iterator`~~ `chunk<>` detects whether is lies on the borders and computation may branch accordingly 
-- [x] multi-dimensional `slice_iterator` `slice<>` accessor
+- [x] multi-dimensional ~~`slice_iterator`~~ `slice<>` accessor
 - [ ] multi-dimensional `n_dim_iterator` for STD containers
 
 #### Multi-dimensional Algorithms
