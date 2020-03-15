@@ -37,9 +37,9 @@ Provide a user-friendly interface using C++ Standard Library paradigms and conce
 
 - [x] ~~`device_vector` for wrapping celerity buffers avoid intrusive changes of the public interface of the celerity core.~~
   instead global functions in combination with ADL
-- [ ] ~~iterators for `device_vector` for providing a std like algorithm interface~~
-  Iterators do only specify the range of iteratiuon but not which elements are 
-  accessible. Range-access is controlled by accepting different accessor types
+- [x] ~~iterators for `device_vector` for providing a std like algorithm interface~~
+  Iterators do only specify the range of iteration but not which elements are 
+  accessible (celerity-wise). Range-access is controlled by accepting different accessor types
   in the callback function (see [Multi-dimensional Buffer Support](#multi-dimensional-buffer-support)).
 - [ ] `copy`, `copy_if`, `copy_n`, `transform` for copying data from/to STD containers
 - [ ] ~~STD-like constructors for celerity buffers (using ranges or iterator-pairs)~~
