@@ -17,7 +17,7 @@ auto setup_wave(cl::sycl::range<2> range, cl::sycl::float2 center, float amplitu
 {
 	using namespace celerity::algorithm;
 
-	return generate<class setup>(range,
+	return generate_n<class setup>(range,
 								 [c = center, a = amplitude, s = sigma](cl::sycl::item<2> item) {
 									 const auto dx = item[1] - c.x();
 									 const auto dy = item[0] - c.y();
@@ -28,7 +28,7 @@ auto setup_wave(cl::sycl::range<2> range, cl::sycl::float2 center, float amplitu
 auto zero(cl::sycl::range<2> &range)
 {
 	using namespace celerity::algorithm;
-	return fill<class zero>(range, 0.f);
+	return fill_n<class zero>(range, 0.f);
 }
 
 struct init_config
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
 		auto u = setup_wave(buf_range, {cfg.N / 4.f, cfg.N / 4.f}, 1, {cfg.N / 8.f, cfg.N / 8.f}) |
 				 submit_to(queue);
 
-		auto up = fill<class zero>(buf_range, 0.f) |
+		auto up = fill_n<class zero>(buf_range, 0.f) |
 				  initialize(cfg.dt, {cfg.dx, cfg.dy}) << u |
 				  submit_to(queue);
 

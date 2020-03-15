@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 	cl::sycl::range<2> gauss_range(FILTER_SIZE, FILTER_SIZE);
 
 	auto out_buf = make_buffer(image_input.data(), image_range) |
-				   transform<class _1>(kernels::blur) << generate<class _2>(gauss_range, kernels::gen_gauss) |
+				   transform<class _1>(kernels::blur) << generate_n<class _2>(gauss_range, kernels::gen_gauss) |
 				   transform<class _3>(kernels::sharpen) |
 				   transform<class _4>(kernels::delimit) |
 				   transform<class _5>(kernels::to_uint8) |

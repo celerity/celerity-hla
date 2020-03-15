@@ -53,7 +53,7 @@ auto fill(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Ra
 }
 
 template <typename KernelName, typename T, int Rank>
-auto fill(cl::sycl::range<Rank> range, const T &value)
+auto fill_n(cl::sycl::range<Rank> range, const T &value)
 {
     using execution_policy = detail::named_distributed_execution_policy<KernelName>;
     return detail::fill<execution_policy>(range, value);

@@ -84,7 +84,7 @@ auto generate(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T
 }
 
 template <typename KernelName, typename F, int Rank>
-auto generate(cl::sycl::range<Rank> range, const F &f)
+auto generate_n(cl::sycl::range<Rank> range, const F &f)
 {
     using execution_policy = detail::named_distributed_execution_policy<KernelName>;
     return detail::generate<execution_policy>(range, f);

@@ -53,11 +53,11 @@ int main(int argc, char *argv[])
 		celerity::experimental::bench::begin("main program");
 
 		auto mat_b =
-			generate<class _1>(mat_range, kernels::gen_b) |
+			generate_n<class _1>(mat_range, kernels::gen_b) |
 			submit_to(queue);
 
 		auto out_buf =
-			generate<class _2>(mat_range, kernels::gen_a) |
+			generate_n<class _2>(mat_range, kernels::gen_a) |
 			transform<class _3>(kernels::multiply) << mat_b |
 			transform<class _4>(kernels::multiply) << mat_b |
 			submit_to(queue);
