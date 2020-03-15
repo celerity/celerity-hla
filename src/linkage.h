@@ -115,8 +115,19 @@ template <typename T, typename U,
 auto operator<<(T lhs, U rhs)
 {
     using namespace detail;
+    using namespace traits;
 
-    auto linked_sequence = link(get_last_element(rhs), lhs);
+    auto linked_sequence = [&]() {
+        if constexpr (is_transiently_linkable_source_v<traits::last_element_t<U>> &&
+                      is_transiently_linkable_sink_v<T>)
+        {
+            return link_transiently(get_last_element(rhs), lhs);
+        }
+        else
+        {
+            return link(get_last_element(rhs), lhs);
+        }
+    }();
 
     auto linked_lhs = get_last_element(linked_sequence);
     auto linked_last_rhs = get_first_element(linked_sequence);
@@ -132,8 +143,19 @@ template <typename T, typename U,
 auto operator<<(T lhs, U rhs)
 {
     using namespace detail;
+    using namespace traits;
 
-    auto linked_sequence = link(get_last_element(rhs), get_last_element(lhs));
+    auto linked_sequence = [&]() {
+        if constexpr (is_transiently_linkable_source_v<traits::last_element_t<U>> &&
+                      is_transiently_linkable_sink_v<traits::last_element_t<T>>)
+        {
+            return link_transiently(get_last_element(rhs), get_last_element(lhs));
+        }
+        else
+        {
+            return link(get_last_element(rhs), get_last_element(lhs));
+        }
+    }();
 
     auto linked_last_lhs = get_last_element(linked_sequence);
     auto linked_last_rhs = get_first_element(linked_sequence);

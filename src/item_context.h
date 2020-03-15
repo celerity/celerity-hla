@@ -44,14 +44,20 @@ public:
 
     item_shared_data<Rank, ContextType> operator[](int idx)
     {
+        if (switch_)
+            return {shared_data_[1 - idx], item_};
+
         return {shared_data_[idx], item_};
     }
 
     cl::sycl::item<Rank> get_item() const { return item_; }
 
+    void switch_data() { switch_ = !switch_; }
+
 private:
     cl::sycl::item<Rank> item_;
     std::array<ContextType, 2> shared_data_;
+    bool switch_ = false;
 };
 
 } // namespace detail

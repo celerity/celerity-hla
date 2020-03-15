@@ -102,8 +102,13 @@ struct packaged_task_traits<detail::t_joint<Task, SecondaryInputSequence>>
 
 template <typename Task, typename SecondaryInputSequence>
 struct extended_packaged_task_traits<detail::t_joint<Task, SecondaryInputSequence>, detail::computation_type::zip>
-    : extended_packaged_task_traits<Task, detail::computation_type::zip>
 {
+    using traits = extended_packaged_task_traits<Task, detail::computation_type::zip>;
+
+    static constexpr auto second_input_access_type = traits::second_input_access_type;
+
+    using second_input_value_type = typename traits::second_input_value_type;
+    using second_input_iterator_type = typename traits::second_input_iterator_type;
 };
 
 template <typename Task, typename SecondaryInputSequence>

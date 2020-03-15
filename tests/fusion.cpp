@@ -277,7 +277,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -313,7 +313,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 3);
-                static_assert(size_v<fused_sequence_type> == 3);
+                static_assert(size_v<fused_sequence_type> == 2);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -345,13 +345,15 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             auto seq = t1 | (t3 << t2) | t4 | t5;
             auto buf_out = seq | submit_to(q);
 
+            std::cout << to_string(terminate(seq)) << std::endl;
+
             THEN("kernels are fused and the result is (i + 3)")
             {
                 using terminated_sequence_type = decltype(terminate(seq));
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 4);
-                static_assert(size_v<fused_sequence_type> == 3);
+                static_assert(size_v<fused_sequence_type> == 2);
 
                 const auto r = copy_to_host(q, buf_out);
 
