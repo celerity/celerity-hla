@@ -21,7 +21,7 @@ struct one_to_one
 {
 };
 
-}
+} // namespace detail
 
 template <typename T, size_t Dim>
 class slice
@@ -164,6 +164,8 @@ template <typename T, int Rank>
 class all
 {
 public:
+	using value_type = T;
+
 	template <typename AccessorType>
 	all(AccessorType acc, cl::sycl::range<Rank> range)
 		: accessor_(acc), range_(range)
