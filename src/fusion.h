@@ -141,9 +141,9 @@ auto fuse(T lhs, U rhs)
     constexpr auto first_input_access_type = traits::packaged_task_traits<U>::access_type;
     constexpr auto second_input_access_type = traits::extended_packaged_task_traits<U, computation_type::zip>::second_input_access_type;
 
-    const auto fused = fuse_parallel(lhs.get_task(),
-                                     get_last_element(rhs.get_secondary()).get_task(),
-                                     rhs.get_task().get_task());
+    const auto fused = fuse(lhs.get_task(),
+                            get_last_element(rhs.get_secondary()).get_task(),
+                            rhs.get_task().get_task());
 
     auto lhs_out_beg = lhs.get_out_beg();
     auto lhs_out_end = end(lhs_out_beg.get_buffer());
