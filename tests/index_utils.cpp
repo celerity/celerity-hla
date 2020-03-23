@@ -10,6 +10,27 @@ using namespace celerity::algorithm;
 using namespace celerity::algorithm::detail;
 using namespace cl::sycl;
 
+SCENARIO("ids can be compared", "[cl::sycl::id]")
+{
+	GIVEN("A one-dimensional range")
+	{
+		REQUIRE(equals(cl::sycl::range<1>{2}, cl::sycl::range<1>{2}));
+		REQUIRE_FALSE(equals(cl::sycl::range<1>{2}, cl::sycl::range<1>{1}));
+	}
+
+	GIVEN("A two-dimensional range")
+	{
+		REQUIRE(equals(cl::sycl::range<2>{1, 2}, cl::sycl::range<2>{1, 2}));
+		REQUIRE_FALSE(equals(cl::sycl::range<2>{2, 2}, cl::sycl::range<2>{1, 2}));
+	}
+
+	GIVEN("A three-dimensional range")
+	{
+		REQUIRE(equals(cl::sycl::range<3>{2, 2, 2}, cl::sycl::range<3>{2, 2, 2}));
+		REQUIRE_FALSE(equals(cl::sycl::range<3>{2, 3, 2}, cl::sycl::range<3>{2, 2, 2}));
+	}
+}
+
 SCENARIO("ranges can be counted", "[cl::sycl::range]")
 {
 	GIVEN("A one-dimensional range")
