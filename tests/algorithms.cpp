@@ -1,5 +1,7 @@
 #define CATCH_CONFIG_MAIN
 
+#pragma clang diagnostic warning "-Wall"
+
 #include "utils.h"
 
 #include <numeric>

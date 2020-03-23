@@ -1,8 +1,11 @@
 #define CATCH_CONFIG_MAIN
 
-#include "utils.h"
+#pragma clang diagnostic warning "-Wall"
 
 #include <numeric>
+
+#include "utils.h"
+#include "../src/actions.h"
 
 using namespace celerity;
 using namespace celerity::algorithm;

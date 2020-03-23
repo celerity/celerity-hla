@@ -1,4 +1,7 @@
 #define CATCH_CONFIG_MAIN
+
+#pragma clang diagnostic warning "-Wall"
+
 #include "../src/catch/catch.hpp"
 #include "../src/sycl.h"
 

@@ -1,3 +1,5 @@
+#pragma clang diagnostic warning "-Wall"
+
 #include "../src/accessor_proxy.h"
 #include "../src/iterator.h"
 #include "../src/kernel_traits.h"

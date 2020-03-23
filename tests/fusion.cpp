@@ -1,6 +1,10 @@
 #define CATCH_CONFIG_MAIN
 
+#pragma clang diagnostic warning "-Wall"
+
 #include "utils.h"
+
+#include "../src/sequencing.h"
 #include "../src/actions.h"
 #include "../src/fusion_helper.h"
 
@@ -10,11 +14,6 @@ using namespace celerity;
 using namespace celerity::algorithm;
 using namespace celerity::algorithm::traits;
 using namespace celerity::algorithm::util;
-
-#pragma clang diagnostic warning "-Wall"
-#pragma clang diagnostic ignored "-Wunused-result"
-#pragma clang diagnostic ignored "-Wsometimes-uninitialized"
-#pragma clang diagnostic ignored "-Wreturn-type"
 
 SCENARIO("Fusing two tasks", "[fusion::simple]")
 {
