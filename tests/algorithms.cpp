@@ -295,6 +295,21 @@ SCENARIO("transforming a buffer", "[celerity::algorithm]")
         {
             buffer<int, 3> buf_c(buf_a.get_range());
 
+            // ========= Program hit cudaErrorLaunchOutOfResources (error 7) due to "too many resources requested for launch" on CUDA API call to cudaLaunch.
+            // =========     Saved host backtrace up to driver entry point at error
+            // =========     Host Frame:/usr/lib/x86_64-linux-gnu/libcuda.so.1 [0x3ac5a3]
+            // =========     Host Frame:/usr/local/cuda-10.0/targets/x86_64-linux/lib/libcudart.so.10.0 (cudaLaunch + 0x17e) [0x3801e]
+            // =========     Host Frame:./build/tests/algorithms [0xaa4df]
+            // =========     Host Frame:./build/tests/algorithms [0xaa3f0]
+            // =========     Host Frame:./build/tests/algorithms [0xaa02d]
+            // =========     Host Frame:/home/ftischler/.lib/hipSYCL/lib/libhipSYCL_cuda.so (_ZN2cl4sycl6detail15task_graph_node6submitEv + 0x2a) [0x13ffa]
+            // =========     Host Frame:/home/ftischler/.lib/hipSYCL/lib/libhipSYCL_cuda.so (_ZN2cl4sycl6detail10task_graph13process_graphEv + 0xa5) [0x15095]
+            // =========     Host Frame:/home/ftischler/.lib/hipSYCL/lib/libhipSYCL_cuda.so [0x15654]
+            // =========     Host Frame:/home/ftischler/.lib/hipSYCL/lib/libhipSYCL_cuda.so (_ZN2cl4sycl6detail13worker_thread4workEv + 0x22b) [0x17b4b]
+            // =========     Host Frame:/usr/lib/x86_64-linux-gnu/libstdc++.so.6 [0xbd6ef]
+            // =========     Host Frame:/lib/x86_64-linux-gnu/libpthread.so.0 [0x76db]
+            // =========     Host Frame:/lib/x86_64-linux-gnu/libc.so.6 (clone + 0x3f) [0x12188f]
+
             transform<class add_ab_10x10x10>(q, buf_a, buf_b, buf_c, std::plus<int>{});
 
             THEN("every element is 5")
@@ -302,6 +317,7 @@ SCENARIO("transforming a buffer", "[celerity::algorithm]")
                 const auto r = copy_to_host(q, buf_c);
                 const auto a = copy_to_host(q, buf_a);
                 const auto b = copy_to_host(q, buf_b);
+                std::cout << r[0] << std::endl;
                 REQUIRE(elements_equal_to<5>(r));
             }
         }
