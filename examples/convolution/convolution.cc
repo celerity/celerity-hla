@@ -14,6 +14,7 @@
 
 #include "../../src/algorithm.h"
 #include "../../src/buffer_traits.h"
+#include "../../src/fusion_helper.h"
 
 constexpr int FILTER_SIZE = 16;
 constexpr float sigma = 3.f;
@@ -101,6 +102,10 @@ int main(int argc, char *argv[])
 	using namespace algorithm;
 
 	distr_queue queue;
+
+	MPI_Barrier(MPI_COMM_WORLD);
+	celerity::experimental::bench::begin("main program");
+
 	cl::sycl::range<2> image_range(image_height, image_width);
 	cl::sycl::range<2> gauss_range(FILTER_SIZE, FILTER_SIZE);
 
@@ -117,10 +122,15 @@ int main(int argc, char *argv[])
 	// 		   transform<class _4>(kernels::delimit) |
 	// 		   transform<class _5>(kernels::to_uint8);
 
-	// static_assert(size_v<decltype(terminate(seq))> == 4);
-	// static_assert(size_v<decltype(fuse(terminate(seq)))> == 2);
+	// static_assert(traits::size_v<decltype(terminate(seq))> == 4);
+	// static_assert(traits::size_v<decltype(fuse(terminate(seq)))> == 2);
 
 	// auto out_buf = seq | submit_to(queue);
+
+	// std::cout << util::to_string(fuse(terminate(seq))) << std::endl;
+
+	queue.slow_full_sync();
+	celerity::experimental::bench::end("main program");
 
 	std::vector<std::array<uint8_t, 3>>
 		image_output(image_width * image_height);
