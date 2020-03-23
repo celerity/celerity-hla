@@ -92,6 +92,8 @@ private:
         default:
             abort();
         }
+
+        return apply<device_accessor<T, Rank, Mode, target::global_buffer>>(f);
     }
 
     template <int Rank, cl::sycl::access::mode Mode, typename F>
@@ -108,6 +110,8 @@ private:
         default:
             abort();
         }
+
+        return apply<device_accessor<T, Rank, Mode, target::global_buffer>>(f);
     }
 
     template <int Rank, typename F>
@@ -126,6 +130,8 @@ private:
         default:
             abort();
         }
+
+        return apply<Rank, mode::read_write>(target, f);
     }
 
     template <int Rank, typename F>
@@ -144,6 +150,8 @@ private:
         default:
             abort();
         }
+
+        return apply<Rank, mode::read_write>(target, f);
     }
 
     template <typename F>
@@ -162,6 +170,8 @@ private:
         default:
             abort();
         }
+
+        return apply<1>(mode, target, f);
     }
 
     template <typename F>
@@ -180,6 +190,8 @@ private:
         default:
             abort();
         }
+
+        return apply<1>(mode, target, f);
     }
 
     const long rank_;
