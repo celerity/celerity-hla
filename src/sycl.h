@@ -3,36 +3,10 @@
 
 #include <utility>
 
-#ifdef MOCK_CELERITY
-
-#include "sycl/item.hpp"
-#include "sycl/range.hpp"
-#include "sycl/id.hpp"
-#include "sycl/vec.hpp"
-
-namespace cl::sycl
-{
-template <int Dimensions, bool with_offset = true>
-using item = trisycl::item<Dimensions, with_offset>;
-
-template <int Dimensions>
-using id = trisycl::id<Dimensions>;
-
-template <int Dimensions>
-using range = trisycl::range<Dimensions>;
-
-using float2 = trisycl::float2;
-using float3 = trisycl::float3;
-
-struct exception
-{
-	const char *what() { return nullptr; }
-};
-} // namespace cl::sycl
-
-#else
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wsometimes-uninitialized"
 #include <CL/sycl.hpp>
-#endif
+#pragma clang diagnostic pop
 
 namespace std
 {

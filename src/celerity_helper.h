@@ -2,7 +2,15 @@
 #define CELERITY_HELPER_H
 #define CELERITY_STRICT_CGF_SAFETY 0
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-result"
+#pragma clang diagnostic ignored "-Wsometimes-uninitialized"
+#pragma clang diagnostic ignored "-Wreturn-type"
+
 #include <celerity.h>
+
+#pragma clang diagnostic pop
+
 #include "require.h"
 
 namespace celerity::algorithm::detail
