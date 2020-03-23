@@ -8,4 +8,7 @@
 /CMakeSettings.json
 build/
 wave_sim_result.csv
-output.png
+*.png
+*.jpg
+*.bak
+*.csv
