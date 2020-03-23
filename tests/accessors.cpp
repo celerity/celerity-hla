@@ -11,8 +11,6 @@ using namespace celerity;
 using namespace celerity::algorithm;
 using namespace celerity::algorithm::aliases;
 
-#include "../src/actions.h"
-
 SCENARIO("accessing a slice", "[accessors::slice]")
 {
     distr_queue q;
@@ -451,11 +449,9 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
                 auto out = buf_out.get_access<cl::sycl::access::mode::write>(cgh, celerity::access::one_to_one<1>());
 
                 cgh.parallel_for<class adding_ab_any>(buf_out.get_range(), [=](cl::sycl::item<1> it) {
-                    //auto any_in_a = celerity::detail::any_accessor<int, std::array<std::byte, 128>>(in_a);
-                    //auto any_in_b = celerity::detail::any_accessor<int, std::array<std::byte, 128>>(in_b);
                     out[it] = add(it,
-                                  algorithm::detail::any_accessor<int, std::array<std::byte, 128>>(in_a),
-                                  algorithm::detail::any_accessor<int, std::array<std::byte, 128>>(in_b));
+                                  algorithm::detail::any_accessor<int>(in_a),
+                                  algorithm::detail::any_accessor<int>(in_b));
                 });
             });
 
@@ -491,28 +487,121 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
             }
         }
 
-        WHEN("adding using accessor_proxy<>")
+        WHEN("add(chunk_i<1>, chunk_i<1>)")
         {
             buffer<int, 1> buf_out(buf_a.get_range());
 
-            const auto add = [](chunk_i<3> a, chunk_i<3> b) {
+            const auto add = [](chunk_i<1> a, chunk_i<1> b) {
+                // *b returns the same as *a
                 return *a + *b;
             };
 
-            const auto add2 = [](chunk_i<3> a, int b) {
+            using namespace celerity::algorithm::detail;
+
+            const auto initialize = [=](handler &c) {
+                auto in_a = get_access<distributed_execution_policy,
+                                       cl::sycl::access::mode::read, chunk_i<1>>(c, begin(buf_a), end(buf_a));
+
+                auto in_b = get_access<distributed_execution_policy,
+                                       cl::sycl::access::mode::read, chunk_i<1>>(c, begin(buf_b), end(buf_b));
+
+                auto out = buf_out.get_access<cl::sycl::access::mode::write>(c, celerity::access::one_to_one<1>());
+
+                return [=](item_context<1, int> it) {
+                    out[it[0]] = add(in_a[it[0]], in_b[it[1]]);
+                };
+            };
+
+            auto t = task<named_distributed_execution_and_queue_policy<class adding_ab_proxy_1>>(initialize);
+
+            t(q, begin(buf_out), end(buf_out));
+
+            THEN("each element is equal to 6")
+            {
+                const auto r = copy_to_host(q, buf_out);
+                std::cout << r[0] << std::endl;
+                REQUIRE(elements_equal_to<6>(r));
+            }
+        }
+
+        WHEN("add(chunk_i<1>, int)")
+        {
+            buffer<int, 1> buf_out(buf_a.get_range());
+
+            const auto add = [](chunk_i<1> a, int b) {
                 return *a + b;
             };
 
-            const auto add3 = [](int a, chunk_i<3> b) {
+            using namespace celerity::algorithm::detail;
+
+            const auto initialize = [=](handler &c) {
+                auto in_a = get_access<distributed_execution_policy,
+                                       cl::sycl::access::mode::read, chunk_i<1>>(c, begin(buf_a), end(buf_a));
+
+                auto in_b = get_access<distributed_execution_policy,
+                                       cl::sycl::access::mode::read, chunk_i<1>>(c, begin(buf_b), end(buf_b));
+
+                auto out = buf_out.get_access<cl::sycl::access::mode::write>(c, celerity::access::one_to_one<1>());
+
+                return [=](item_context<1, int> it) {
+                    out[it[0]] = add(in_a[it[0]], *in_b[it[1]]);
+                };
+            };
+
+            auto t = task<named_distributed_execution_and_queue_policy<class adding_ab_proxy_2>>(initialize);
+
+            t(q, begin(buf_out), end(buf_out));
+
+            THEN("each element is equal to 6")
+            {
+                const auto r = copy_to_host(q, buf_out);
+                std::cout << r[0] << std::endl;
+                REQUIRE(elements_equal_to<6>(r));
+            }
+        }
+
+        WHEN("add(int, chunk_i<1>)")
+        {
+            buffer<int, 1> buf_out(buf_a.get_range());
+
+            const auto add = [](int a, chunk_i<1> b) {
                 return a + *b;
             };
 
-            const auto add4 = [](int a, int b) {
-                return a + b;
+            using namespace celerity::algorithm::detail;
+
+            const auto initialize = [=](handler &c) {
+                auto in_a = get_access<distributed_execution_policy,
+                                       cl::sycl::access::mode::read, chunk_i<1>>(c, begin(buf_a), end(buf_a));
+
+                auto in_b = get_access<distributed_execution_policy,
+                                       cl::sycl::access::mode::read, chunk_i<1>>(c, begin(buf_b), end(buf_b));
+
+                auto out = buf_out.get_access<cl::sycl::access::mode::write>(c, celerity::access::one_to_one<1>());
+
+                return [=](item_context<1, int> it) {
+                    out[it[0]] = add(*in_a[it[0]], in_b[it[1]]);
+                };
             };
 
-            const auto add5 = [](const chunk_i<3> &a, const chunk_i<3> &b) {
-                return *a + *b;
+            auto t = task<named_distributed_execution_and_queue_policy<class adding_ab_proxy_3>>(initialize);
+
+            t(q, begin(buf_out), end(buf_out));
+
+            THEN("each element is equal to 6")
+            {
+                const auto r = copy_to_host(q, buf_out);
+                std::cout << r[0] << std::endl;
+                REQUIRE(elements_equal_to<6>(r));
+            }
+        }
+
+        WHEN("add(int, int)")
+        {
+            buffer<int, 1> buf_out(buf_a.get_range());
+
+            const auto add = [](int a, int b) {
+                return a + b;
             };
 
             using namespace celerity::algorithm::detail;
@@ -527,16 +616,47 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
                 auto out = buf_out.get_access<cl::sycl::access::mode::write>(c, celerity::access::one_to_one<1>());
 
                 return [=](item_context<1, int> it) {
-                    //out[it] = add(in_a[it], in_b[it]);            // FAILS
-                    //out[it] = add3(*in_a[it], in_b[it]);          // WORKS
-                    //auto ca = in_a[it];
-                    //auto cb = in_b[it];
-                    //out[it] = add(std::move(ca), std::move(cb));  // FAILS
-                    out[it[0]] = add5(in_a[it[0]], in_b[it[1]]);
+                    out[it[0]] = add(*in_a[it[0]], *in_b[it[1]]);
                 };
             };
 
-            auto t = task<named_distributed_execution_and_queue_policy<class adding_ab_proxy>>(initialize);
+            auto t = task<named_distributed_execution_and_queue_policy<class adding_ab_proxy_4>>(initialize);
+
+            t(q, begin(buf_out), end(buf_out));
+
+            THEN("each element is equal to 6")
+            {
+                const auto r = copy_to_host(q, buf_out);
+                std::cout << r[0] << std::endl;
+                REQUIRE(elements_equal_to<6>(r));
+            }
+        }
+
+        WHEN("add(const chunk_i<1>&, const chunk_i<1>&)")
+        {
+            buffer<int, 1> buf_out(buf_a.get_range());
+
+            const auto add = [](const chunk_i<1> &a, const chunk_i<1> &b) {
+                return *a + *b;
+            };
+
+            using namespace celerity::algorithm::detail;
+
+            const auto initialize = [=](handler &c) {
+                auto in_a = get_access<distributed_execution_policy,
+                                       cl::sycl::access::mode::read, chunk_i<1>>(c, begin(buf_a), end(buf_a));
+
+                auto in_b = get_access<distributed_execution_policy,
+                                       cl::sycl::access::mode::read, chunk_i<1>>(c, begin(buf_b), end(buf_b));
+
+                auto out = buf_out.get_access<cl::sycl::access::mode::write>(c, celerity::access::one_to_one<1>());
+
+                return [=](item_context<1, int> it) {
+                    out[it[0]] = add(in_a[it[0]], in_b[it[1]]);
+                };
+            };
+
+            auto t = task<named_distributed_execution_and_queue_policy<class adding_ab_proxy_5>>(initialize);
 
             t(q, begin(buf_out), end(buf_out));
 
