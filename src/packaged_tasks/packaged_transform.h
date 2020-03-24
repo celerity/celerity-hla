@@ -39,7 +39,7 @@ public:
 
     InputIteratorType get_in_beg() const { return in_beg_; }
     InputIteratorType get_in_end() const { return in_end_; }
-    OutputIteratorType get_out_iterator() const { return out_beg_; }
+    OutputIteratorType get_out_beg() const { return out_beg_; }
 
 private:
     Functor functor_;

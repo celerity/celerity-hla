@@ -107,7 +107,7 @@ auto fuse(T lhs, U rhs)
     return package_transform<access_type::one_to_one>(fuse(lhs.get_task(), rhs.get_task()),
                                                       lhs.get_in_beg(),
                                                       lhs.get_in_end(),
-                                                      rhs.get_out_iterator());
+                                                      rhs.get_out_beg());
 
     // Results in a linker error. Not sure why -> need further clarification from philip/peter
     //
@@ -125,7 +125,7 @@ auto fuse(T lhs, U rhs)
 {
     using output_value_type = typename traits::packaged_task_traits<U>::output_value_type;
 
-    auto out_beg = rhs.get_out_iterator();
+    auto out_beg = rhs.get_out_beg();
     auto out_end = end(out_beg.get_buffer());
 
     return package_generate<output_value_type>(fuse(lhs.get_task(), rhs.get_task()), out_beg, out_end);

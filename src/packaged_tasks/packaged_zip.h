@@ -48,7 +48,7 @@ public:
     FirstInputIteratorType get_in_beg() const { return in_beg_; }
     FirstInputIteratorType get_in_end() const { return in_end_; }
     SecondInputIteratorType get_second_in_beg() const { return second_in_beg_; }
-    OutputIteratorType get_out_iterator() const { return out_beg_; }
+    OutputIteratorType get_out_beg() const { return out_beg_; }
 
     cl::sycl::range<Rank> get_range() const { return distance(in_beg_, in_end_); }
 
