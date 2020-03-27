@@ -31,7 +31,7 @@ template <typename T, require<traits::is_partially_packaged_task_v<T>,
 auto operator|(T lhs, distr_queue q)
 {
     using namespace detail;
-    return terminate(sequence(lhs)) | q;
+    return fuse(terminate(sequence(lhs))) | q;
 }
 
 template <typename T, require<traits::is_sequence_v<T>,

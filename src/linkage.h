@@ -40,22 +40,27 @@ auto link(T lhs, U rhs)
 }
 
 template <typename T,
+          require<traits::is_partially_packaged_task_v<T>,
+                  traits::stage_requirement_v<T> == detail::stage_requirement::output> = yes>
+auto terminate(T task)
+{
+    using traits = traits::packaged_task_traits<T>;
+    using value_type = typename traits::output_value_type;
+
+    constexpr auto rank = traits::rank;
+
+    buffer<value_type, rank> out_buf{task.get_range()};
+
+    return sequence(task.complete(begin(out_buf), end(out_buf)));
+}
+
+template <typename T,
           require<traits::is_sequence_v<T>,
                   traits::is_partially_packaged_task_v<traits::last_element_t<T>>,
                   traits::stage_requirement_v<traits::last_element_t<T>> == detail::stage_requirement::output> = yes>
 auto terminate(T seq)
 {
-    using last_element_type = traits::last_element_t<T>;
-    using traits = traits::packaged_task_traits<last_element_type>;
-
-    using value_type = typename traits::output_value_type;
-    constexpr auto rank = traits::rank;
-
-    auto last = get_last_element(seq);
-
-    buffer<value_type, rank> out_buf{last.get_range()};
-
-    return append(remove_last_element(seq), last.complete(begin(out_buf), end(out_buf)));
+    return append(remove_last_element(seq), get_first_element(terminate(get_last_element(seq))));
 }
 
 } // namespace detail

@@ -262,12 +262,6 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             auto t3 = transform<class zip_add_t_1>(zip_add);
 
             auto seq = t1 | (t3 << t2);
-
-            std::cout << to_string(terminate(seq)) << std::endl;
-
-            std::cout << "Fused:\n\n";
-            std::cout << to_string(fuse(terminate(seq))) << std::endl;
-
             auto buf_out = seq | submit_to(q);
 
             THEN("kernels are fused and the result is (i + 3)")
@@ -344,8 +338,6 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             auto seq = t1 | (t3 << t2) | t4 | t5;
             auto buf_out = seq | submit_to(q);
 
-            std::cout << to_string(terminate(seq)) << std::endl;
-
             THEN("kernels are fused and the result is (i + 3)")
             {
                 using terminated_sequence_type = decltype(terminate(seq));
@@ -359,6 +351,196 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
                 for (auto i = 5; i < size; ++i)
                 {
                     REQUIRE(r[i] == add_3(mul_2(zip_add(3, i))));
+                }
+            }
+        }
+    }
+
+    GIVEN("One generate kernel, a buffer and a zip kernel")
+    {
+        constexpr auto size = 100;
+
+        auto gen_i = [](cl::sycl::item<1> i) { return static_cast<int>(i.get_linear_id()); };
+        auto zip_add = [](int x, int y) { return x + y; };
+
+        buffer<int, 1> buf{{size}};
+        fill<class _1>(q, begin(buf), end(buf), 1);
+
+        WHEN("chaining calls")
+        {
+            auto t1 = generate_n<class generate_item_id_3>(cl::sycl::range<1>{size}, gen_i);
+            auto t3 = transform<class zip_add_t_3>(zip_add);
+            auto seq = t1 | (t3 << buf);
+            auto buf_out = seq | submit_to(q);
+
+            THEN("kernels are fused and the result is (i + 3)")
+            {
+                using terminated_sequence_type = decltype(terminate(seq));
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using algorithm::detail::computation_type;
+
+                static_assert(size_v<terminated_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(computation_type_of_v<last_element_t<fused_sequence_type>, computation_type::generate>);
+
+                const auto r = copy_to_host(q, buf_out);
+
+                for (auto i = 5; i < size; ++i)
+                {
+                    REQUIRE(r[i] == zip_add(1, i));
+                }
+            }
+        }
+    }
+
+    GIVEN("One generate kernel, a buffer and a zip kernel")
+    {
+        constexpr auto size = 100;
+
+        auto gen_i = [](cl::sycl::item<1> i) { return static_cast<int>(i.get_linear_id()); };
+        auto zip_add = [](int x, int y) { return x + y; };
+
+        buffer<int, 1> buf{{size}};
+        fill<class _2>(q, begin(buf), end(buf), 1);
+
+        WHEN("chaining calls")
+        {
+            auto t1 = generate_n<class generate_item_id_3>(cl::sycl::range<1>{size}, gen_i);
+            auto t3 = transform<class zip_add_t_4>(zip_add);
+            auto seq = buf | (t3 << t1);
+            auto buf_out = seq | submit_to(q);
+
+            THEN("kernels are fused and the result is (i + 3)")
+            {
+                using terminated_sequence_type = decltype(terminate(seq));
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+
+                static_assert(size_v<terminated_sequence_type> == 1);
+                static_assert(size_v<fused_sequence_type> == 1);
+                //static_assert(is_t_joint_v<fused_sequence_type>);
+                static_assert(!has_transient_input_v<last_element_t<fused_sequence_type>>);
+                static_assert(has_transient_second_input_v<last_element_t<fused_sequence_type>>);
+
+                const auto r = copy_to_host(q, buf_out);
+
+                for (auto i = 5; i < size; ++i)
+                {
+                    REQUIRE(r[i] == zip_add(1, i));
+                }
+            }
+        }
+    }
+
+    GIVEN("One generate kernel, a buffer and a zip kernel")
+    {
+        constexpr auto size = 100;
+
+        auto zip_add = [](int x, int y) { return x + y; };
+
+        buffer<int, 1> buf_a{{size}};
+        buffer<int, 1> buf_b{{size}};
+        fill<class _3>(q, begin(buf_a), end(buf_a), 1);
+        fill<class _4>(q, begin(buf_b), end(buf_b), 2);
+
+        WHEN("chaining calls")
+        {
+            auto t3 = transform<class zip_add_t_5>(zip_add);
+            auto seq = buf_a | (t3 << buf_b);
+            auto buf_out = seq | submit_to(q);
+
+            THEN("kernels are fused and the result is (i + 3)")
+            {
+                using terminated_sequence_type = decltype(terminate(seq));
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using algorithm::detail::computation_type;
+
+                static_assert(size_v<terminated_sequence_type> == 1);
+                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(computation_type_of_v<last_element_t<fused_sequence_type>, computation_type::zip>);
+                static_assert(!has_transient_input_v<last_element_t<fused_sequence_type>>);
+                static_assert(!has_transient_second_input_v<last_element_t<fused_sequence_type>>);
+
+                const auto r = copy_to_host(q, buf_out);
+
+                for (auto i = 5; i < size; ++i)
+                {
+                    REQUIRE(r[i] == 3);
+                }
+            }
+        }
+    }
+
+    GIVEN("One generate kernel, a buffer and a zip kernel")
+    {
+        constexpr auto size = 100;
+
+        auto mul_chunk = [](int c) { return c * 5; };
+        auto zip_add = [](int x, int y) { return x + y; };
+
+        buffer<int, 1> buf_a{{size}};
+        buffer<int, 1> buf_b{{size}};
+        fill<class _5>(q, begin(buf_a), end(buf_a), 1);
+        fill<class _6>(q, begin(buf_b), end(buf_b), 3);
+
+        WHEN("chaining calls")
+        {
+            auto t2 = transform<class mul_chunk_5>(mul_chunk);
+            auto t3 = transform<class zip_add_t_6>(zip_add);
+            auto seq = buf_a | t2 | t3 << (buf_b | t2);
+            auto buf_out = seq | submit_to(q);
+
+            THEN("kernels are fused and the result is 20")
+            {
+                using terminated_sequence_type = decltype(terminate(seq));
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using algorithm::detail::computation_type;
+
+                static_assert(size_v<terminated_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 1);
+
+                const auto r = copy_to_host(q, buf_out);
+
+                for (auto i = 5; i < size; ++i)
+                {
+                    REQUIRE(r[i] == 20);
+                }
+            }
+        }
+    }
+
+    GIVEN("One generate kernel, a buffer and a zip kernel")
+    {
+        constexpr auto size = 100;
+
+        auto mul_chunk = [](int c) { return c * 5; };
+        auto zip_add = [](int x, int y) { return x + y; };
+
+        buffer<int, 1> buf_a{{size}};
+        buffer<int, 1> buf_b{{size}};
+        fill<class _7>(q, begin(buf_a), end(buf_a), 1);
+        fill<class _8>(q, begin(buf_b), end(buf_b), 3);
+
+        WHEN("chaining calls")
+        {
+            auto t2 = transform<class mul_chunk_7>(mul_chunk);
+            auto t3 = transform<class zip_add_t_8>(zip_add);
+            auto seq = buf_a | t2 | t3 << (buf_b | t2 | t2);
+            auto buf_out = seq | submit_to(q);
+
+            THEN("kernels are fused and the result is 80")
+            {
+                using terminated_sequence_type = decltype(terminate(seq));
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using algorithm::detail::computation_type;
+
+                static_assert(size_v<terminated_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 1);
+
+                const auto r = copy_to_host(q, buf_out);
+
+                for (auto i = 5; i < size; ++i)
+                {
+                    REQUIRE(r[i] == 80);
                 }
             }
         }
