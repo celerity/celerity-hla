@@ -545,4 +545,42 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             }
         }
     }
+
+    GIVEN("One generate kernel, a buffer and a zip kernel")
+    {
+        constexpr auto size = 100;
+
+        auto mul_chunk = [](int c) { return c * 5; };
+        auto zip_add = [](int x, int y) { return x + y; };
+
+        buffer<int, 1> buf_a{{size}};
+        buffer<int, 1> buf_b{{size}};
+        fill<class _7>(q, begin(buf_a), end(buf_a), 1);
+        fill<class _8>(q, begin(buf_b), end(buf_b), 3);
+
+        WHEN("chaining calls")
+        {
+            auto t2 = transform<class mul_chunk_7>(mul_chunk);
+            auto t3 = transform<class zip_add_t_8>(zip_add);
+            auto seq = buf_a | t2 | t3 << (buf_b | t2 | t2);
+            auto buf_out = seq | submit_to(q);
+
+            THEN("kernels are fused and the result is 80")
+            {
+                using terminated_sequence_type = decltype(terminate(seq));
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using algorithm::detail::computation_type;
+
+                static_assert(size_v<terminated_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 1);
+
+                const auto r = copy_to_host(q, buf_out);
+
+                for (auto i = 5; i < size; ++i)
+                {
+                    REQUIRE(r[i] == 80);
+                }
+            }
+        }
+    }
 }
