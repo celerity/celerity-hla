@@ -367,12 +367,12 @@ struct packaged_task_traits<detail::partially_packaged_zip_1<FunctorType, Kernel
 {
     static constexpr auto rank = Rank;
     static constexpr auto computation_type = detail::computation_type::zip;
-    static constexpr auto access_type = SecondInputAccessType;
+    static constexpr auto access_type = FirstInputAccessType;
 
-    using input_value_type = typename std::iterator_traits<SecondInputIteratorType>::value_type;
+    using input_value_type = void;
     using output_value_type = kernel_result_t<KernelType>;
 
-    using input_iterator_type = SecondInputIteratorType;
+    using input_iterator_type = void;
     using output_iterator_type = void;
 };
 
@@ -384,10 +384,10 @@ template <typename FunctorType,
           detail::access_type SecondInputAccessType>
 struct extended_packaged_task_traits<detail::partially_packaged_zip_1<FunctorType, KernelType, SecondInputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType>, detail::computation_type::zip>
 {
-    static constexpr auto second_input_access_type = FirstInputAccessType;
+    static constexpr auto second_input_access_type = SecondInputAccessType;
 
-    using second_input_value_type = void;
-    using second_input_iterator_type = void;
+    using second_input_value_type = typename std::iterator_traits<SecondInputIteratorType>::value_type;
+    using second_input_iterator_type = SecondInputIteratorType;
 };
 
 template <typename FunctorType,
