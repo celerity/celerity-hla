@@ -21,7 +21,7 @@ template <typename T>
 inline constexpr bool is_fusable_source_v = is_packaged_task_v<T> &&has_transient_output_v<T> && !is_t_joint_v<T>;
 
 template <typename T>
-inline constexpr bool is_fusable_sink_v = is_packaged_task_v<T> &&has_transient_input_v<T>;
+inline constexpr bool is_fusable_sink_v = (is_packaged_task_v<T> && has_transient_input_v<T>) || (is_t_joint_v<T> && has_transient_second_input_v<T>);
 
 template <typename T, typename U>
 inline constexpr bool are_fusable_v = is_fusable_source_v<T> &&is_fusable_sink_v<U>;

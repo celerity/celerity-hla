@@ -73,7 +73,7 @@ auto operator|(T lhs, U rhs)
     using namespace detail;
 
     if constexpr (is_transiently_linkable_source_v<T> &&
-                  is_transiently_linkable_sink_v<U>)
+                  has_transiently_linkable_first_input_v<U>)
     {
         return link_transiently(lhs, rhs);
     }
@@ -124,7 +124,7 @@ auto operator<<(T lhs, U rhs)
 
     auto linked_sequence = [&]() {
         if constexpr (is_transiently_linkable_source_v<traits::last_element_t<U>> &&
-                      is_transiently_linkable_sink_v<T>)
+                      has_transiently_linkable_second_input_v<T>)
         {
             return link_transiently(get_last_element(rhs), lhs);
         }
@@ -152,7 +152,7 @@ auto operator<<(T lhs, U rhs)
 
     auto linked_sequence = [&]() {
         if constexpr (is_transiently_linkable_source_v<traits::last_element_t<U>> &&
-                      is_transiently_linkable_sink_v<traits::last_element_t<T>>)
+                      has_transiently_linkable_second_input_v<traits::last_element_t<T>>)
         {
             return link_transiently(get_last_element(rhs), get_last_element(lhs));
         }

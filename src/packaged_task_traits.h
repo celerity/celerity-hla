@@ -43,6 +43,12 @@ struct extended_packaged_task_traits
 };
 
 template <typename T>
+struct extended_packaged_task_traits<T, detail::computation_type::zip>
+{
+    using second_input_iterator_type = void;
+};
+
+template <typename T>
 constexpr detail::access_type get_second_input_access_type()
 {
     if constexpr (packaged_task_traits<T>::computation_type == detail::computation_type::zip)

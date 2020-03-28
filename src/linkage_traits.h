@@ -29,8 +29,15 @@ inline constexpr bool is_linkable_sink_v = is_partially_packaged_task_v<T> &&
 template <typename T>
 inline constexpr bool is_transiently_linkable_source_v = is_linkable_source_v<T> && !is_t_joint_v<T>;
 
+//template <typename T>
+//inline constexpr bool is_transiently_linkable_sink_v = is_linkable_sink_v<T> &&single_element_access_v<T>;
+
 template <typename T>
-inline constexpr bool is_transiently_linkable_sink_v = is_linkable_sink_v<T> &&single_element_access_v<T>; // && !detail::is_t_joint_v<T>;
+inline constexpr bool has_transiently_linkable_first_input_v = is_linkable_sink_v<T> &&access_type_v<T> == detail::access_type::one_to_one;
+
+template <typename T>
+inline constexpr bool has_transiently_linkable_second_input_v = is_linkable_sink_v<T> &&computation_type_of_v<T, detail::computation_type::zip> &&
+                                                                    second_input_access_type_v<T> == detail::access_type::one_to_one;
 
 } // namespace celerity::algorithm::traits
 

@@ -132,7 +132,7 @@ auto fuse_right(task_t<ExecutionPolicyB, KernelB> b,
             // second data store
             item.switch_data();
             // data[0] = empty
-            // data[1] = result of a
+            // data[1] = empty
 
             kernels_b(item);
             // data[0] = result of b
@@ -144,7 +144,8 @@ auto fuse_right(task_t<ExecutionPolicyB, KernelB> b,
             item.switch_data();
 
             kernels_c(item);
-            // result of c written to buffer
+            // data[0] = result of c
+            // data[1] = empty
         };
     };
 
@@ -198,7 +199,7 @@ auto fuse(T lhs, U rhs)
     using secondary_input_sequence = decltype(fused_secondary);
 
     // both primary and secondary input sequence fusable
-    if constexpr (traits::are_fusable_v<T, U> &&
+    if constexpr (traits::has_transient_input_v<U> &&
                   traits::has_transient_second_input_v<U>)
     {
         const auto fused = fuse(lhs.get_task(),
@@ -215,19 +216,19 @@ auto fuse(T lhs, U rhs)
                                                                                   secondary_out_beg,
                                                                                   rhs.get_task().get_out_beg());
 
-        if constexpr (traits::size_v<secondary_input_sequence>> 1)
+        if constexpr (traits::size_v<secondary_input_sequence> == 1)
         {
-            return sequence(t_joint{zip, remove_last_element(fused_secondary)});
+            return sequence(zip);
         }
         else
         {
-            return sequence(zip);
+            return sequence(t_joint{zip, remove_last_element(fused_secondary)});
         }
     }
     // only primary input is fusable
     // TODO: Not enabled yet -> are_fusable_v<T, U> needs adaption
-    else if (traits::are_fusable_v<T, U> &&
-             !traits::has_transient_second_input_v<U>)
+    else if constexpr (traits::has_transient_input_v<U> &&
+                       !traits::has_transient_second_input_v<U>)
     {
         const auto fused = fuse(lhs.get_task(),
                                 rhs.get_task().get_task());
@@ -246,8 +247,8 @@ auto fuse(T lhs, U rhs)
     }
     // only secondary input fusable
     // TODO: Not enabled yet -> are_fusable_v<T, U> needs adaption
-    else if (!traits::are_fusable_v<T, U> &&
-             traits::has_transient_second_input_v<U>)
+    else if constexpr (!traits::has_transient_input_v<U> &&
+                       traits::has_transient_second_input_v<U>)
     {
         const auto fused = fuse_right(get_last_element(fused_secondary).get_task(),
                                       rhs.get_task().get_task());
@@ -262,13 +263,13 @@ auto fuse(T lhs, U rhs)
                                                                                   secondary_out_beg,
                                                                                   rhs.get_task().get_out_beg());
 
-        if constexpr (traits::size_v<secondary_input_sequence>> 1)
+        if constexpr (traits::size_v<secondary_input_sequence> == 1)
         {
-            return sequence(lhs, t_joint{zip, remove_last_element(fused_secondary)});
+            return sequence(lhs, zip);
         }
         else
         {
-            return sequence(lhs, zip);
+            return sequence(lhs, t_joint{zip, remove_last_element(fused_secondary)});
         }
     }
     // none is fusable

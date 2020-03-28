@@ -14,6 +14,7 @@ using namespace celerity;
 using namespace celerity::algorithm;
 using namespace celerity::algorithm::traits;
 using namespace celerity::algorithm::util;
+using celerity::algorithm::chunk;
 
 SCENARIO("Fusing two tasks", "[fusion::simple]")
 {
@@ -555,13 +556,13 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
         buffer<int, 1> buf_a{{size}};
         buffer<int, 1> buf_b{{size}};
-        fill<class _7>(q, begin(buf_a), end(buf_a), 1);
-        fill<class _8>(q, begin(buf_b), end(buf_b), 3);
+        fill<class _9>(q, begin(buf_a), end(buf_a), 1);
+        fill<class _10>(q, begin(buf_b), end(buf_b), 3);
 
         WHEN("chaining calls")
         {
-            auto t2 = transform<class mul_chunk_7>(mul_chunk);
-            auto t3 = transform<class zip_add_t_8>(zip_add);
+            auto t2 = transform<class mul_chunk_9>(mul_chunk);
+            auto t3 = transform<class zip_add_t_10>(zip_add);
             auto seq = buf_a | t2 | t3 << (buf_b | t2 | t2);
             auto buf_out = seq | submit_to(q);
 
@@ -579,6 +580,135 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
                 for (auto i = 5; i < size; ++i)
                 {
                     REQUIRE(r[i] == 80);
+                }
+            }
+        }
+    }
+
+    GIVEN("One generate kernel, a buffer and a zip kernel")
+    {
+        constexpr auto size = 100;
+
+        using celerity::algorithm::chunk;
+        using celerity::algorithm::detail::access_type;
+
+        auto mul_chunk = [](int c) { return c * 5; };
+        auto zip_add = [](const chunk<int, 1> &x, int y) { return *x + y; };
+
+        buffer<int, 1> buf_a{{size}};
+        buffer<int, 1> buf_b{{size}};
+        fill<class _11>(q, begin(buf_a), end(buf_a), 1);
+        fill<class _12>(q, begin(buf_b), end(buf_b), 3);
+
+        WHEN("chaining calls")
+        {
+            auto t2 = transform<class mul_chunk_11>(mul_chunk);
+            auto t3 = transform<class zip_add_t_12>(zip_add);
+            auto seq = buf_a | t2 | t3 << (buf_b | t2 | t2);
+            auto buf_out = seq | submit_to(q);
+
+            THEN("secondary sequence is fused and the result is 80")
+            {
+                using terminated_sequence_type = decltype(terminate(seq));
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using algorithm::detail::computation_type;
+
+                static_assert(size_v<terminated_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 2);
+
+                static_assert(!is_t_joint_v<last_element_t<fused_sequence_type>>);
+
+                const auto r = copy_to_host(q, buf_out);
+
+                for (auto i = 5; i < size; ++i)
+                {
+                    REQUIRE(r[i] == 80);
+                }
+            }
+        }
+    }
+
+    GIVEN("One generate kernel, a buffer and a zip kernel")
+    {
+        constexpr auto size = 100;
+
+        using celerity::algorithm::chunk;
+        using celerity::algorithm::detail::access_type;
+
+        auto mul_chunk = [](int c) { return c * 5; };
+        auto zip_add = [](int x, const chunk<int, 1> &y) { return x + *y; };
+
+        buffer<int, 1> buf_a{{size}};
+        buffer<int, 1> buf_b{{size}};
+        fill<class _13>(q, begin(buf_a), end(buf_a), 1);
+        fill<class _14>(q, begin(buf_b), end(buf_b), 3);
+
+        WHEN("chaining calls")
+        {
+            auto t2 = transform<class mul_chunk_13>(mul_chunk);
+            auto t3 = transform<class zip_add_t_14>(zip_add);
+            auto seq = buf_a | t2 | t3 << (buf_b | t2 | t2);
+            auto buf_out = seq | submit_to(q);
+
+            THEN("secondary sequence is fused and the result is 80")
+            {
+                using terminated_sequence_type = decltype(terminate(seq));
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using algorithm::detail::computation_type;
+
+                static_assert(size_v<terminated_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 1);
+
+                static_assert(is_t_joint_v<last_element_t<fused_sequence_type>>);
+
+                const auto r = copy_to_host(q, buf_out);
+
+                for (auto i = 5; i < size; ++i)
+                {
+                    REQUIRE(r[i] == 80);
+                }
+            }
+        }
+    }
+
+    GIVEN("One generate kernel, a buffer and a zip kernel")
+    {
+        constexpr auto size = 100;
+
+        using celerity::algorithm::chunk;
+        using celerity::algorithm::detail::access_type;
+
+        auto mul_chunk = [](int c) { return c * 5; };
+        auto zip_add = [](const chunk<int, 1> &x, int y) { return *x + y; };
+
+        buffer<int, 1> buf_a{{size}};
+        buffer<int, 1> buf_b{{size}};
+        fill<class _15>(q, begin(buf_a), end(buf_a), 1);
+        fill<class _16>(q, begin(buf_b), end(buf_b), 3);
+
+        WHEN("chaining calls")
+        {
+            auto t2 = transform<class mul_chunk_15>(mul_chunk);
+            auto t3 = transform<class zip_add_t_16>(zip_add);
+            auto seq = buf_a | t3 << (buf_b | t2 | t2);
+            auto buf_out = seq | submit_to(q);
+
+            THEN("secondary sequence is fused and the result is 76")
+            {
+                using terminated_sequence_type = decltype(terminate(seq));
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using algorithm::detail::computation_type;
+
+                static_assert(size_v<terminated_sequence_type> == 1);
+                static_assert(size_v<fused_sequence_type> == 1);
+
+                static_assert(!is_t_joint_v<last_element_t<fused_sequence_type>>);
+
+                const auto r = copy_to_host(q, buf_out);
+
+                for (auto i = 5; i < size; ++i)
+                {
+                    REQUIRE(r[i] == 76);
                 }
             }
         }

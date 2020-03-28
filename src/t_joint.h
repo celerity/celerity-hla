@@ -13,6 +13,8 @@ template <typename Task, typename SecondaryInputSequence>
 struct t_joint
 {
 public:
+    static_assert(traits::is_sequence_v<SecondaryInputSequence>);
+
     t_joint(Task task, SecondaryInputSequence sequence)
         : task_(task), secondary_in_(sequence)
     {
