@@ -307,7 +307,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 3);
-                static_assert(size_v<fused_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 1); // TODO
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -345,7 +345,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
 
                 static_assert(size_v<terminated_sequence_type> == 4);
-                static_assert(size_v<fused_sequence_type> == 2);
+                static_assert(size_v<fused_sequence_type> == 1); // TODO
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -709,6 +709,50 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
                 for (auto i = 5; i < size; ++i)
                 {
                     REQUIRE(r[i] == 76);
+                }
+            }
+        }
+    }
+
+    GIVEN("One generate kernel, a buffer and a zip kernel")
+    {
+        constexpr auto size = 100;
+
+        using celerity::algorithm::chunk;
+        using celerity::algorithm::detail::access_type;
+
+        auto mul_chunk = [](int c) { return c * 5; };
+        auto zip_add = [](const chunk<int, 1> &x, int y) { return *x + y; };
+
+        buffer<int, 1> buf_a{{size}};
+        buffer<int, 1> buf_b{{size}};
+        fill<class _17>(q, begin(buf_a), end(buf_a), 1);
+        fill<class _18>(q, begin(buf_b), end(buf_b), 3);
+
+        WHEN("chaining calls")
+        {
+            auto t2 = transform<class mul_chunk_17>(mul_chunk);
+            auto t3 = transform<class zip_add_t_18>(zip_add);
+            auto secondary_sequence = buf_a | t3 << (buf_b | t2 | t2);
+            auto seq = buf_a | t3 << secondary_sequence;
+            auto buf_out = seq | submit_to(q);
+
+            THEN("secondary sequence is fused and the result is 77")
+            {
+                using terminated_sequence_type = decltype(terminate(seq));
+                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using algorithm::detail::computation_type;
+
+                static_assert(size_v<terminated_sequence_type> == 1);
+                static_assert(size_v<fused_sequence_type> == 1);
+
+                static_assert(!is_t_joint_v<last_element_t<fused_sequence_type>>);
+
+                const auto r = copy_to_host(q, buf_out);
+
+                for (auto i = 5; i < size; ++i)
+                {
+                    REQUIRE(r[i] == 77);
                 }
             }
         }

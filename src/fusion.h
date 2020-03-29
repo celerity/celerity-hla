@@ -155,7 +155,8 @@ auto fuse_right(task_t<ExecutionPolicyB, KernelB> b,
 template <typename T, typename U,
           require<traits::are_fusable_v<T, U>,
                   traits::computation_type_of_v<T, computation_type::transform>,
-                  !traits::is_t_joint_v<U>> = yes>
+                  !traits::is_t_joint_v<U>,
+                  !traits::is_t_joint_v<T>> = yes>
 auto fuse(T lhs, U rhs)
 {
     return package_transform<access_type::one_to_one>(fuse(lhs.get_task(), rhs.get_task()),
@@ -174,7 +175,8 @@ auto fuse(T lhs, U rhs)
 template <typename T, typename U,
           require<traits::are_fusable_v<T, U>,
                   traits::computation_type_of_v<T, computation_type::generate>,
-                  !traits::is_t_joint_v<U>> = yes>
+                  !traits::is_t_joint_v<U>,
+                  !traits::is_t_joint_v<T>> = yes>
 auto fuse(T lhs, U rhs)
 {
     using output_value_type = typename traits::packaged_task_traits<U>::output_value_type;
@@ -186,7 +188,23 @@ auto fuse(T lhs, U rhs)
 }
 
 template <typename T, typename U,
-          require<traits::is_packaged_task_v<T>,
+          require<traits::are_fusable_v<T, U>,
+                  traits::computation_type_of_v<T, computation_type::zip>,
+                  !traits::is_t_joint_v<U>,
+                  !traits::is_t_joint_v<T>> = yes>
+auto fuse(T lhs, U rhs)
+{
+    using namespace traits;
+
+    return package_zip<access_type_v<T>, second_input_access_type_v<T>>(fuse(lhs.get_task(), rhs.get_task()),
+                                                                        lhs.get_in_beg(),
+                                                                        lhs.get_in_end(),
+                                                                        lhs.get_second_in_beg(),
+                                                                        rhs.get_out_beg());
+}
+
+template <typename T, typename U,
+          require<!traits::is_t_joint_v<T>,
                   traits::is_t_joint_v<U>> = yes>
 auto fuse(T lhs, U rhs)
 {
@@ -346,6 +364,7 @@ template <typename T, typename U,
           require<traits::is_packaged_task_v<T>,
                   traits::is_packaged_task_v<U>,
                   !traits::is_t_joint_v<U>,
+                  !traits::is_t_joint_v<T>,
                   !traits::are_fusable_v<T, U>> = yes>
 auto operator|(T lhs, U rhs)
 {

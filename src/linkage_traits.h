@@ -27,7 +27,7 @@ inline constexpr bool is_linkable_sink_v = is_partially_packaged_task_v<T> &&
                                                stage_requirement_v<T> == detail::stage_requirement::input;
 
 template <typename T>
-inline constexpr bool is_transiently_linkable_source_v = is_linkable_source_v<T> && !is_t_joint_v<T>;
+inline constexpr bool is_transiently_linkable_source_v = is_linkable_source_v<T>; // && !is_t_joint_v<T>;
 
 //template <typename T>
 //inline constexpr bool is_transiently_linkable_sink_v = is_linkable_sink_v<T> &&single_element_access_v<T>;
