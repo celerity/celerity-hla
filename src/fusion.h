@@ -205,7 +205,8 @@ auto fuse(T lhs, U rhs)
 
 template <typename T, typename U,
           require<!traits::is_t_joint_v<T>,
-                  traits::is_t_joint_v<U>> = yes>
+                  traits::is_t_joint_v<U>,
+                  traits::computation_type_of_v<U, computation_type::zip>> = yes>
 auto fuse(T lhs, U rhs)
 {
     using namespace detail;
@@ -295,6 +296,14 @@ auto fuse(T lhs, U rhs)
     {
         return sequence(lhs, rhs);
     }
+}
+
+template <typename T, typename U,
+          require<traits::is_t_joint_v<T>,
+                  !traits::is_t_joint_v<U>> = yes>
+auto fuse(T lhs, U rhs)
+{
+    return make_t_joint(fuse(lhs.get_task(), rhs), lhs.get_secondary());
 }
 
 template <typename T,
