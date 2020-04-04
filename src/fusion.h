@@ -209,15 +209,15 @@ auto fuse(T joint)
 {
     using namespace detail;
 
-    constexpr auto first_input_access_type = traits::packaged_task_traits<T>::access_type;
-    constexpr auto second_input_access_type = traits::extended_packaged_task_traits<T, computation_type::zip>::second_input_access_type;
-
-    auto fused_secondary = fuse(joint.get_secondary());
-    using secondary_input_sequence = decltype(fused_secondary);
-
     // secondary sequence fusable
-    if constexpr (traits::has_transient_second_input_v<T>)
+    if constexpr (traits::has_transient_second_input_v<T> && traits::computation_type_of_v<T, computation_type::zip>)
     {
+        auto fused_secondary = fuse(joint.get_secondary());
+        using secondary_input_sequence = decltype(fused_secondary);
+
+        constexpr auto first_input_access_type = traits::packaged_task_traits<T>::access_type;
+        constexpr auto second_input_access_type = traits::extended_packaged_task_traits<T, computation_type::zip>::second_input_access_type;
+
         auto in_beg = joint.get_task().get_in_beg();
         auto in_end = joint.get_task().get_in_end();
         auto secondary_out_beg = get_last_element(fused_secondary).get_out_beg();
@@ -274,14 +274,10 @@ auto fuse(T joint)
 
 template <typename T, typename U,
           require<!traits::is_t_joint_v<T>,
-                  traits::is_t_joint_v<U>,
-                  traits::computation_type_of_v<U, computation_type::zip>> = yes>
+                  traits::is_t_joint_v<U>> = yes>
 auto fuse(T lhs, U rhs)
 {
     using namespace detail;
-
-    constexpr auto first_input_access_type = traits::packaged_task_traits<U>::access_type;
-    constexpr auto second_input_access_type = traits::extended_packaged_task_traits<U, computation_type::zip>::second_input_access_type;
 
     // fuse t_joint internally (fuse secondary, if possible)
     auto fused_rhs = fuse(rhs);
@@ -293,22 +289,9 @@ auto fuse(T lhs, U rhs)
     }
     else if constexpr (traits::has_transient_input_v<fused_rhs_type>)
     {
-        auto fused_secondary = fused_rhs.get_secondary();
+        auto task = fuse(lhs, fused_rhs.get_task());
 
-        const auto fused = fuse(lhs.get_task(),
-                                fused_rhs.get_task().get_task());
-
-        auto lhs_out_beg = lhs.get_out_beg();
-        auto lhs_out_end = end(lhs_out_beg.get_buffer());
-        auto secondary_out_beg = get_last_element(fused_secondary).get_out_beg();
-
-        auto zip = package_zip<first_input_access_type, second_input_access_type>(fused,
-                                                                                  lhs_out_beg,
-                                                                                  lhs_out_end,
-                                                                                  secondary_out_beg,
-                                                                                  fused_rhs.get_task().get_out_beg());
-
-        return make_t_joint(zip, fused_secondary);
+        return make_t_joint(task, fused_rhs.get_secondary());
     }
     else
     {
