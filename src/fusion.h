@@ -235,13 +235,18 @@ auto fuse(T joint)
                                                                                       secondary_out_beg,
                                                                                       out_beg);
 
+            auto transform = package_transform<first_input_access_type>(zip.get_task(),
+                                                                        in_beg,
+                                                                        in_end,
+                                                                        out_beg);
+
             if constexpr (traits::size_v<secondary_input_sequence> == 1)
             {
-                return make_t_joint(zip, other_t_joint.get_secondary());
+                return make_t_joint(transform, other_t_joint.get_secondary());
             }
             else
             {
-                return make_t_joint(zip, remove_last_element(fused_secondary) | other_t_joint.get_secondary());
+                return make_t_joint(transform, remove_last_element(fused_secondary) | other_t_joint.get_secondary());
             }
         }
         else
@@ -255,13 +260,18 @@ auto fuse(T joint)
                                                                                       secondary_out_beg,
                                                                                       out_beg);
 
+            auto transform = package_transform<first_input_access_type>(zip.get_task(),
+                                                                        in_beg,
+                                                                        in_end,
+                                                                        out_beg);
+
             if constexpr (traits::size_v<secondary_input_sequence> == 1)
             {
-                return zip;
+                return transform;
             }
             else
             {
-                return make_t_joint(zip, remove_last_element(fused_secondary));
+                return make_t_joint(transform, remove_last_element(fused_secondary));
             }
         }
     }
