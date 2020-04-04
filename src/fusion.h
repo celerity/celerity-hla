@@ -379,7 +379,7 @@ auto fuse(T task)
 
 template <typename T, typename U,
           require_one<traits::are_fusable_v<T, U>,
-                      traits::is_packaged_task_v<T> && traits::is_t_joint_v<U>> = yes>
+                      traits::is_packaged_task_v<T> && traits::is_packaged_task_v<U>> = yes>
 auto operator|(T lhs, U rhs)
 {
     using namespace detail;
@@ -428,7 +428,7 @@ auto fuse(const sequence<Actions...> &s)
         }
         else
         {
-            return sequence(fuse(detail::get_first_element(s)));
+            return sequence(fuse(get_first_element(s)));
         }
     }
     else
