@@ -240,7 +240,7 @@ auto fuse(T lhs, U rhs)
         }
         else
         {
-            return sequence(t_joint{zip, remove_last_element(fused_secondary)});
+            return sequence(make_t_joint(zip, remove_last_element(fused_secondary)));
         }
     }
     // only primary input is fusable
@@ -261,7 +261,7 @@ auto fuse(T lhs, U rhs)
                                                                                   secondary_out_beg,
                                                                                   rhs.get_task().get_out_beg());
 
-        return sequence(t_joint{zip, fused_secondary});
+        return sequence(make_t_joint(zip, fused_secondary));
     }
     // only secondary input fusable
     // TODO: Not enabled yet -> are_fusable_v<T, U> needs adaption
@@ -287,7 +287,7 @@ auto fuse(T lhs, U rhs)
         }
         else
         {
-            return sequence(lhs, t_joint{zip, remove_last_element(fused_secondary)});
+            return sequence(lhs, make_t_joint(zip, remove_last_element(fused_secondary)));
         }
     }
     // none is fusable
@@ -331,7 +331,7 @@ auto fuse(T joint)
         }
         else
         {
-            return t_joint{zip, remove_last_element(fused_secondary)};
+                return make_t_joint(zip, remove_last_element(fused_secondary));
         }
     }
     // non-fusable

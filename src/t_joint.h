@@ -9,11 +9,21 @@ namespace celerity::algorithm
 namespace detail
 {
 
+template <typename T>
+constexpr inline bool is_sequence_list_v = traits::is_sequence_v<T> &&
+    all_of<T>([](auto e) {
+        return std::bool_constant<traits::is_sequence_v<decltype(e)>>{};
+    });
+
+template <typename Task, typename SecondaryInputSequence, bool SequenceList>
+struct t_joint;
+
 template <typename Task, typename SecondaryInputSequence>
-struct t_joint
+struct t_joint<Task, SecondaryInputSequence, false>
 {
 public:
-    static_assert(traits::is_sequence_v<SecondaryInputSequence>);
+    static_assert(traits::is_sequence_v<SecondaryInputSequence> &&
+                  !is_sequence_list_v<SecondaryInputSequence>);
 
     t_joint(Task task, SecondaryInputSequence sequence)
         : task_(task), secondary_in_(sequence)
@@ -28,7 +38,7 @@ public:
 
     auto get_in_beg() const { return task_.get_in_beg(); }
     auto get_in_end() const { return task_.get_in_end(); }
-    auto get_out_iterator() const { return task_.get_out_iterator(); }
+    auto get_out_beg() const { return task_.get_out_beg(); }
     auto get_range() const { return task_.get_range(); }
 
     auto get_task() { return task_; }
@@ -37,6 +47,35 @@ public:
 private:
     Task task_;
     SecondaryInputSequence secondary_in_;
+};
+
+template <typename Task, typename SequenceList>
+struct t_joint<Task, SequenceList, true>
+{
+public:
+    static_assert(is_sequence_list_v<SequenceList>);
+
+    t_joint(Task task, SequenceList sequences)
+        : task_(task), sequences_(sequences)
+    {
+    }
+
+    auto operator()(celerity::distr_queue &queue) const
+    {
+        std::invoke(sequences_, queue);
+        return std::invoke(task_, queue);
+    }
+
+    auto get_in_beg() const { return task_.get_in_beg(); }
+    auto get_in_end() const { return task_.get_in_end(); }
+    auto get_out_beg() const { return task_.get_out_beg(); }
+    auto get_range() const { return task_.get_range(); }
+
+    auto get_task() { return task_; }
+
+private:
+    Task task_;
+    SequenceList sequences_;
 };
 
 template <typename Task, typename SecondaryInputSequence>
@@ -62,7 +101,7 @@ public:
         }
         else
         {
-            return t_joint<completed_task_type, SecondaryInputSequence>{
+            return t_joint<completed_task_type, SecondaryInputSequence, false>{
                 completed_task, secondary_in_};
         }
     }
@@ -76,19 +115,25 @@ private:
     SecondaryInputSequence secondary_in_;
 };
 
+template <typename Task, typename Sequence>
+auto make_t_joint(Task t, Sequence s)
+{
+    return t_joint<Task, Sequence, is_sequence_list_v<Sequence>>(t, s);
+}
+
 } // namespace detail
 
 namespace traits
 {
 
-template <typename Task, typename SecondaryInputSequence>
-struct is_packaged_task<detail::t_joint<Task, SecondaryInputSequence>>
+template <typename Task, typename SecondaryInputSequence, bool SequenceList>
+struct is_packaged_task<detail::t_joint<Task, SecondaryInputSequence, SequenceList>>
     : std::bool_constant<true>
 {
 };
 
-template <typename Task, typename SecondaryInputSequence>
-struct packaged_task_traits<detail::t_joint<Task, SecondaryInputSequence>>
+template <typename Task, typename SecondaryInputSequence, bool SequenceList>
+struct packaged_task_traits<detail::t_joint<Task, SecondaryInputSequence, SequenceList>>
 {
     using traits = packaged_task_traits<Task>;
 
@@ -102,8 +147,8 @@ struct packaged_task_traits<detail::t_joint<Task, SecondaryInputSequence>>
     using output_iterator_type = typename traits::output_iterator_type;
 };
 
-template <typename Task, typename SecondaryInputSequence>
-struct extended_packaged_task_traits<detail::t_joint<Task, SecondaryInputSequence>, detail::computation_type::zip>
+template <typename Task, typename SecondaryInputSequence, bool SequenceList>
+struct extended_packaged_task_traits<detail::t_joint<Task, SecondaryInputSequence, SequenceList>, detail::computation_type::zip>
 {
     using traits = extended_packaged_task_traits<Task, detail::computation_type::zip>;
 
@@ -151,8 +196,8 @@ struct is_t_joint : std::bool_constant<false>
 {
 };
 
-template <typename Task, typename SecondaryInputSequence>
-struct is_t_joint<detail::t_joint<Task, SecondaryInputSequence>>
+template <typename Task, typename SecondaryInputSequence, bool SequenceList>
+struct is_t_joint<detail::t_joint<Task, SecondaryInputSequence, SequenceList>>
     : std::bool_constant<true>
 {
 };
@@ -173,8 +218,8 @@ struct t_joint_traits
     using secondary_input_sequence_type = detail::sequence<>;
 };
 
-template <typename Task, typename SecondaryInputSequence>
-struct t_joint_traits<detail::t_joint<Task, SecondaryInputSequence>>
+template <typename Task, typename SecondaryInputSequence, bool SequenceList>
+struct t_joint_traits<detail::t_joint<Task, SecondaryInputSequence, SequenceList>>
 {
     using task_type = Task;
     using secondary_input_sequence_type = SecondaryInputSequence;

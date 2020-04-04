@@ -254,6 +254,22 @@ auto apply_append(const sequence<Actions...> &seq, const T &a)
 	return remove_last_element(seq) | (get_last_element(seq) | a);
 }
 
+template <typename T, typename F, size_t... Is>
+constexpr bool all_of(std::index_sequence<Is...>)
+{
+	static_assert(traits::is_sequence_v<T>);
+	using actions_type = typename T::actions_t;
+
+	return ((std::invoke_result_t<F, std::tuple_element_t<Is, actions_type>>::value) && ...);
+}
+
+template <typename T, typename F>
+constexpr bool all_of(const F &pred)
+{
+	static_assert(traits::is_sequence_v<T>);
+	return all_of<T, F>(std::make_index_sequence<traits::size_v<T>>{});
+}
+
 } // namespace detail
 
 } // namespace celerity::algorithm
