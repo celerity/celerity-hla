@@ -203,109 +203,6 @@ auto fuse(T lhs, U rhs)
                                                                         rhs.get_out_beg());
 }
 
-template <typename T, typename U,
-          require<!traits::is_t_joint_v<T>,
-                  traits::is_t_joint_v<U>,
-                  traits::computation_type_of_v<U, computation_type::zip>> = yes>
-auto fuse(T lhs, U rhs)
-{
-    using namespace detail;
-
-    constexpr auto first_input_access_type = traits::packaged_task_traits<U>::access_type;
-    constexpr auto second_input_access_type = traits::extended_packaged_task_traits<U, computation_type::zip>::second_input_access_type;
-
-    auto fused_secondary = fuse(rhs.get_secondary());
-    using secondary_input_sequence = decltype(fused_secondary);
-
-    // both primary and secondary input sequence fusable
-    if constexpr (traits::has_transient_input_v<U> &&
-                  traits::has_transient_second_input_v<U>)
-    {
-        const auto fused = fuse(lhs.get_task(),
-                                get_last_element(fused_secondary).get_task(),
-                                rhs.get_task().get_task());
-
-        auto lhs_out_beg = lhs.get_out_beg();
-        auto lhs_out_end = end(lhs_out_beg.get_buffer());
-        auto secondary_out_beg = get_last_element(fused_secondary).get_out_beg();
-
-        auto zip = package_zip<first_input_access_type, second_input_access_type>(fused,
-                                                                                  lhs_out_beg,
-                                                                                  lhs_out_end,
-                                                                                  secondary_out_beg,
-                                                                                  rhs.get_task().get_out_beg());
-
-        if constexpr (traits::size_v<secondary_input_sequence> == 1)
-        {
-            return sequence(zip);
-        }
-        else
-        {
-            return sequence(make_t_joint(zip, remove_last_element(fused_secondary)));
-        }
-    }
-    // only primary input is fusable
-    // TODO: Not enabled yet -> are_fusable_v<T, U> needs adaption
-    else if constexpr (traits::has_transient_input_v<U> &&
-                       !traits::has_transient_second_input_v<U>)
-    {
-        const auto fused = fuse(lhs.get_task(),
-                                rhs.get_task().get_task());
-
-        auto lhs_out_beg = lhs.get_out_beg();
-        auto lhs_out_end = end(lhs_out_beg.get_buffer());
-        auto secondary_out_beg = get_last_element(fused_secondary).get_out_beg();
-
-        auto zip = package_zip<first_input_access_type, second_input_access_type>(fused,
-                                                                                  lhs_out_beg,
-                                                                                  lhs_out_end,
-                                                                                  secondary_out_beg,
-                                                                                  rhs.get_task().get_out_beg());
-
-        return sequence(make_t_joint(zip, fused_secondary));
-    }
-    // only secondary input fusable
-    // TODO: Not enabled yet -> are_fusable_v<T, U> needs adaption
-    else if constexpr (!traits::has_transient_input_v<U> &&
-                       traits::has_transient_second_input_v<U>)
-    {
-        const auto fused = fuse_right(get_last_element(fused_secondary).get_task(),
-                                      rhs.get_task().get_task());
-
-        auto lhs_out_beg = lhs.get_out_beg();
-        auto lhs_out_end = end(lhs_out_beg.get_buffer());
-        auto secondary_out_beg = get_last_element(fused_secondary).get_out_beg();
-
-        auto zip = package_zip<first_input_access_type, second_input_access_type>(fused,
-                                                                                  lhs_out_beg,
-                                                                                  lhs_out_end,
-                                                                                  secondary_out_beg,
-                                                                                  rhs.get_task().get_out_beg());
-
-        if constexpr (traits::size_v<secondary_input_sequence> == 1)
-        {
-            return sequence(lhs, zip);
-        }
-        else
-        {
-            return sequence(lhs, make_t_joint(zip, remove_last_element(fused_secondary)));
-        }
-    }
-    // none is fusable
-    else
-    {
-        return sequence(lhs, rhs);
-    }
-}
-
-template <typename T, typename U,
-          require<traits::is_t_joint_v<T>,
-                  !traits::is_t_joint_v<U>> = yes>
-auto fuse(T lhs, U rhs)
-{
-    return make_t_joint(fuse(lhs.get_task(), rhs), lhs.get_secondary());
-}
-
 template <typename T,
           require<traits::is_t_joint_v<T>> = yes>
 auto fuse(T joint)
@@ -373,6 +270,66 @@ auto fuse(T joint)
     {
         return joint;
     }
+}
+
+template <typename T, typename U,
+          require<!traits::is_t_joint_v<T>,
+                  traits::is_t_joint_v<U>,
+                  traits::computation_type_of_v<U, computation_type::zip>> = yes>
+auto fuse(T lhs, U rhs)
+{
+    using namespace detail;
+
+    constexpr auto first_input_access_type = traits::packaged_task_traits<U>::access_type;
+    constexpr auto second_input_access_type = traits::extended_packaged_task_traits<U, computation_type::zip>::second_input_access_type;
+
+    // fuse t_joint internally (fuse secondary, if possible)
+    auto fused_rhs = fuse(rhs);
+    using fused_rhs_type = decltype(fused_rhs);
+
+    if constexpr (!traits::is_t_joint_v<fused_rhs_type> && traits::are_fusable_v<T, fused_rhs_type>)
+    {
+        return fuse(lhs, fused_rhs);
+    }
+    else if constexpr (traits::has_transient_input_v<fused_rhs_type>)
+    {
+        auto fused_secondary = fused_rhs.get_secondary();
+
+        const auto fused = fuse(lhs.get_task(),
+                                fused_rhs.get_task().get_task());
+
+        auto lhs_out_beg = lhs.get_out_beg();
+        auto lhs_out_end = end(lhs_out_beg.get_buffer());
+        auto secondary_out_beg = get_last_element(fused_secondary).get_out_beg();
+
+        auto zip = package_zip<first_input_access_type, second_input_access_type>(fused,
+                                                                                  lhs_out_beg,
+                                                                                  lhs_out_end,
+                                                                                  secondary_out_beg,
+                                                                                  fused_rhs.get_task().get_out_beg());
+
+        return make_t_joint(zip, fused_secondary);
+    }
+    else
+    {
+        return sequence(lhs, fused_rhs);
+    }
+}
+
+template <typename T, typename U,
+          require<traits::is_t_joint_v<T>,
+                  !traits::is_t_joint_v<U>> = yes>
+auto fuse(T lhs, U rhs)
+{
+    return make_t_joint(fuse(lhs.get_task(), rhs), lhs.get_secondary());
+}
+
+template <typename T, typename U,
+          require<traits::is_t_joint_v<T>,
+                  traits::is_t_joint_v<U>> = yes>
+auto fuse(T lhs, U rhs)
+{
+    static_assert(std::is_void_v<T>, "not implemented");
 }
 
 template <typename T,

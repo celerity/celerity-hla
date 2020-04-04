@@ -647,10 +647,10 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         {
             auto t2 = transform<class mul_chunk_13>(mul_chunk);
             auto t3 = transform<class zip_add_t_14>(zip_add);
-            auto seq = buf_a | t2 | t3 << (buf_b | t2 | t2);
+            auto seq = buf_a | t2 | t3 << (buf_b | t2);
             auto buf_out = seq | submit_to(q);
 
-            THEN("secondary sequence is fused and the result is 80")
+            THEN("secondary sequence is fused and the result is 20")
             {
                 using terminated_sequence_type = decltype(terminate(seq));
                 using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
@@ -665,7 +665,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
                 for (auto i = 5; i < size; ++i)
                 {
-                    REQUIRE(r[i] == 80);
+                    REQUIRE(r[i] == 20);
                 }
             }
         }
