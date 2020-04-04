@@ -312,26 +312,51 @@ auto fuse(T joint)
     // secondary sequence fusable
     if constexpr (traits::has_transient_second_input_v<T>)
     {
-        const auto fused = fuse_right(get_last_element(fused_secondary).get_task(),
-                                      joint.get_task().get_task());
-
         auto in_beg = joint.get_task().get_in_beg();
         auto in_end = joint.get_task().get_in_end();
         auto secondary_out_beg = get_last_element(fused_secondary).get_out_beg();
         auto out_beg = joint.get_task().get_out_beg();
 
-        auto zip = package_zip<first_input_access_type, second_input_access_type>(fused,
-                                                                                  in_beg,
-                                                                                  in_end,
-                                                                                  secondary_out_beg,
-                                                                                  out_beg);
-        if constexpr (traits::size_v<secondary_input_sequence> == 1)
+        if constexpr (traits::is_t_joint_v<traits::last_element_t<secondary_input_sequence>>)
         {
-            return zip;
+            auto other_t_joint = get_last_element(fused_secondary);
+            auto fused = fuse_right(other_t_joint.get_task().get_task(),
+                                    joint.get_task().get_task());
+
+            auto zip = package_zip<first_input_access_type, second_input_access_type>(fused,
+                                                                                      in_beg,
+                                                                                      in_end,
+                                                                                      secondary_out_beg,
+                                                                                      out_beg);
+
+            if constexpr (traits::size_v<secondary_input_sequence> == 1)
+            {
+                return make_t_joint(zip, other_t_joint.get_secondary());
+            }
+            else
+            {
+                return make_t_joint(zip, remove_last_element(fused_secondary) | other_t_joint.get_secondary());
+            }
         }
         else
         {
+            const auto fused = fuse_right(get_last_element(fused_secondary).get_task(),
+                                          joint.get_task().get_task());
+
+            auto zip = package_zip<first_input_access_type, second_input_access_type>(fused,
+                                                                                      in_beg,
+                                                                                      in_end,
+                                                                                      secondary_out_beg,
+                                                                                      out_beg);
+
+            if constexpr (traits::size_v<secondary_input_sequence> == 1)
+            {
+                return zip;
+            }
+            else
+            {
                 return make_t_joint(zip, remove_last_element(fused_secondary));
+            }
         }
     }
     // non-fusable
