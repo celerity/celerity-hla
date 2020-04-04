@@ -304,7 +304,31 @@ template <typename T, typename U,
                   !traits::is_t_joint_v<U>> = yes>
 auto fuse(T lhs, U rhs)
 {
-    return make_t_joint(fuse(lhs.get_task(), rhs), lhs.get_secondary());
+    if constexpr (traits::are_fusable_v<decltype(lhs.get_task()), U>)
+    {
+        return make_t_joint(fuse(lhs.get_task(), rhs), lhs.get_secondary());
+    }
+    else
+    {
+        return sequence(lhs, rhs);
+    }
+}
+
+template <typename T, typename U,
+          require<traits::is_t_joint_v<T>,
+                  traits::is_t_joint_v<U>> = yes>
+auto fuse_t_joints(T lhs, U rhs)
+{
+    if constexpr (traits::has_transient_input_v<U>)
+    {
+        auto task = fuse(lhs.get_task(), rhs.get_task());
+
+        return make_t_joint(task, lhs.get_secondary() | rhs.get_secondary());
+    }
+    else
+    {
+        return sequence(lhs, rhs);
+    }
 }
 
 template <typename T, typename U,
@@ -312,7 +336,25 @@ template <typename T, typename U,
                   traits::is_t_joint_v<U>> = yes>
 auto fuse(T lhs, U rhs)
 {
-    static_assert(std::is_void_v<T>, "not implemented");
+    auto fused_lhs = fuse(lhs);
+
+    if constexpr (!traits::is_t_joint_v<decltype(fused_lhs)>)
+    {
+        return fuse(fused_lhs, rhs);
+    }
+    else
+    {
+        auto fused_rhs = fuse(rhs);
+
+        if constexpr (!traits::is_t_joint_v<decltype(fused_rhs)>)
+        {
+            return fuse(fused_lhs, fused_rhs);
+        }
+        else
+        {
+            return fuse_t_joints(fused_lhs, fused_rhs);
+        }
+    }
 }
 
 template <typename T,
