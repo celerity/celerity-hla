@@ -50,6 +50,8 @@ public:
 			using first_kernel_type = first_result_t<decltype(r)>;
 			using item_context_type = decay_t<arg_type_t<first_kernel_type, 0>>;
 
+			static_assert(size_v<decltype(sequence(r))> == 1);
+
 			cgh.template parallel_for<KernelName>(d, *beg, [=](cl::sycl::item<Rank> item) {
 				item_context_type ctx{item};
 				invoke(sequence(r), ctx);

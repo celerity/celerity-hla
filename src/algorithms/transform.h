@@ -28,8 +28,8 @@ auto transform_impl(InIterator<T, Rank> beg, InIterator<T, Rank> end, OutIterato
         auto in_acc = get_access<policy_type, mode::read, accessor_type>(cgh, beg, end);
         auto out_acc = get_access<policy_type, mode::discard_write, one_to_one>(cgh, out, out);
 
-        return [=](item_context<Rank, T> &ctx) {
-            out_acc[ctx[0]] = f(in_acc[ctx[0]]);
+        return [=](item_context<Rank, U(T)> &ctx) {
+            out_acc[ctx.get_out()] = f(in_acc[ctx.get_in()]);
         };
     };
 }
@@ -48,8 +48,8 @@ auto transform_impl(InIterator<T, Rank> beg, InIterator<T, Rank> end, OutIterato
         auto in_acc = get_access<policy_type, mode::read, accessor_type>(cgh, beg, end);
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
 
-        return [=](item_context<Rank, T> &ctx) {
-            out_acc[ctx[0]] = f(ctx.get_item(), in_acc[ctx[0]]);
+        return [=](item_context<Rank, U(T)> &ctx) {
+            out_acc[ctx.get_out()] = f(ctx.get_item(), in_acc[ctx.get_in()]);
         };
     };
 }
@@ -61,12 +61,13 @@ template <typename ExecutionPolicy,
           typename F,
           typename T,
           typename U,
+          typename V,
           int Rank,
           require<traits::function_traits<F>::arity == 2> = yes>
 auto transform_impl(FirstInputIteratorType<T, Rank> beg,
                     FirstInputIteratorType<T, Rank> end,
                     SecondInputIteratorType<U, Rank> beg2,
-                    OutputIteratorType<T, Rank> out,
+                    OutputIteratorType<V, Rank> out,
                     const F &f)
 {
     using namespace traits;
@@ -82,8 +83,8 @@ auto transform_impl(FirstInputIteratorType<T, Rank> beg,
         auto out_acc = get_access<policy_type, mode::discard_write, one_to_one>(cgh, out, out);
 
         // TODO: item_context needs to fit for both T and U
-        return [=](item_context<Rank, T> &ctx) {
-            out_acc[ctx[0]] = f(first_in_acc[ctx[0]], second_in_acc[ctx[1]]);
+        return [=](item_context<Rank, V(T, U)> &ctx) {
+            out_acc[ctx.get_out()] = f(first_in_acc[ctx.template get_in<0>()], second_in_acc[ctx.template get_in<1>()]);
         };
     };
 }
@@ -95,12 +96,13 @@ template <typename ExecutionPolicy,
           typename F,
           typename T,
           typename U,
+          typename V,
           int Rank,
           require<traits::function_traits<F>::arity == 3> = yes>
 auto transform_impl(FirstInputIteratorType<T, Rank> beg,
                     FirstInputIteratorType<T, Rank> end,
                     SecondInputIteratorType<U, Rank> beg2,
-                    OutputIteratorType<T, Rank> out, const F &f)
+                    OutputIteratorType<V, Rank> out, const F &f)
 {
     using namespace traits;
     using namespace cl::sycl::access;
@@ -115,8 +117,8 @@ auto transform_impl(FirstInputIteratorType<T, Rank> beg,
         auto out_acc = get_access<policy_type, mode::discard_write, one_to_one>(cgh, out, out);
 
         // TODO: item_context needs to fit for both T and U
-        return [=](item_context<Rank, T> &ctx) {
-            out_acc[ctx[0]] = f(ctx.get_item(), first_in_acc[ctx[0]], second_in_acc[ctx[1]]);
+        return [=](item_context<Rank, V(T, U)> &ctx) {
+            out_acc[ctx.get_out()] = f(ctx.get_item(), first_in_acc[ctx.template get_in<0>()], second_in_acc[ctx.template get_in<1>()]);
         };
     };
 }

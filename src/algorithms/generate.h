@@ -25,18 +25,16 @@ auto generate_impl(IteratorType<T, Rank> beg, IteratorType<T, Rank> end, const F
     return [=](celerity::handler &cgh) {
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, beg, end);
 
-        if constexpr (traits::arity_v<F> == 1)
-        {
-            return [=](item_context<Rank, T> &ctx) {
-                out_acc[ctx[0]] = f(ctx[0]);
-            };
-        }
-        else
-        {
-            return [=](item_context<Rank, T> &ctx) {
-                out_acc[ctx[0]] = f();
-            };
-        }
+        return [=](item_context<Rank, T()> &ctx) {
+            if constexpr (traits::arity_v<F> == 1)
+            {
+                out_acc[ctx.get_out()] = f(ctx.get_item());
+            }
+            else
+            {
+                out_acc[ctx.get_out()] = f();
+            }
+        };
     };
 }
 

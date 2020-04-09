@@ -27,16 +27,28 @@ auto fuse(task_t<ExecutionPolicyA, KernelA> a, task_t<ExecutionPolicyB, KernelB>
     using new_execution_policy = named_distributed_execution_policy<
         indexed_kernel_name_t<fused<ExecutionPolicyA, ExecutionPolicyB>>>;
 
-    using kernel_type = std::invoke_result_t<decltype(a.get_sequence()), handler &>;
-    using item_type = traits::arg_type_t<kernel_type, 0>;
+    using kernel_a_type = std::invoke_result_t<decltype(a.get_sequence()), handler &>;
+    using context_a_type = std::decay_t<traits::arg_type_t<kernel_a_type, 0>>;
 
-    auto seq = a.get_sequence() | b.get_sequence();
+    using kernel_b_type = std::invoke_result_t<decltype(b.get_sequence()), handler &>;
+    using context_b_type = std::decay_t<traits::arg_type_t<kernel_b_type, 0>>;
+
+    using combined_context_type = combined_context_t<context_a_type, context_b_type>;
 
     auto f = [=](handler &cgh) {
-        const auto kernels = sequence(std::invoke(seq, cgh));
+        const auto kernels_a = sequence(std::invoke(a.get_sequence(), cgh));
+        const auto kernels_b = sequence(std::invoke(b.get_sequence(), cgh));
 
-        return [=](item_type item) {
-            kernels(item);
+        return [=](combined_context_type &ctx) {
+            context_a_type ctx_a(ctx.get_item());
+            ctx_a.copy_in(ctx);
+
+            kernels_a(ctx_a);
+
+            context_b_type ctx_b{ctx_a, ctx};
+            kernels_b(ctx_b);
+
+            ctx.copy_out(ctx_b);
         };
     };
 
@@ -60,8 +72,16 @@ auto fuse(task_t<ExecutionPolicyA, KernelA> a,
     using new_execution_policy = named_distributed_execution_policy<
         indexed_kernel_name_t<fused<fused<ExecutionPolicyA, ExecutionPolicyB>, ExecutionPolicyC>>>;
 
-    using kernel_type = std::invoke_result_t<decltype(a.get_sequence()), handler &>;
-    using item_type = traits::arg_type_t<kernel_type, 0>;
+    using kernel_a_type = std::invoke_result_t<decltype(a.get_sequence()), handler &>;
+    using context_a_type = std::decay_t<traits::arg_type_t<kernel_a_type, 0>>;
+
+    using kernel_b_type = std::invoke_result_t<decltype(b.get_sequence()), handler &>;
+    using context_b_type = std::decay_t<traits::arg_type_t<kernel_b_type, 0>>;
+
+    using kernel_c_type = std::invoke_result_t<decltype(c.get_sequence()), handler &>;
+    using context_c_type = std::decay_t<traits::arg_type_t<kernel_c_type, 0>>;
+
+    using combined_context_type = combined_context_t<context_a_type, context_c_type>;
 
     auto seq_a = a.get_sequence();
     auto seq_b = b.get_sequence();
@@ -72,29 +92,18 @@ auto fuse(task_t<ExecutionPolicyA, KernelA> a,
         const auto kernels_b = sequence(std::invoke(seq_b, cgh));
         const auto kernels_c = sequence(std::invoke(seq_c, cgh));
 
-        return [=](item_type item) {
-            kernels_a(item);
-            // data[0] = result of a
-            // data[1] = empty
+        return [=](combined_context_type &ctx) {
+            context_a_type ctx_a{ctx.get_item()};
+            ctx_a.copy_in(ctx);
+            kernels_a(ctx_a);
 
-            // switch item context so that
-            // the b-kernels write to the
-            // second data store
-            item.switch_data();
-            // data[0] = empty
-            // data[1] = result of a
+            context_b_type ctx_b{ctx.get_item()};
+            kernels_b(ctx_b);
 
-            kernels_b(item);
-            // data[0] = result of b
-            // data[1] = result of a
+            context_c_type ctx_c{ctx_a, ctx_b};
+            kernels_c(ctx_c);
 
-            // switch back to normal
-            // data[0] = result of a
-            // data[1] = result of b
-            item.switch_data();
-
-            kernels_c(item);
-            // result of c written to buffer
+            ctx.copy_out(ctx_c);
         };
     };
 
@@ -116,8 +125,11 @@ auto fuse_right(task_t<ExecutionPolicyB, KernelB> b,
     using new_execution_policy = named_distributed_execution_policy<
         indexed_kernel_name_t<fused<ExecutionPolicyB, ExecutionPolicyC>>>;
 
-    using kernel_type = std::invoke_result_t<decltype(b.get_sequence()), handler &>;
-    using item_type = traits::arg_type_t<kernel_type, 0>;
+    using kernel_b_type = std::invoke_result_t<decltype(b.get_sequence()), handler &>;
+    using context_b_type = std::decay_t<traits::arg_type_t<kernel_b_type, 0>>;
+
+    using kernel_c_type = std::invoke_result_t<decltype(c.get_sequence()), handler &>;
+    using context_c_type = std::decay_t<traits::arg_type_t<kernel_c_type, 0>>;
 
     auto seq_b = b.get_sequence();
     auto seq_c = c.get_sequence();
@@ -126,26 +138,12 @@ auto fuse_right(task_t<ExecutionPolicyB, KernelB> b,
         const auto kernels_b = sequence(std::invoke(seq_b, cgh));
         const auto kernels_c = sequence(std::invoke(seq_c, cgh));
 
-        return [=](item_type item) {
-            // switch item context so that
-            // the b-kernels write to the
-            // second data store
-            item.switch_data();
-            // data[0] = empty
-            // data[1] = empty
+        return [=](context_c_type &ctx_c) {
+            context_b_type ctx_b{ctx_c.get_item()};
+            kernels_b(ctx_b);
 
-            kernels_b(item);
-            // data[0] = result of b
-            // data[1] = empty
-
-            // switch back to normal
-            // data[0] = empty
-            // data[1] = result of b
-            item.switch_data();
-
-            kernels_c(item);
-            // data[0] = result of c
-            // data[1] = empty
+            ctx_c.template get_in<1>() = ctx_b.get_out();
+            kernels_c(ctx_c);
         };
     };
 

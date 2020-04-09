@@ -26,8 +26,8 @@ auto for_each_impl(InIterator<T, Rank> beg, InIterator<T, Rank> end, const F &f)
     return [=](celerity::handler &cgh) {
         auto in_acc = get_access<policy_type, cl::sycl::access::mode::read, accessor_type>(cgh, beg, end);
 
-        return [=](item_context<Rank, T> &ctx) {
-            f(ctx[0], in_acc[ctx[0]]);
+        return [=](item_context<Rank, void(T)> &ctx) {
+            f(ctx.get_item(), in_acc[ctx.get_in()]);
         };
     };
 }

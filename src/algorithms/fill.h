@@ -23,8 +23,8 @@ auto fill_impl(IteratorType<T, Rank> beg, IteratorType<T, Rank> end, const T &va
     return [=](celerity::handler &cgh) {
         auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, beg, end);
 
-        return [=](item_context<Rank, T> &ctx) {
-            out_acc[ctx[0]] = value;
+        return [=](item_context<Rank, T(void)> &ctx) {
+            out_acc[ctx.get_out()] = value;
         };
     };
 }

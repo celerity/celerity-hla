@@ -48,6 +48,14 @@ inline auto submit_to(celerity::distr_queue q)
     return q;
 }
 
+template <typename T>
+using terminated_t = std::conditional_t<traits::is_sequence_v<T>,
+                                        decltype(terminate(std::declval<T>())),
+                                        void>;
+
+template <typename T>
+using fused_t = decltype(fuse(std::declval<terminated_t<T>>()));
+
 } // namespace celerity::algorithm
 
 #endif // SEQUENCING_H
