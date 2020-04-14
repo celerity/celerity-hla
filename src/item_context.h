@@ -55,6 +55,11 @@ public:
 
     static constexpr auto rank = Rank;
 
+    item_context(const item_context &) = delete;
+    item_context &operator=(const item_context &) = delete;
+    item_context(item_context &&) = delete;
+    item_context &operator=(item_context &&) = delete;
+
     explicit item_context(cl::sycl::item<Rank> item)
         : item_(item) {}
 
@@ -88,11 +93,16 @@ public:
 
     static constexpr auto rank = Rank;
 
+    item_context(const item_context &) = delete;
+    item_context &operator=(const item_context &) = delete;
+    item_context(item_context &&) = delete;
+    item_context &operator=(item_context &&) = delete;
+
     explicit item_context(cl::sycl::item<Rank> item)
         : item_(item) {}
 
     template <typename ItemContext>
-    explicit item_context(ItemContext ctx)
+    explicit item_context(ItemContext &ctx)
         : item_(ctx.get_item())
     {
         static_assert(std::is_convertible_v<std::decay_t<decltype(get_in())>, decltype(ctx.get_out())>);
@@ -135,11 +145,16 @@ public:
 
     static constexpr auto rank = Rank;
 
+    item_context(const item_context &) = delete;
+    item_context &operator=(const item_context &) = delete;
+    item_context(item_context &&) = delete;
+    item_context &operator=(item_context &&) = delete;
+
     explicit item_context(cl::sycl::item<Rank> item)
         : item_(item) {}
 
     template <typename ItemContext>
-    explicit item_context(ItemContext ctx)
+    explicit item_context(ItemContext &ctx)
         : item_(ctx.get_item())
     {
         static_assert(std::is_convertible_v<std::decay_t<decltype(get_in())>, decltype(ctx.get_out())>);
@@ -147,7 +162,7 @@ public:
     }
 
     template <typename ItemContextA, typename ItemContextB>
-    item_context(ItemContextA a, ItemContextB b)
+    item_context(ItemContextA &a, ItemContextB &)
         : item_context(a)
     {
     }
@@ -186,6 +201,11 @@ public:
 
     static constexpr auto rank = Rank;
 
+    item_context(const item_context &) = delete;
+    item_context &operator=(const item_context &) = delete;
+    item_context(item_context &&) = delete;
+    item_context &operator=(item_context &&) = delete;
+
     explicit item_context(cl::sycl::item<Rank> item)
         : item_(item) {}
 
@@ -198,7 +218,7 @@ public:
     // }
 
     template <typename ItemContextA, typename ItemContextB>
-    item_context(ItemContextA a, ItemContextB b)
+    item_context(ItemContextA &a, ItemContextB &b)
         : item_(a.get_item())
     {
         static_assert(std::is_convertible_v<std::decay_t<decltype(get_in<0>())>, decltype(a.get_out())>);

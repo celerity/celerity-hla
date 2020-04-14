@@ -905,7 +905,6 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add_sec = [](int x, const chunk<int, 1> &y) { return x + *y; };
-        auto zip_add = [](const chunk<int, 1> &x, int y) { return *x + y; };
 
         buffer<int, 1> buf_a{{size}};
         buffer<int, 1> buf_b{{size}};
@@ -915,7 +914,6 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         WHEN("chaining calls")
         {
             auto t2 = transform<class mul_chunk_25>(mul_chunk);
-            auto t3 = transform<class zip_add_t_26>(zip_add);
             auto t4 = transform<class zip_add_sec_4>(zip_add_sec);
             auto seq = buf_a | t4 << (buf_b | t2) | t4 << (buf_a | t2);
 
