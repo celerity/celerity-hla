@@ -376,8 +376,21 @@ auto fuse(T task)
 } // namespace detail
 
 template <typename T, typename U,
-          require_one<traits::are_fusable_v<T, U>,
-                      traits::is_packaged_task_v<T> && traits::is_packaged_task_v<U>> = yes>
+          require<traits::is_packaged_task_v<T>,
+                  traits::is_packaged_task_v<U>,
+                  traits::is_t_joint_v<T> || traits::is_t_joint_v<U>> = yes>
+auto operator|(T lhs, U rhs)
+{
+    using namespace detail;
+    return sequence(fuse(lhs, rhs));
+}
+
+template <typename T, typename U,
+          require<traits::are_fusable_v<T, U>,
+                  traits::is_packaged_task_v<T>,
+                  traits::is_packaged_task_v<U>,
+                  !traits::is_t_joint_v<U>,
+                  !traits::is_t_joint_v<T>> = yes>
 auto operator|(T lhs, U rhs)
 {
     using namespace detail;
