@@ -456,6 +456,9 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
             });
 
             /* 
+            // TODO: try different clang versions
+            //       try computecpp 
+            //
             // since this works, it seems likely there is something going wrong on the device or
             // while compiling for it
 

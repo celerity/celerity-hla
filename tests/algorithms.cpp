@@ -295,6 +295,9 @@ SCENARIO("transforming a buffer", "[celerity::algorithm]")
         {
             buffer<int, 3> buf_c(buf_a.get_range());
 
+            // TODO: may depend on lambda capture size
+            //       try to reduce size of any_accessor<> => should be the same for two-dimensional case
+            //
             // ========= Program hit cudaErrorLaunchOutOfResources (error 7) due to "too many resources requested for launch" on CUDA API call to cudaLaunch.
             // =========     Saved host backtrace up to driver entry point at error
             // =========     Host Frame:/usr/lib/x86_64-linux-gnu/libcuda.so.1 [0x3ac5a3]
@@ -424,12 +427,11 @@ SCENARIO("iterating a buffer on the master", "[celerity::algorithm]")
             auto all_one = false;
             auto checked = 0;
 
-            master_task(
-                master(q), pack(buf_a, buf_b), [&](all<int, 1> a, all<int, 1> b) {
-                    checked = 1000;
-                    all_one = std::all_of(begin(a), end(a), [](int x) { return x == 1; });
-                    all_one = all_one && std::all_of(begin(b), end(b), [](int x) { return x == 2; });
-                });
+            master_task(master(q), pack(buf_a, buf_b), [&](all<int, 1> a, all<int, 1> b) {
+                checked = 1000;
+                all_one = std::all_of(begin(a), end(a), [](int x) { return x == 1; });
+                all_one = all_one && std::all_of(begin(b), end(b), [](int x) { return x == 2; });
+            });
 
             q.slow_full_sync();
 

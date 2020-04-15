@@ -82,7 +82,6 @@ auto transform_impl(FirstInputIteratorType<T, Rank> beg,
         auto second_in_acc = get_access<policy_type, mode::read, second_accessor_type>(cgh, beg2, beg2);
         auto out_acc = get_access<policy_type, mode::discard_write, one_to_one>(cgh, out, out);
 
-        // TODO: item_context needs to fit for both T and U
         return [=](item_context<Rank, V(T, U)> &ctx) {
             out_acc[ctx.get_out()] = f(first_in_acc[ctx.template get_in<0>()], second_in_acc[ctx.template get_in<1>()]);
         };
@@ -116,7 +115,6 @@ auto transform_impl(FirstInputIteratorType<T, Rank> beg,
         auto second_in_acc = get_access<policy_type, mode::read, second_accessor_type>(cgh, beg2, beg2);
         auto out_acc = get_access<policy_type, mode::discard_write, one_to_one>(cgh, out, out);
 
-        // TODO: item_context needs to fit for both T and U
         return [=](item_context<Rank, V(T, U)> &ctx) {
             out_acc[ctx.get_out()] = f(ctx.get_item(), first_in_acc[ctx.template get_in<0>()], second_in_acc[ctx.template get_in<1>()]);
         };
