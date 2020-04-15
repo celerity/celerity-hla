@@ -507,8 +507,8 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
 
                 auto out = buf_out.get_access<cl::sycl::access::mode::write>(c, celerity::access::one_to_one<1>());
 
-                return [=](item_context<1, int> it) {
-                    out[it[0]] = add(in_a[it[0]], in_b[it[1]]);
+                return [=](item_context<1, int(int, int)> &it) {
+                    out[it.get_out()] = add(in_a[it.get_in<0>()], in_b[it.get_in<1>()]);
                 };
             };
 
@@ -543,8 +543,8 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
 
                 auto out = buf_out.get_access<cl::sycl::access::mode::write>(c, celerity::access::one_to_one<1>());
 
-                return [=](item_context<1, int> it) {
-                    out[it[0]] = add(in_a[it[0]], *in_b[it[1]]);
+                return [=](item_context<1, int(int, int)> &it) {
+                    out[it.get_out()] = add(in_a[it.get_in<0>()], *in_b[it.get_in<1>()]);
                 };
             };
 
@@ -579,8 +579,8 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
 
                 auto out = buf_out.get_access<cl::sycl::access::mode::write>(c, celerity::access::one_to_one<1>());
 
-                return [=](item_context<1, int> it) {
-                    out[it[0]] = add(*in_a[it[0]], in_b[it[1]]);
+                return [=](item_context<1, int(int, int)> &it) {
+                    out[it.get_out()] = add(*in_a[it.get_in<0>()], in_b[it.get_in<1>()]);
                 };
             };
 
@@ -615,8 +615,8 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
 
                 auto out = buf_out.get_access<cl::sycl::access::mode::write>(c, celerity::access::one_to_one<1>());
 
-                return [=](item_context<1, int> it) {
-                    out[it[0]] = add(*in_a[it[0]], *in_b[it[1]]);
+                return [=](item_context<1, int(int, int)> &it) {
+                    out[it.get_out()] = add(*in_a[it.get_in<0>()], *in_b[it.get_in<1>()]);
                 };
             };
 
@@ -651,8 +651,8 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
 
                 auto out = buf_out.get_access<cl::sycl::access::mode::write>(c, celerity::access::one_to_one<1>());
 
-                return [=](item_context<1, int> it) {
-                    out[it[0]] = add(in_a[it[0]], in_b[it[1]]);
+                return [=](item_context<1, int(int, int)> &it) {
+                    out[it.get_out()] = add(in_a[it.get_in<0>()], in_b[it.get_in<1>()]);
                 };
             };
 
