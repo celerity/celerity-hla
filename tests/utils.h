@@ -4,10 +4,10 @@
 #pragma clang diagnostic ignored "-Wunused-result"
 #pragma clang diagnostic ignored "-Wsometimes-uninitialized"
 
-#include "../src/catch/catch.hpp"
+#include "../include/catch/catch.hpp"
 
 #define CELERITY_TEST
-#include "../src/algorithm.h"
+#include "../include/algorithm.h"
 
 struct GlobalSetupAndTeardown : Catch::TestEventListenerBase
 {

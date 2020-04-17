@@ -2,8 +2,8 @@
 
 #pragma clang diagnostic warning "-Wall"
 
-#include "../src/catch/catch.hpp"
-#include "../src/sycl.h"
+#include "../include/catch/catch.hpp"
+#include "../include/sycl.h"
 
 using namespace celerity;
 using namespace celerity::algorithm;

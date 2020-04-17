@@ -1,11 +1,11 @@
 #pragma clang diagnostic warning "-Wall"
 
-#include "../src/accessor_proxy.h"
-#include "../src/iterator.h"
-#include "../src/kernel_traits.h"
-#include "../src/sequence.h"
-#include "../src/packaged_task_traits.h"
-#include "../src/packaged_tasks/packaged_generate.h"
+#include "../include/accessor_proxy.h"
+#include "../include/iterator.h"
+#include "../include/kernel_traits.h"
+#include "../include/sequence.h"
+#include "../include/packaged_task_traits.h"
+#include "../include/packaged_tasks/packaged_generate.h"
 
 #include <vector>
 #include <stdlib.h>

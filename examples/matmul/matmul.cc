@@ -3,9 +3,9 @@
 #pragma clang diagnostic ignored "-Wunused-result"
 #pragma clang diagnostic ignored "-Wreturn-type"
 
-#include "../../src/algorithm.h"
-#include "../../src/actions.h"
-#include "../../src/buffer_traits.h"
+#include "../../include/algorithm.h"
+#include "../../include/actions.h"
+#include "../../include/buffer_traits.h"
 
 #include <numeric>
 

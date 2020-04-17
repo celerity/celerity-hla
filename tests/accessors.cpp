@@ -5,7 +5,7 @@
 #include <numeric>
 
 #include "utils.h"
-#include "../src/actions.h"
+#include "../include/actions.h"
 
 using namespace celerity;
 using namespace celerity::algorithm;

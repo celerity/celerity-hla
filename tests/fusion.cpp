@@ -4,9 +4,9 @@
 
 #include "utils.h"
 
-#include "../src/sequencing.h"
-#include "../src/actions.h"
-#include "../src/fusion_helper.h"
+#include "../include/sequencing.h"
+#include "../include/actions.h"
+#include "../include/fusion_helper.h"
 
 #include <numeric>
 

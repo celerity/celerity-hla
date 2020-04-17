@@ -8,21 +8,21 @@
 #pragma clang diagnostic ignored "-Wsometimes-uninitialized"
 #pragma clang diagnostic ignored "-Wreturn-type"
 
-#include "../../src/celerity_helper.h"
-#include "../../src/algorithm.h"
-#include "../../src/actions.h"
-#include "../../src/buffer_traits.h"
+#include "../../include/celerity_helper.h"
+#include "../../include/algorithm.h"
+#include "../../include/actions.h"
+#include "../../include/buffer_traits.h"
 
 auto setup_wave(cl::sycl::range<2> range, cl::sycl::float2 center, float amplitude, cl::sycl::float2 sigma)
 {
 	using namespace celerity::algorithm;
 
 	return generate_n<class setup>(range,
-								 [c = center, a = amplitude, s = sigma](cl::sycl::item<2> item) {
-									 const auto dx = item[1] - c.x();
-									 const auto dy = item[0] - c.y();
-									 return a * cl::sycl::exp(-(dx * dx / (2.f * s.x() * s.x()) + dy * dy / (2.f * s.y() * s.y())));
-								 });
+								   [c = center, a = amplitude, s = sigma](cl::sycl::item<2> item) {
+									   const auto dx = item[1] - c.x();
+									   const auto dy = item[0] - c.y();
+									   return a * cl::sycl::exp(-(dx * dx / (2.f * s.x() * s.x()) + dy * dy / (2.f * s.y() * s.y())));
+								   });
 }
 
 auto zero(cl::sycl::range<2> &range)
@@ -115,7 +115,7 @@ void write_csv(size_t N, std::vector<std::vector<float>> &result_frames)
 
 struct wave_sim_config
 {
-	int N = 64;	// Grid size
+	int N = 64;	   // Grid size
 	float T = 100; // Time at end of simulation
 	float dt = 0.25f;
 	float dx = 1.f;
