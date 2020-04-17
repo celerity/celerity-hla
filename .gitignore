@@ -12,3 +12,4 @@ wave_sim_result.csv
 *.jpg
 *.bak
 *.csv
+install/

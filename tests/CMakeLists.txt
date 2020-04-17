@@ -15,8 +15,8 @@ foreach(ONE_TEST_CPP ${ALL_TEST_CPP})
         ${TARGET_NAME} 
         PUBLIC
         Celerity::celerity_runtime
-        Boost::boost
-        MPI::MPI_CXX
+        #Boost::boost
+        #MPI::MPI_CXX
     )	
 
     add_celerity_to_target(

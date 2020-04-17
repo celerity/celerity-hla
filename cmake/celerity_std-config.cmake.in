@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.5.1)
+include(CMakeFindDependencyMacro)
+
+set(CELERITY_STD_INSTALL_LOCATION "@CELERITY_STD_INSTALL_LOCATION@")
+
+find_dependency(Celerity REQUIRED)
+
+include("${CMAKE_CURRENT_LIST_DIR}/celerity_std-targets.cmake")
