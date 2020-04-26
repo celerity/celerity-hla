@@ -85,8 +85,9 @@ private:
 	cl::sycl::range<Rank> range_;
 };
 
-template <typename T, int Rank, typename AccessorType, size_t Dim>
-class accessor_proxy<T, Rank, AccessorType, slice<T, Dim>>
+template <typename T, int Rank, typename AccessorType, size_t Dim,
+		  bool Transposed>
+class accessor_proxy<T, Rank, AccessorType, slice<T, Dim, Transposed>>
 	: public accessor_proxy_base<AccessorType>
 {
 public:
@@ -97,7 +98,7 @@ public:
 	explicit accessor_proxy(AccessorType acc, cl::sycl::range<Rank>)
 		: base(acc) {}
 
-	slice<T, Dim> operator[](const cl::sycl::item<Rank> item) const
+	slice<T, Dim, Transposed> operator[](const cl::sycl::item<Rank> item) const
 	{
 		return {item, base::get_accessor()};
 	}

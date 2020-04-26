@@ -17,8 +17,8 @@ struct accessor_traits<Rank, detail::one_to_one>
     }
 };
 
-template <int Rank, typename T, size_t Dim>
-struct accessor_traits<Rank, slice<T, Dim>>
+template <int Rank, typename T, size_t Dim, size_t IndexDim>
+struct accessor_traits<Rank, slice<T, Dim, IndexDim>>
 {
     static auto range_mapper()
     {
@@ -49,8 +49,8 @@ struct is_slice : std::false_type
 {
 };
 
-template <typename T, size_t Dim>
-struct is_slice<slice<T, Dim>> : std::true_type
+template <typename T, size_t Dim, bool Transposed>
+struct is_slice<slice<T, Dim, Transposed>> : std::true_type
 {
 };
 

@@ -23,7 +23,7 @@ struct one_to_one
 
 } // namespace detail
 
-template <typename T, size_t Dim>
+template <typename T, size_t Dim, bool Transpose = false>
 class slice
 {
 public:
@@ -44,9 +44,27 @@ public:
 	T operator[](int pos) const
 	{
 		return item_.apply([pos, this](const auto &item) {
-			auto id = item.get_id();
-			id[Dim] = pos;
-			return accessor_.template get(id);
+			using id_type = std::decay_t<decltype(item.get_id())>;
+
+			if constexpr (Transpose && std::is_same_v<id_type, cl::sycl::id<2>>)
+			{
+				auto id = item.get_id();
+				id[1 - Dim] = id[Dim];
+				id[Dim] = pos;
+
+				return accessor_.template get(id);
+			}
+			else if constexpr (Transpose)
+			{
+				assert(false && "Only slices of 2-dimensional ranges can be transposed");
+				return T{};
+			}
+			else
+			{
+				auto id = item.get_id();
+				id[Dim] = pos;
+				return accessor_.template get(id);
+			}
 		});
 	}
 
@@ -64,6 +82,9 @@ private:
 	const variant_item<2, 3> item_;
 	const detail::any_accessor<T> accessor_;
 };
+
+template <typename T, size_t Dim>
+using t_slice = slice<T, Dim, true>;
 
 template <typename T, size_t... Extents>
 class chunk
