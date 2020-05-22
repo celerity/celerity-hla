@@ -13,6 +13,22 @@
 
 #include "require.h"
 
+namespace celerity::algorithm::traits
+{
+template <typename T>
+struct is_celerity_buffer : std::false_type
+{
+};
+
+template <typename T, int Rank>
+struct is_celerity_buffer<buffer<T, Rank>> : std::true_type
+{
+};
+
+template <typename T>
+constexpr inline bool is_celerity_buffer_v = is_celerity_buffer<T>::value;
+} // namespace celerity::algorithm::traits
+
 namespace celerity::algorithm::detail
 {
 template <typename ElementTypeA, int RankA,

@@ -7,7 +7,6 @@
 
 namespace celerity::algorithm::traits
 {
-
 template <typename T>
 struct sequence_traits : std::integral_constant<bool, false>
 {
@@ -27,8 +26,7 @@ struct size<T, true> : std::integral_constant<int, T::num_actions>
 };
 
 template <typename T>
-constexpr inline auto size_v = size<T, is_sequence_v<T>>::value;
-;
+constexpr inline auto size_v = size<std::decay_t<T>, is_sequence_v<std::decay_t<T>>>::value;
 
 template <typename T>
 struct last_element;
@@ -42,16 +40,22 @@ struct first_element;
 template <typename T>
 using first_element_t = typename first_element<T>::type;
 
+template <size_t Idx, typename T>
+struct nth_element;
+
+template <size_t Idx, typename T>
+using nth_element_t = typename nth_element<Idx, T>::type;
+
 template <typename T>
 struct first_result
 {
-    using type = T;
+	using type = T;
 };
 
 template <typename... Ts>
 struct first_result<std::tuple<Ts...>>
 {
-    using type = std::tuple_element_t<0, std::tuple<Ts...>>;
+	using type = std::tuple_element_t<0, std::tuple<Ts...>>;
 };
 
 template <typename T>
