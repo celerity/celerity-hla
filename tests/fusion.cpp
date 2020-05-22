@@ -35,15 +35,15 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             auto t2 = transform<class mul>(mul_3);
 
             auto seq = buf_in | t1 | t2;
+
             auto buf_out = seq | submit_to(q);
 
             THEN("kernels are fused and the result is 18")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
                 REQUIRE(elements_equal_to<18>(begin(r), end(r)));
@@ -70,11 +70,10 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is 18")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
                 REQUIRE(elements_equal_to<18>(begin(r), end(r)));
@@ -99,11 +98,10 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is 3")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -132,11 +130,10 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is 3")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
                 REQUIRE(elements_equal_to<3 * init>(begin(r), end(r)));
@@ -163,11 +160,10 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is 18")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 3);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 3);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
                 REQUIRE(elements_equal_to<18>(begin(r), end(r)));
@@ -196,11 +192,10 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is correct")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 4);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 4);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -229,15 +224,15 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             auto t2 = transform<class zip_add_t>(zip_add);
 
             auto seq = t1 | (t2 << buf_in);
+
             auto buf_out = seq | submit_to(q);
 
             THEN("kernels are fused and the result is 18")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -263,15 +258,17 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             auto t3 = transform<class zip_add_t_1>(zip_add);
 
             auto seq = t1 | (t3 << t2);
+            static_assert(!traits::is_sequence_v<traits::first_element_t<decltype(seq)>>);
+            static_assert(!traits::is_sequence_v<traits::last_element_t<decltype(seq)>>);
+
             auto buf_out = seq | submit_to(q);
 
             THEN("kernels are fused and the result is (i + 3)")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -303,11 +300,10 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is (i + 3)")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 3);
-                static_assert(size_v<fused_sequence_type> == 1); // TODO
+                static_assert(size_v<linked_t<seq_type>> == 3);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -341,11 +337,10 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is (i + 3)")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 4);
-                static_assert(size_v<fused_sequence_type> == 1); // TODO
+                static_assert(size_v<linked_t<seq_type>> == 4);
+                static_assert(size_v<fused_t<seq_type>> == 1); // TODO
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -376,13 +371,12 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is (i + 3)")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
-                using algorithm::detail::computation_type;
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
-                static_assert(computation_type_of_v<last_element_t<fused_sequence_type>, computation_type::generate>);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 1);
+                static_assert(computation_type_of_v<last_element_t<fused_t<seq_type>>,
+                                                    celerity::algorithm::detail::computation_type::generate>);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -413,13 +407,11 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is (i + 3)")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 1);
-                static_assert(size_v<fused_sequence_type> == 1);
-                //static_assert(is_t_joint_v<fused_sequence_type>);
-                static_assert(!has_transient_input_v<last_element_t<fused_sequence_type>>);
+                static_assert(size_v<linked_t<seq_type>> == 1);
+                static_assert(size_v<fused_t<seq_type>> == 1);
+                static_assert(!has_transient_input_v<last_element_t<fused_t<seq_type>>>);
                 //TODO: static_assert(has_transient_second_input_v<last_element_t<fused_sequence_type>>);
 
                 const auto r = copy_to_host(q, buf_out);
@@ -451,15 +443,15 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is (i + 3)")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
                 using algorithm::detail::computation_type;
 
-                static_assert(size_v<terminated_sequence_type> == 1);
-                static_assert(size_v<fused_sequence_type> == 1);
-                static_assert(computation_type_of_v<last_element_t<fused_sequence_type>, computation_type::zip>);
-                static_assert(!has_transient_input_v<last_element_t<fused_sequence_type>>);
-                static_assert(!has_transient_second_input_v<last_element_t<fused_sequence_type>>);
+                using seq_type = decltype(seq);
+
+                static_assert(size_v<linked_t<seq_type>> == 1);
+                static_assert(size_v<fused_t<seq_type>> == 1);
+                static_assert(computation_type_of_v<last_element_t<fused_t<seq_type>>, computation_type::zip>);
+                static_assert(!has_transient_input_v<last_element_t<fused_t<seq_type>>>);
+                static_assert(!has_transient_second_input_v<last_element_t<fused_t<seq_type>>>);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -492,12 +484,10 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is 20")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
-                using algorithm::detail::computation_type;
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -530,12 +520,10 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is 80")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
-                using algorithm::detail::computation_type;
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -568,12 +556,10 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is 80")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
-                using algorithm::detail::computation_type;
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -609,14 +595,12 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("secondary sequence is fused and the result is 80")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
-                using algorithm::detail::computation_type;
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 2);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 2);
 
-                static_assert(!is_t_joint_v<last_element_t<fused_sequence_type>>);
+                static_assert(!is_t_joint_v<last_element_t<fused_t<seq_type>>>);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -652,14 +636,12 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("secondary sequence is fused and the result is 20")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
-                using algorithm::detail::computation_type;
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
-                static_assert(is_t_joint_v<last_element_t<fused_sequence_type>>);
+                static_assert(is_t_joint_v<last_element_t<fused_t<seq_type>>>);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -695,14 +677,12 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("secondary sequence is fused and the result is 76")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
-                using algorithm::detail::computation_type;
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 1);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 1);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
-                static_assert(!is_t_joint_v<last_element_t<fused_sequence_type>>);
+                static_assert(!is_t_joint_v<last_element_t<fused_t<seq_type>>>);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -739,14 +719,12 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("secondary sequence is fused and the result is 77")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
-                using algorithm::detail::computation_type;
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 1);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 1);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
-                static_assert(!is_t_joint_v<last_element_t<fused_sequence_type>>);
+                static_assert(!is_t_joint_v<last_element_t<fused_t<seq_type>>>);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -786,14 +764,12 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("secondary sequence is fused and the result is 17")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
-                using algorithm::detail::computation_type;
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 1);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 1);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
-                static_assert(is_t_joint_v<last_element_t<fused_sequence_type>>);
+                static_assert(is_t_joint_v<last_element_t<fused_t<seq_type>>>);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -833,14 +809,12 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("secondary sequence is fused and the result is 21")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
-                using algorithm::detail::computation_type;
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 1);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 1);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
-                static_assert(is_t_joint_v<last_element_t<fused_sequence_type>>);
+                static_assert(is_t_joint_v<last_element_t<fused_t<seq_type>>>);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -877,14 +851,12 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("secondary sequence is fused and the result is 80")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
-                using algorithm::detail::computation_type;
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
-                static_assert(is_t_joint_v<last_element_t<fused_sequence_type>>);
+                static_assert(is_t_joint_v<last_element_t<fused_t<seq_type>>>);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -921,14 +893,12 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("secondary sequence is fused and the result is 21")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
-                using algorithm::detail::computation_type;
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
-                static_assert(is_t_joint_v<last_element_t<fused_sequence_type>>);
+                static_assert(is_t_joint_v<last_element_t<fused_t<seq_type>>>);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -967,14 +937,12 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("secondary sequence is fused and the result is 21")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
-                using algorithm::detail::computation_type;
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
-                static_assert(is_t_joint_v<last_element_t<fused_sequence_type>>);
+                static_assert(is_t_joint_v<last_element_t<fused_t<seq_type>>>);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -1013,14 +981,12 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("secondary sequence is fused and the result is 21")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
-                using algorithm::detail::computation_type;
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 1);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 1);
 
-                static_assert(is_t_joint_v<last_element_t<fused_sequence_type>>);
+                static_assert(is_t_joint_v<last_element_t<fused_t<seq_type>>>);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -1059,14 +1025,13 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("secondary sequence is fused and the result is 21")
             {
-                using terminated_sequence_type = decltype(terminate(seq));
-                using fused_sequence_type = decltype(fuse(std::declval<terminated_sequence_type>()));
-                using algorithm::detail::computation_type;
+                using seq_type = decltype(seq);
 
-                static_assert(size_v<terminated_sequence_type> == 2);
-                static_assert(size_v<fused_sequence_type> == 2);
-                static_assert(is_t_joint_v<first_element_t<fused_sequence_type>>);
-                static_assert(!is_t_joint_v<last_element_t<fused_sequence_type>>);
+                static_assert(size_v<linked_t<seq_type>> == 2);
+                static_assert(size_v<fused_t<seq_type>> == 2);
+
+                static_assert(is_t_joint_v<first_element_t<fused_t<seq_type>>>);
+                static_assert(!is_t_joint_v<last_element_t<fused_t<seq_type>>>);
 
                 const auto r = copy_to_host(q, buf_out);
 
