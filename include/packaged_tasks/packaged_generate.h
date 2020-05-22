@@ -36,6 +36,7 @@ public:
     OutputIteratorType get_out_end() const { return out_end_; }
 
     auto get_task() const { return functor_; }
+    auto get_range() -> cl::sycl::range<Rank> { return distance(out_beg_, out_end_); }
 
 private:
     FunctorType functor_;

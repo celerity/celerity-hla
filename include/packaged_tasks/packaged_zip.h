@@ -396,6 +396,7 @@ template <typename FunctorType,
           detail::access_type SecondInputAccessType>
 struct packaged_task_traits<detail::partially_packaged_zip_0<FunctorType, KernelType, FirstInputAccessType, SecondInputAccessType>>
 {
+    static constexpr auto rank = -1;
     static constexpr auto computation_type = detail::computation_type::zip;
     static constexpr auto access_type = FirstInputAccessType;
 

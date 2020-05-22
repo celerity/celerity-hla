@@ -18,8 +18,12 @@ namespace celerity::algorithm
 
 namespace detail
 {
+
 template <typename... Actions>
 auto fuse(const sequence<Actions...> &s);
+
+namespace fuse_impl
+{
 
 template <typename ExecutionPolicyA, typename KernelA, typename ExecutionPolicyB, typename KernelB>
 auto fuse(task_t<ExecutionPolicyA, KernelA> a, task_t<ExecutionPolicyB, KernelB> b)
@@ -373,13 +377,11 @@ auto fuse(T task)
     return task;
 }
 
-} // namespace detail
-
 template <typename T, typename U,
           require<traits::is_packaged_task_v<T>,
                   traits::is_packaged_task_v<U>,
                   traits::is_t_joint_v<T> || traits::is_t_joint_v<U>> = yes>
-auto operator|(T lhs, U rhs)
+auto operator+(T lhs, U rhs)
 {
     using namespace detail;
     return sequence(fuse(lhs, rhs));
@@ -391,7 +393,7 @@ template <typename T, typename U,
                   traits::is_packaged_task_v<U>,
                   !traits::is_t_joint_v<U>,
                   !traits::is_t_joint_v<T>> = yes>
-auto operator|(T lhs, U rhs)
+auto operator+(T lhs, U rhs)
 {
     using namespace detail;
     return sequence(fuse(lhs, rhs));
@@ -403,7 +405,7 @@ template <typename T, typename U,
                   !traits::is_t_joint_v<U>,
                   !traits::is_t_joint_v<T>,
                   !traits::are_fusable_v<T, U>> = yes>
-auto operator|(T lhs, U rhs)
+auto operator+(T lhs, U rhs)
 {
     using namespace detail;
     return sequence(lhs, rhs);
@@ -412,25 +414,32 @@ auto operator|(T lhs, U rhs)
 template <typename T, typename U,
           require<traits::is_packaged_task_sequence_v<T>,
                   traits::is_packaged_task_v<U>> = yes>
-auto operator|(T lhs, U rhs)
+auto operator+(T lhs, U rhs)
 {
-    using namespace detail;
-    return apply_append(lhs, rhs);
-}
+    constexpr auto fuse_op = [](auto &&a, auto &&b) {
+        return fuse_impl::operator+(std::forward<decltype(a)>(a), std::forward<decltype(b)>(b));
+    };
 
-namespace detail
-{
+    return apply_append(lhs, rhs, fuse_op);
+}
 
 template <typename... Actions, size_t... Is>
 auto fuse(const sequence<Actions...> &s, std::index_sequence<Is...>)
 {
-    const auto &actions = s.actions();
-    return (... | (std::get<Is>(actions)));
+    constexpr auto fuse_op = [](auto &&a, auto &&b) {
+        return fuse_impl::operator+(std::forward<decltype(a)>(a), std::forward<decltype(b)>(b));
+    };
+
+    return left_fold(s, fuse_op);
 }
+
+} // namespace fuse_impl
 
 template <typename... Actions>
 auto fuse(const sequence<Actions...> &s)
 {
+    using fuse_impl::fuse;
+
     if constexpr (sizeof...(Actions) == 1)
     {
         if constexpr (!traits::is_t_joint_v<traits::first_element_t<sequence<Actions...>>>)
