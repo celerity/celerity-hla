@@ -9,7 +9,9 @@
 
 namespace celerity
 {
-template <typename T, int Rank, typename U, algorithm::require<algorithm::traits::is_linkable_sink_v<U>> = algorithm::yes>
+	template <typename T, int Rank, typename U,
+			  algorithm::require_one<algorithm::traits::is_linkable_sink_v<U>,
+									 algorithm::traits::is_iterator_transform_v<U>> = algorithm::yes>
 auto operator|(celerity::buffer<T, Rank> lhs, U rhs)
 {
 	return algorithm::detail::sequence(lhs, rhs);

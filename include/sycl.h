@@ -156,6 +156,23 @@ constexpr cl::sycl::id<Rank> next(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> 
 	return out;
 }
 
+	// TODO: is this really max_id or range?
+	template <int Rank>
+	constexpr cl::sycl::id<Rank> next(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> max_id, cl::sycl::id<Rank> distance)
+	{
+		cl::sycl::id<Rank> out = idx;
+
+		for (auto i = 0; i < Rank; ++i)
+			out[i] += distance[i];
+
+		if constexpr (Rank > 1)
+		{
+			detail::dispatch_next(out, max_id, std::make_index_sequence<Rank - 1>{});
+		}
+
+		return out;
+	}
+
 template <int Rank>
 constexpr cl::sycl::id<Rank> prev(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> r, int distance = 1)
 {

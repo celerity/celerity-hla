@@ -5,6 +5,7 @@
 #include "linkage_traits.h"
 #include "require.h"
 #include "transient.h"
+#include "buffer_range.h"
 
 namespace celerity::algorithm::detail
 {
@@ -194,7 +195,7 @@ auto terminate(T task)
 
 	constexpr auto rank = traits::rank;
 
-	buffer<value_type, rank> out_buf{task.get_range()};
+		buffer<value_type, rank> out_buf{distance(cl::sycl::id<rank>{}, *task.get_in_end())};
 
 	return sequence(task.complete(begin(out_buf), end(out_buf)));
 }

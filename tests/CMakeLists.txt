@@ -38,4 +38,5 @@ add_tests(accessors.cpp
           index_utils.cpp
           traits.cpp
           fusion.cpp
-          sequencing.cpp)
+          sequencing.cpp
+          subranges.cpp)
