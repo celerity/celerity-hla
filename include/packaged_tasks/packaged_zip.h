@@ -32,9 +32,9 @@ public:
         : functor_(functor), in_beg_(in_beg), in_end_(in_end), second_in_beg_(second_in_beg), out_beg_(out_beg)
     {
         assert(are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
-        assert(!are_equal(in_beg_.get_buffer(), out_beg_.get_buffer()));
-        assert(!are_equal(second_in_beg_.get_buffer(), out_beg_.get_buffer()));
-        //assert(distance(in_beg_, in_end_) <= distance(out_beg_, end(out_beg_.get_buffer())));
+        assert(FirstInputAccessType == detail::access_type::one_to_one || !are_equal(in_beg_.get_buffer(), out_beg_.get_buffer()));
+        assert(SecondInputAccessType == detail::access_type::one_to_one || !are_equal(second_in_beg_.get_buffer(), out_beg_.get_buffer()));
+       //assert(distance(in_beg_, in_end_) <= distance(out_beg_, end(out_beg_.get_buffer())));
     }
 
     auto operator()(celerity::distr_queue &queue) const
