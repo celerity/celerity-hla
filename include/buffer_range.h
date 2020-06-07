@@ -2,6 +2,7 @@
 #define BUFFER_RANGE_H
 
 #include "iterator.h"
+#include <type_traits>
 
 namespace celerity::algorithm::detail
 {
@@ -30,5 +31,21 @@ namespace celerity::algorithm::detail
         return pb.it_end;
     }
 } // namespace celerity::algorithm::detail
+
+namespace celerity::algorithm::traits
+{
+    template <typename T>
+    struct is_buffer_range : std::false_type
+    {
+    };
+
+    template <typename T, int Rank>
+    struct is_buffer_range<algorithm::detail::buffer_range<T, Rank>> : std::true_type
+    {
+    };
+
+    template <typename T>
+    constexpr inline bool is_buffer_range_v = is_buffer_range<T>::value;
+} // namespace celerity::algorithm::traits
 
 #endif

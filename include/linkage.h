@@ -109,10 +109,19 @@ auto operator+(T lhs, U rhs)
 	return detail::sequence(lhs, t_right);
 }
 
-template <typename T, typename U, require<!traits::is_linkable_source_v<T>, !traits::is_linkable_sink_v<U>> = yes>
+		template <typename T, typename U,
+				  require<!traits::is_sequence_v<T>,
+						  !traits::is_linkable_source_v<T>,
+						  !traits::is_linkable_sink_v<U>> = yes>
 auto operator+(T lhs, U rhs)
 {
-	return detail::sequence(lhs, rhs);
+			static_assert(std::is_void_v<T>, "invalid sequence");
+		}
+
+		template <typename T, int Rank, typename U, require<algorithm::traits::is_linkable_sink_v<U>> = yes>
+		auto operator+(const celerity::buffer<T, Rank> &lhs, U rhs)
+		{
+			return detail::sequence(link_internally(rhs).complete(begin(lhs), end(lhs)));
 }
 
 template <typename T, int Rank, typename U, require<algorithm::traits::is_linkable_sink_v<U>> = yes>
@@ -128,8 +137,9 @@ auto operator+(U lhs, const celerity::buffer<T, Rank>& rhs)
 }
 
 template <typename T, typename U,
-    require<algorithm::traits::is_sequence_v<T>, algorithm::traits::is_linkable_source_v<traits::last_element_t<T>>, algorithm::traits::is_linkable_sink_v<U>> =
-        yes>
+				  require<algorithm::traits::is_sequence_v<T>,
+						  algorithm::traits::is_linkable_source_v<traits::last_element_t<T>>,
+						  algorithm::traits::is_linkable_sink_v<U> || algorithm::traits::is_celerity_buffer_v<U>> = yes>
 auto operator+(T lhs, U rhs)
 {
 	constexpr auto op = [](auto&& a, auto&& b) { return link_impl::operator+(std::forward<decltype(a)>(a), std::forward<decltype(b)>(b)); };
@@ -157,7 +167,7 @@ template <typename T>
 constexpr T ensure(T s)
 {
 	using namespace traits;
-	static_assert(!traits::is_packaged_task_sequence_v<T>);
+				static_assert(all_of<T>([](auto x) { return std::bool_constant<element_post_condition<decltype(x)>()>{}; }));
 	return s;
 }
 

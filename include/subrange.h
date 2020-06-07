@@ -24,7 +24,7 @@ namespace celerity::algorithm::detail
     }
 
     template <typename T, typename U,
-              require<traits::is_celerity_buffer_v<T>,
+              require<traits::is_celerity_buffer_v<T> || traits::is_buffer_range_v<T>,
                       traits::is_iterator_transform_v<U>> = yes>
     auto operator+(T lhs, U rhs)
     {
@@ -48,6 +48,7 @@ namespace celerity::algorithm::detail
 
     template <typename T, typename U,
               require<!traits::is_celerity_buffer_v<T>,
+                      !traits::is_buffer_range_v<T>,
                       traits::is_iterator_transform_v<U>> = yes>
     auto operator+(T lhs, U rhs)
     {
@@ -124,17 +125,19 @@ namespace celerity::algorithm
   }
 
   template <size_t Rank>
-  auto take(cl::sycl::id<Rank> distance)
+  auto take(cl::sycl::range<Rank> range)
   {
     using namespace detail;
 
     return iterator_transform<Rank>{
         [=](auto &beg, auto &end) {
-          auto tmp = beg;
-          tmp += distance;
-          end = tmp;
+          const auto shifted_range = range + to_range(*beg);
+          beg.set_range(shifted_range);
+          end.set_range(shifted_range);
+          end.set_pos(shifted_range);
         }};
   }
+
 } // namespace celerity::algorithm
 
 #endif // !SUBRANGE_H

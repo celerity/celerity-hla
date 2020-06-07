@@ -34,11 +34,11 @@ namespace celerity::algorithm::seq
         return fuse(terminate(link(resolve_subranges(lhs))));
     }
 
-    template <typename T, require<traits::is_sequence_v<T>, !traits::is_partially_packaged_task_v<traits::last_element_t<T>>> = yes>
+    template <typename T, require<traits::is_sequence_v<T>, traits::is_celerity_buffer_v<traits::last_element_t<T>>> = yes>
     auto operator|(T lhs, const end_t &)
     {
         using namespace detail;
-        return lhs;
+        return fuse(link(resolve_subranges(lhs)));
     }
 
     template <typename T, require<traits::is_partially_packaged_task_v<T>> = yes>

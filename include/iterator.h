@@ -20,6 +20,14 @@ namespace celerity::algorithm
 			: pos_(pos),
 			  range_(range)
 		{
+			stride_[Rank - 1] = 1;
+		}
+
+		iterator(cl::sycl::id<Rank> pos, cl::sycl::range<Rank> range, cl::sycl::id<Rank> stride)
+			: pos_(pos),
+			  range_(range),
+			  stride_(stride)
+		{
 		}
 
 		bool operator==(const iterator &rhs)
@@ -34,35 +42,48 @@ namespace celerity::algorithm
 
 		iterator &operator++()
 		{
-			pos_ = next(pos_, range_);
-
-			if (pos_[0] != range_[0])
-				return *this;
-
-			for (auto i = 0; i < Rank; ++i)
-				pos_[i] = range_[i];
-
-			return *this;
+			return operator+=(stride_);
 		}
 
 		iterator &operator+=(cl::sycl::id<Rank> offset)
 		{
 			pos_ = next(pos_, range_, offset);
 
-			if (pos_[0] != range_[0])
+			if (pos_[0] < range_[0])
 				return *this;
 
-			for (auto i = 0; i < Rank; ++i)
-				pos_[i] = range_[i];
+			saturate();
 
 			return *this;
 		}
 
 		[[nodiscard]] cl::sycl::id<Rank> operator*() const { return pos_; }
 
+		void set_stride(cl::sycl::id<Rank> stride) { stride_ = stride; }
+		void set_range(cl::sycl::range<Rank> range)
+		{
+			range_ = range;
+			saturate();
+		}
+		void set_pos(cl::sycl::id<Rank> pos)
+		{
+			pos_ = pos;
+			saturate();
+		}
+
 	private:
 		cl::sycl::id<Rank> pos_ = 0;
 		cl::sycl::range<Rank> range_;
+		cl::sycl::id<Rank> stride_{};
+
+		void saturate()
+		{
+			for (auto i = 0; i < Rank; ++i)
+			{
+				pos_[i] = std::min(pos_[i], range_[i]);
+				pos_[i] = std::max(pos_[i], size_t(0));
+			}
+		}
 	};
 
 	namespace detail
