@@ -15,7 +15,7 @@ public:
 
     template <typename T, size_t Dim, bool Transposed>
     slice_iterator(const slice<T, Dim, Transposed> &slice, cl::sycl::id<rank> pos,
-                   cl::sycl::range<rank> range)
+                    cl::sycl::range<rank> range)
         : it_(pos, range), slice_(slice) {}
 
     bool operator==(const slice_iterator &rhs)
@@ -45,7 +45,7 @@ private:
 
 template <typename T, size_t Dim, bool Transposed>
 slice_iterator(const slice<T, Dim, Transposed> &, cl::sycl::id<1>,
-               cl::sycl::range<1>)
+                cl::sycl::range<1>)
     ->slice_iterator<slice<T, Dim, Transposed>>;
 
 template <typename T, size_t Dim, bool Transposed>
@@ -66,9 +66,9 @@ class chunk_iterator
 public:
     template <typename T, size_t... Extents>
     chunk_iterator(const chunk<T, Extents...> &chunk, cl::sycl::id<Rank> center,
-                   cl::sycl::id<Rank> pos)
+                    cl::sycl::id<Rank> pos)
         : offset_((Extents / 2)...), center_(center), it_(pos, {Extents...}),
-          chunk_(chunk) {}
+            chunk_(chunk) {}
 
     bool operator==(const chunk_iterator &rhs)
     {
@@ -104,21 +104,21 @@ private:
 
 template <typename T, int Rank, size_t... Extents>
 chunk_iterator(const chunk<T, Extents...> &, cl::sycl::id<Rank>,
-               cl::sycl::id<Rank>)
+                cl::sycl::id<Rank>)
     ->chunk_iterator<chunk<T, Extents...>, Rank>;
 
 template <typename T, size_t... Extents>
 auto begin(const chunk<T, Extents...> &chunk)
 {
     return chunk_iterator{chunk, chunk.item().get_id(),
-                          cl::sycl::id<sizeof...(Extents)>{}};
+                            cl::sycl::id<sizeof...(Extents)>{}};
 }
 
 template <typename T, size_t... Extents>
 auto end(const chunk<T, Extents...> &chunk)
 {
     return chunk_iterator{chunk, chunk.item().get_id(),
-                          cl::sycl::id<sizeof...(Extents)>{Extents...}};
+                            cl::sycl::id<sizeof...(Extents)>{Extents...}};
 }
 
 template <typename AllType, int Rank>
@@ -126,7 +126,7 @@ class all_iterator
 {
 public:
     all_iterator(const AllType &all, cl::sycl::id<Rank> pos,
-                 cl::sycl::range<Rank> range)
+                    cl::sycl::range<Rank> range)
         : it_(pos, range), all_(all) {}
 
     bool operator==(const all_iterator &rhs)
@@ -176,6 +176,26 @@ struct iterator_traits<celerity::algorithm::all_iterator<AllType, Rank>>
 {
     using difference_type = long;
     using value_type = typename AllType::value_type;
+    using pointer = std::add_pointer_t<value_type>;
+    using reference = std::add_lvalue_reference_t<value_type>;
+    using iterator_category = std::forward_iterator_tag;
+};
+
+template <typename SliceType>
+struct iterator_traits<celerity::algorithm::slice_iterator<SliceType>>
+{
+    using difference_type = long;
+    using value_type = typename SliceType::value_type;
+    using pointer = std::add_pointer_t<value_type>;
+    using reference = std::add_lvalue_reference_t<value_type>;
+    using iterator_category = std::forward_iterator_tag;
+};
+
+template <typename ChunkType, int Rank>
+struct iterator_traits<celerity::algorithm::chunk_iterator<ChunkType, Rank>>
+{
+    using difference_type = long;
+    using value_type = typename ChunkType::value_type;
     using pointer = std::add_pointer_t<value_type>;
     using reference = std::add_lvalue_reference_t<value_type>;
     using iterator_category = std::forward_iterator_tag;
