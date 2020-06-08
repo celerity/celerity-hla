@@ -100,6 +100,24 @@ SCENARIO("Subranges", "[subranges::simple]")
                 REQUIRE(elements_equal_to<3>(next(begin(r)), end(r)));
             }
         }
+
+        WHEN("skipping the first 25 elements and taking the next 50 elements of both buffers")
+        {
+            auto r0 = skip<1>({25});
+            auto r1 = take<1>({50});
+            buffer<int, 1> buf_out{size};
+
+            in_buf_a | r0 | r1 | t0 << (in_buf_b | r0 | r1) | buf_out | submit_to(q);
+
+            THEN("the first and last 25 elements are zero and the rest is 3")
+            {
+                const auto r = copy_to_host(q, buf_out);
+                REQUIRE(r.size() == in_buf_a.get_range().size());
+                REQUIRE(elements_equal_to<0>(begin(r), begin(r) + 25));
+                REQUIRE(elements_equal_to<3>(begin(r) + 25, begin(r) + 75));
+                REQUIRE(elements_equal_to<0>(begin(r) + 75, end(r)));
+            }
+        }
     }
 
     GIVEN("A 2d buffer of 100 ones and a transform kernel which adds 5")
