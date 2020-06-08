@@ -122,6 +122,12 @@ namespace celerity::algorithm
 
 	namespace detail
 	{
+		template <typename T, int Rank>
+		bool is_subrange(buffer_iterator<T, Rank> from, buffer_iterator<T, Rank> to)
+		{
+			assert(from.get_buffer().get_id() == to.get_buffer().get_id() && "invalid iterator pair");
+			return from == begin(from.get_buffer()) && to == end(to.get_buffer());
+		}
 
 		template <int Rank>
 		cl::sycl::range<Rank> distance(iterator<Rank> from, iterator<Rank> to)
