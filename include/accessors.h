@@ -58,7 +58,8 @@ public:
 			}
 			else if constexpr (Transpose)
 			{
-				assert(false && "Only slices of 2-dimensional ranges can be transposed");
+				// TODO: unresolved external
+				// assert(false && "Only slices of 2-dimensional ranges can be transposed");
 				return T{};
 			}
 			else
