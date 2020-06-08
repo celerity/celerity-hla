@@ -93,21 +93,25 @@ namespace celerity::algorithm::detail
   {
     using namespace subrange_impl;
 
-    if constexpr (sizeof...(Actions) == 1)
+    // TODO
+    const auto seq = traverse(s, [](const auto &seq) { return resolve_subranges(seq); });
+    // const auto seq = s;
+
+    if constexpr (traits::size_v<decltype(seq)> == 1)
     {
       if constexpr (!traits::is_t_joint_v<
-                        traits::first_element_t<sequence<Actions...>>>)
+                        traits::first_element_t<decltype(seq)>>)
       {
-        return sequence(s);
+        return sequence(seq);
       }
       else
       {
-        return sequence(resolve_internally(get_first_element(s)));
+        return sequence(resolve_internally(get_first_element(seq)));
       }
     }
     else
     {
-      return resolve_subranges(s, std::make_index_sequence<sizeof...(Actions)>{});
+      return resolve_subranges(seq, std::make_index_sequence<traits::size_v<decltype(seq)>>{});
     }
   }
 

@@ -77,6 +77,31 @@ SCENARIO("Subranges", "[subranges::simple]")
         }
     }
 
+    GIVEN("Two buffers of 100 ones and a transform kernel which sums the elements")
+    {
+        constexpr auto size = 100;
+        buffer<int, 1> in_buf_a{size};
+        buffer<int, 1> in_buf_b{size};
+        fill<class _4>(q, in_buf_a, 1);
+        fill<class _5>(q, in_buf_b, 2);
+
+        auto t0 = transform<class _6>(std::plus<int>{});
+
+        WHEN("skipping the first element of both buffers")
+        {
+            auto r0 = skip<1>({1});
+            auto buf_out = in_buf_a | r0 | t0 << (in_buf_b | r0) | submit_to(q);
+
+            THEN("the first element is zero and the rest is 3")
+            {
+                const auto r = copy_to_host(q, buf_out);
+                REQUIRE(r.size() == in_buf_a.get_range().size());
+                REQUIRE(r.front() == 0);
+                REQUIRE(elements_equal_to<3>(next(begin(r)), end(r)));
+            }
+        }
+    }
+
     GIVEN("A 2d buffer of 100 ones and a transform kernel which adds 5")
     {
         constexpr auto size = 10;
