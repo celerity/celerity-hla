@@ -52,7 +52,8 @@ namespace celerity::algorithm
 			if (pos_[0] < range_[0])
 				return *this;
 
-			saturate();
+			for (auto i = 0; i < Rank; ++i)
+				pos_[i] = range_[i];
 
 			return *this;
 		}
