@@ -96,13 +96,16 @@ namespace celerity::algorithm::detail
 
 		static_assert(Dim >= 0 && Dim < Rank, "Dim out of bounds");
 
-		explicit accessor_proxy(AccessorType acc, cl::sycl::id<Rank>, cl::sycl::range<Rank>)
-			: base(acc) {}
+		explicit accessor_proxy(AccessorType acc, cl::sycl::id<Rank>, cl::sycl::range<Rank> range)
+			: base(acc), range_(range) {}
 
 		slice<T, Dim, Transposed> operator[](const cl::sycl::item<Rank> item) const
 		{
-			return {item, base::get_accessor()};
+			return {item, range_, base::get_accessor()};
 		}
+
+	private:
+		cl::sycl::range<Rank> range_;
 	};
 
 	template <typename T, int Rank, typename AccessorType, size_t... Extents>
@@ -158,7 +161,7 @@ namespace celerity::algorithm::detail
 	auto get_access(celerity::handler &cgh, Iterator<T, Rank> beg, Iterator<T, Rank> end)
 	{
 		const auto acc = create_accessor<ExecutionPolicy, Mode, AccessorType>(cgh, beg, end);
-		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{acc, *beg, distance(beg, end)};
+		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{acc, *beg, beg.get_buffer().get_range()};
 	}
 
 } // namespace celerity::algorithm::detail

@@ -30,8 +30,8 @@ namespace celerity::algorithm
 		using value_type = T;
 
 		template <int Rank, cl::sycl::access::mode Mode>
-		slice(const cl::sycl::item<Rank> item, cl::sycl::accessor<T, Rank, Mode, cl::sycl::access::target::global_buffer, cl::sycl::access::placeholder::true_t> acc)
-			: idx_(static_cast<int>(item.get_id()[Dim])), range_(item.get_range()[Dim]), item_(item), accessor_(acc)
+		slice(const cl::sycl::item<Rank> item, const cl::sycl::range<Rank> range, cl::sycl::accessor<T, Rank, Mode, cl::sycl::access::target::global_buffer, cl::sycl::access::placeholder::true_t> acc)
+			: idx_(static_cast<int>(item.get_id()[Dim])), range_(range[Dim]), item_(item), accessor_(acc)
 		{
 		}
 

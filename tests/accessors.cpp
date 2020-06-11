@@ -74,6 +74,97 @@ SCENARIO("accessing a slice", "[accessors::slice]")
                 }
             }
         }
+
+        WHEN("multiplying using std::inner_product")
+        {
+            buffer<int, 2> buf_c(buf_a.get_range());
+
+            transform<class matrix_mul_1>(q, buf_a, buf_b, buf_c,
+                                          [](const slice_i<1> &a, const slice_i<0> &b) {
+                                              return std::inner_product(begin(a), end(a), begin(b), 0);
+                                          });
+
+            THEN("the result is the identity matrix times 8")
+            {
+                const auto r = copy_to_host(q, buf_c);
+
+                for (size_t i = 0; i < rank; ++i)
+                {
+                    for (size_t j = 0; j < rank; ++j)
+                    {
+                        const float correct_value = (i == j) * 15;
+
+                        REQUIRE(r[j * rank + i] == correct_value);
+                    }
+                }
+            }
+        }
+
+        WHEN("multiplying transpose using std::inner_product")
+        {
+            buffer<int, 2> buf_c(buf_a.get_range());
+
+            transform<class matrix_mul_2>(q, buf_a, buf_b, buf_c,
+                                          [](const slice_i<1> &a, const t_slice<int, 0> &b) {
+                                              return std::inner_product(begin(a), end(a), begin(b), 0);
+                                          });
+
+            THEN("the result is the identity matrix times 8")
+            {
+                const auto r = copy_to_host(q, buf_c);
+
+                for (size_t i = 0; i < rank; ++i)
+                {
+                    for (size_t j = 0; j < rank; ++j)
+                    {
+                        REQUIRE(r[j * rank + i] == 15);
+                    }
+                }
+            }
+        }
+    }
+
+    GIVEN("The matrix an a column vector of 2s")
+    {
+        constexpr auto rank = 4;
+
+        std::vector<int> identity(rank * rank);
+        for (size_t i = 0; i < rank; ++i)
+        {
+            for (size_t j = 0; j < rank; ++j)
+            {
+                identity[i * rank + j] = (i == j) * 1;
+            }
+        }
+
+        buffer<int, 2> mat(identity.data(), {rank, rank});
+        buffer<int, 2> vec({rank, 1});
+
+        generate<class _5>(q, begin(mat), end(mat), [](cl::sycl::item<2> item) {
+            return item.get_linear_id();
+        });
+
+        fill<class _6>(q, begin(vec), end(vec), 2);
+
+        WHEN("multiplying using std::inner_product")
+        {
+            buffer<int, 2> out_vec(vec.get_range());
+
+            transform<class Ap>(
+                q, begin(vec), end(vec), begin(mat), begin(out_vec), [](const slice<int, 0> &v, const slice<int, 1> &a) {
+                    return std::inner_product(begin(v), end(v), begin(a), 0);
+                });
+
+            THEN("row sum times 2")
+            {
+                const auto r = copy_to_host(q, out_vec);
+
+                REQUIRE(r[0] == 12);
+                REQUIRE(r[1] == 44);
+                REQUIRE(r[2] == 76);
+                REQUIRE(r[3] == 108);
+            }
+        }
     }
 }
 
@@ -163,8 +254,6 @@ SCENARIO("accessing a chunk", "[accessors::chunk]")
         buffer<int, 2> buf({rank, rank});
         fill<class fill_10x10>(q, buf, 1);
 
-        WHEN("")
-
         WHEN("summing chunks of 3x3")
         {
             constexpr auto chunk_size = 3;
@@ -201,6 +290,46 @@ SCENARIO("accessing a chunk", "[accessors::chunk]")
                                                         y == 0 || y == rank - 1)
                                                            ? 0
                                                            : 9;
+
+                            REQUIRE(r[y * rank + x] == correct_value);
+                        }
+                    }
+                });
+            }
+        }
+
+        WHEN("convolving chunks of 3x3 using std::inner_product")
+        {
+            constexpr auto chunk_size = 3;
+
+            buffer<int, 2> buf_out(buf.get_range());
+
+            transform<class convolve_chunk_3x3>(q, buf, buf_out, [r = buf.get_range()](const chunk_i<chunk_size, chunk_size> &c) {
+                if (c.is_on_boundary(r))
+                    return 0;
+
+                constexpr std::array<int, 9> weights = {
+                    2, 2, 2, //
+                    2, 2, 2, //
+                    2, 2, 2  //
+                };
+
+                return std::inner_product(begin(c), end(c), begin(weights), 0);
+            });
+
+            THEN("border elements are 0, the others are 18")
+            {
+                const auto r = copy_to_host(q, buf_out);
+
+                on_master([&]() {
+                    for (size_t y = 0; y < rank; ++y)
+                    {
+                        for (size_t x = 0; x < rank; ++x)
+                        {
+                            const auto correct_value = (x == 0 || x == rank - 1 ||
+                                                        y == 0 || y == rank - 1)
+                                                           ? 0
+                                                           : 18;
 
                             REQUIRE(r[y * rank + x] == correct_value);
                         }
