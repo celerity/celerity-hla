@@ -8,7 +8,21 @@
 
 namespace celerity::algorithm::seq
 {
+    enum class step : size_t
+    {
+        resolve_subrange = 0,
+        link = 1,
+        terminate = 2,
+        fuse = 3,
+    };
 
+    constexpr inline std::tuple steps = {
+        [](const auto &s) { return resolve_subranges(s); },
+        [](const auto &s) { return link(s); },
+        [](const auto &s) { return terminate(s); },
+        [](const auto &s) { return fuse(s); }};
+
+    template <size_t... Steps>
     struct end_t
     {
     };
@@ -17,31 +31,96 @@ namespace celerity::algorithm::seq
     {
     };
 
-    constexpr inline end_t end{};
+    template <size_t... Steps>
+    struct apply_step;
 
-    template <typename T, require<traits::is_partially_packaged_task_v<T>> = yes>
-    auto operator|(T lhs, const end_t &)
+    template <int CurrentStep, size_t... Steps>
+    struct apply_step<CurrentStep, Steps...>
     {
-        using namespace detail;
-        return fuse(terminate(link(resolve_subranges(sequence(lhs)))));
+        template <typename T>
+        constexpr static auto apply(const T &s)
+        {
+            const auto &current_step = std::get<CurrentStep>(steps);
+            return apply_step<Steps...>::apply(std::invoke(current_step, s));
+        }
+    };
+
+    template <>
+    struct apply_step<>
+    {
+        template <typename T>
+        constexpr static auto apply(const T &s)
+        {
+            return s;
+        }
+    };
+
+    template <typename T, size_t... Is>
+    auto apply_steps(const T &s, std::index_sequence<Is...>)
+    {
+        return apply_step<Is...>::apply(s);
     }
 
-    template <typename T, require<traits::is_sequence_v<T>,
-                                  traits::is_partially_packaged_task_v<traits::last_element_t<T>>> = yes>
-    auto operator|(T lhs, const end_t &)
+    template <size_t... Is, typename T>
+    auto apply_steps(const T &s)
     {
-        using namespace detail;
-        return fuse(terminate(link(resolve_subranges(lhs))));
+        return apply_step<Is...>::apply(s);
     }
 
-    template <typename T, require<traits::is_sequence_v<T>, traits::is_celerity_buffer_v<traits::last_element_t<T>>> = yes>
-    auto operator|(T lhs, const end_t &)
+    template <size_t ToRemove, typename NewStep, size_t... Steps>
+    struct remove_step;
+
+    template <size_t ToRemove, size_t CurrentStep, size_t... Steps, size_t... NewSteps>
+    struct remove_step<ToRemove, std::index_sequence<NewSteps...>, CurrentStep, Steps...>
     {
-        using namespace detail;
-        return fuse(link(resolve_subranges(lhs)));
+        using type = std::conditional_t<ToRemove == CurrentStep,
+                                        typename remove_step<ToRemove, std::index_sequence<NewSteps...>, Steps...>::type,
+                                        typename remove_step<ToRemove, std::index_sequence<NewSteps..., CurrentStep>, Steps...>::type>;
+    };
+
+    template <size_t ToRemove, size_t... NewSteps>
+    struct remove_step<ToRemove, std::index_sequence<NewSteps...>>
+    {
+        using type = std::index_sequence<NewSteps...>;
+    };
+
+    template <step ToRemove, size_t... Steps>
+    using remove_step_t = typename remove_step<static_cast<size_t>(ToRemove), std::index_sequence<>, Steps...>::type;
+
+    template <auto... Is>
+    constexpr inline auto dispatch_make_all_steps_end(std::index_sequence<Is...>)
+    {
+        return end_t<Is...>{};
     }
 
-    template <typename T, require<traits::is_partially_packaged_task_v<T>> = yes>
+    constexpr inline auto make_all_steps_end()
+    {
+        return dispatch_make_all_steps_end(std::make_index_sequence<std::tuple_size_v<decltype(steps)>>{});
+    }
+
+    constexpr inline auto end = make_all_steps_end();
+
+    template <typename T, size_t... Steps, require<traits::is_partially_packaged_task_v<T>> = yes>
+    auto operator|(T lhs, const end_t<Steps...> &e)
+    {
+        return apply_steps<Steps...>(sequence(lhs));
+    }
+
+    template <typename T, size_t... Steps, require<traits::is_sequence_v<T>, traits::is_partially_packaged_task_v<traits::last_element_t<T>>> = yes>
+    auto operator|(T lhs, const end_t<Steps...> &e)
+    {
+        using namespace detail;
+        return apply_steps<Steps...>(lhs);
+    }
+
+    template <typename T, size_t... Steps, require<traits::is_sequence_v<T>, traits::is_celerity_buffer_v<traits::last_element_t<T>>> = yes>
+    auto operator|(T lhs, const end_t<Steps...> &)
+    {
+        using namespace detail;
+        return apply_steps(lhs, remove_step_t<step::terminate, Steps...>{});
+    }
+
+    /*template <typename T, require<traits::is_partially_packaged_task_v<T>> = yes>
     auto operator|(T lhs, const fuse_t &)
     {
         using namespace detail;
@@ -61,7 +140,7 @@ namespace celerity::algorithm::seq
     {
         using namespace detail;
         return lhs;
-    }
+    }*/
 
 } // namespace celerity::algorithm::seq
 
