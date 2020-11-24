@@ -13,6 +13,7 @@ template <int Rank, typename T>
 class item_shared_data
 {
 public:
+    item_shared_data(const item_shared_data &rhs) = default;
     item_shared_data(T &data, cl::sycl::item<Rank> item)
         : data_(data), item_(item) {}
 

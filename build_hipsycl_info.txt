@@ -1,0 +1,15 @@
+CUDA_SDK_ROOT_DIR:PATH=CUDA_SDK_ROOT_DIR-NOTFOUND
+CUDA_TOOLKIT_ROOT_DIR:UNINITIALIZED=/usr/local/cuda
+WITH_CUDA_BACKEND:BOOL=TRUE
+LLVM_DIR:PATH=/usr/lib/llvm-9/cmake
+CMAKE_INSTALL_PREFIX:PATH=/home/ftischler/.lib/hipSYCL
+
+HIPSYCL_PLATFORM:STRING=cuda
+HIPSYCL_GPU_ARCH:STRING=sm_75
+CMAKE_INSTALL_PREFIX:PATH=/home/ftischler/.lib/celerity
+MPIEXEC_EXECUTABLE:FILEPATH=/lib-installs-local/openmpi-4.0.0/bin/mpiexec
+MPI_CXX_HEADER_DIR:PATH=/lib-installs-local/openmpi-4.0.0/include
+MPI_CXX_COMPILER:FILEPATH=/lib-installs-local/openmpi-4.0.0/bin/mpicxx
+MPI_C_COMPILER:FILEPATH=/lib-installs-local/openmpi-4.0.0/bin/mpicc
+MPI_C_HEADER_DIR:PATH=/lib-installs-local/openmpi-4.0.0/include
+hipSYCL_DIR:UNINITIALIZED=/home/ftischler/.lib/hipSYCL/lib/cmake/

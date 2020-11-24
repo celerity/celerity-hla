@@ -37,7 +37,7 @@ void static_assert_accessor_types()
     static_assert(get_accessor_type<access_chunk_t, 1>() == access_type::chunk);
     static_assert(get_accessor_type<access_chunk_t, 2>() == access_type::chunk);
 
-    using all_t = all<int, 1>;
+    using all_t = celerity::algorithm::all<int, 1>;
     auto access_all = [](all_t, all_t, all_t) {};
     using access_all_t = decltype(access_all);
 
