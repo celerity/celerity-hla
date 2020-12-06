@@ -26,7 +26,8 @@ namespace celerity::algorithm::detail
 			: accessor_(acc) {}
 
 	public:
-		const auto &get_accessor() const { return accessor_; }
+		using accessor_type = AccessorType;
+		auto get_accessor() const -> const accessor_type & { return accessor_; }
 
 	private:
 		AccessorType accessor_;
@@ -152,8 +153,8 @@ namespace celerity::algorithm::detail
 		}
 		else
 		{
-			static_assert(std::is_same_v<one_to_one, AccessorType> || traits::is_all_v<AccessorType>, "range mappers not supported for host access");
-			return beg.get_buffer().template get_access<Mode>(cgh, distance(beg, end));
+			static_assert(traits::is_all_v<AccessorType>, "for master node tasks only all<> is supported");
+			return beg.get_buffer().template get_access<Mode, cl::sycl::access::target::host_buffer>(cgh, traits::accessor_traits<Rank, AccessorType>::range_mapper());
 		}
 	}
 

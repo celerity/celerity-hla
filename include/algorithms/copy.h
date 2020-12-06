@@ -23,7 +23,7 @@ auto copy_impl(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<
 	static_assert(!is_celerity_iterator_v<IteratorType>);
 
 	return [=](celerity::handler &cgh) {
-		auto in_acc = get_access<policy_type, cl::sycl::access::mode::read, one_to_one>(cgh, beg, end);
+		auto in_acc = get_access<policy_type, cl::sycl::access::mode::read, all<T, Rank>>(cgh, beg, end);
 
 		if constexpr (traits::is_contiguous_iterator<IteratorType>() &&
 					  sizeof(T) == sizeof(typename std::iterator_traits<IteratorType>::value_type))

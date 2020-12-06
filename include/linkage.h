@@ -15,20 +15,6 @@ namespace celerity::algorithm::detail
 	namespace link_impl
 	{
 		template <typename T, typename U>
-		auto link_transiently(T lhs, U rhs)
-		{
-			using value_type = typename traits::packaged_task_traits<T>::output_value_type;
-			constexpr auto rank = traits::packaged_task_traits<T>::rank;
-
-			transient_buffer<value_type, rank> out_buf{lhs.get_range()};
-
-			auto t_left = lhs.complete(begin(out_buf), end(out_buf));
-			auto t_right = rhs.complete(begin(out_buf), end(out_buf));
-
-			return sequence(t_left, t_right);
-		}
-
-		template <typename T, typename U>
 		auto link(T lhs, U rhs)
 		{
 			using value_type = typename traits::packaged_task_traits<T>::output_value_type;
@@ -40,6 +26,24 @@ namespace celerity::algorithm::detail
 			auto t_right = rhs.complete(begin(out_buf), end(out_buf));
 
 			return sequence(t_left, t_right);
+		}
+
+		template <typename T, typename U>
+		auto link_transiently(T lhs, U rhs)
+		{
+#ifdef CELERITY_STD_DISABLE_FUSION
+			return link(lhs, rhs);
+#else
+			using value_type = typename traits::packaged_task_traits<T>::output_value_type;
+			constexpr auto rank = traits::packaged_task_traits<T>::rank;
+
+			transient_buffer<value_type, rank> out_buf{lhs.get_range()};
+
+			auto t_left = lhs.complete(begin(out_buf), end(out_buf));
+			auto t_right = rhs.complete(begin(out_buf), end(out_buf));
+
+			return sequence(t_left, t_right);
+#endif
 		}
 
 		template <typename T, require<!traits::is_internally_linked_v<T>> = yes>

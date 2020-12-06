@@ -16,9 +16,7 @@ template <typename T>
 constexpr inline bool is_sequence_v = sequence_traits<T>::value;
 
 template <typename T, bool Sequence = false>
-struct size : std::integral_constant<int, 1>
-{
-};
+struct size {};
 
 template <typename T>
 struct size<T, true> : std::integral_constant<int, T::num_actions>

@@ -2,6 +2,7 @@
 #define VARIANT_ITEM
 
 #include "sycl.h"
+#include "platform.h"
 
 #include <variant>
 
@@ -40,7 +41,7 @@ public:
                 return f(*std::get_if<cl::sycl::item<3>>(&var_));
             break;
         default:
-            abort();
+            celerity::algorithm::detail::on_error("variant_item", "invalid rank");
         }
 
         return return_type_t<F>{};
