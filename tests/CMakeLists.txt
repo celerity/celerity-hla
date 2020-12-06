@@ -39,4 +39,5 @@ add_tests(accessors.cpp
           traits.cpp
           fusion.cpp
           sequencing.cpp
-          subranges.cpp)
+          subranges.cpp
+          fusion_disabling.cpp)
