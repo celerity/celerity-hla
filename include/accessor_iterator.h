@@ -18,12 +18,12 @@ public:
                     cl::sycl::range<rank> range)
         : it_(pos, range), slice_(slice) {}
 
-    bool operator==(const slice_iterator &rhs)
+    bool operator==(const slice_iterator &rhs) const
     {
         return detail::equals(get_id(), rhs.get_id());
     }
 
-    bool operator!=(const slice_iterator &rhs)
+    bool operator!=(const slice_iterator &rhs) const
     {
         return !detail::equals(get_id(), rhs.get_id());
     }
@@ -70,12 +70,12 @@ public:
         : offset_((Extents / 2)...), center_(center), it_(pos, {Extents...}),
             chunk_(chunk) {}
 
-    bool operator==(const chunk_iterator &rhs)
+    bool operator==(const chunk_iterator &rhs) const
     {
         return detail::equals(get_id(), rhs.get_id());
     }
 
-    bool operator!=(const chunk_iterator &rhs)
+    bool operator!=(const chunk_iterator &rhs) const
     {
         return !detail::equals(get_id(), rhs.get_id());
     }
@@ -129,12 +129,12 @@ public:
                     cl::sycl::range<Rank> range)
         : it_(pos, range), all_(all) {}
 
-    bool operator==(const all_iterator &rhs)
+    bool operator==(const all_iterator &rhs) const
     {
         return detail::equals(get_id(), rhs.get_id());
     }
 
-    bool operator!=(const all_iterator &rhs)
+    bool operator!=(const all_iterator &rhs) const
     {
         return !detail::equals(get_id(), rhs.get_id());
     }

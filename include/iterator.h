@@ -30,12 +30,12 @@ namespace celerity::algorithm
 		{
 		}
 
-		bool operator==(const iterator &rhs)
+		bool operator==(const iterator &rhs) const
 		{
 			return detail::equals(pos_, rhs.pos_);
 		}
 
-		bool operator!=(const iterator &rhs)
+		bool operator!=(const iterator &rhs) const
 		{
 			return !detail::equals(pos_, rhs.pos_);
 		}

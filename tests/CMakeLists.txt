@@ -9,7 +9,7 @@ function(add_tests TESTS)
 
         add_executable(${TARGET_NAME} ${ONE_TEST_CPP})
         set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME ${ONE_TEST_EXEC}) 
-        set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD 17)
+        set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD 20)
 
         target_link_libraries(
             ${TARGET_NAME} 
@@ -39,5 +39,5 @@ add_tests(accessors.cpp
           traits.cpp
           fusion.cpp
           sequencing.cpp
-          subranges.cpp
-          fusion_disabling.cpp)
+          subranges.cpp)
+          #fusion_disabling.cpp)

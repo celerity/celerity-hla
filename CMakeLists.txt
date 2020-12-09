@@ -37,7 +37,7 @@ target_link_libraries(
     $<BUILD_INTERFACE:Celerity::celerity_runtime>
 )
 
-set(TARGET celerity_std CMAKE_CXX_STANDARD 17)
+set(TARGET celerity_std CMAKE_CXX_STANDARD 20)
 set(TARGET celerity_std CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #Examples
