@@ -115,6 +115,7 @@ void static_assert_kernel_traits()
 #include "../include/experimental/accessor_proxies.h"
 #include "../include/experimental/accessor_traits.h"
 #include "../include/experimental/probing.h"
+#include "../include/experimental/accessor_iterator.h"
 
 void static_assert_kernel_probing()
 {
@@ -242,17 +243,26 @@ void static_assert_kernel_probing()
         }
     }
 
+    {
+        auto f = [](AnySlice auto x) {
+            x.configure(0);
+
+            const auto b = begin(x);
+            const auto e = end(x);
+
+            std::for_each(b, e, [](auto) {});
+
             return x[0];
         };
 
         using f_t = decltype(f);
 
         static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, 0, slice_probe<int>>);
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, int>() == celerity::algorithm::detail::access_type::slice);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, int, 1>() == celerity::algorithm::detail::access_type::slice);
 
         celerity::buffer<int, 1> b{{10}};
 
-        auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<f_t, 1, 0, 1, int>(f);
+        auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<1, 0, 1, int>(f);
 
         static_assert(std::is_same_v<celerity::access::slice<1>, decltype(mapper)>);
 
@@ -260,6 +270,80 @@ void static_assert_kernel_probing()
 
         static_assert(std::is_same_v<proxy_type, hla::experimental::slice<accessor_t>>);
     }
+
+    {
+        auto f = [](AnyBlock auto x) {
+            x.configure({0});
+
+            const auto b = begin(x);
+            const auto e = end(x);
+
+            std::for_each(b, e, [](auto) {});
+
+            return x[{0}];
+        };
+
+        using f_t = decltype(f);
+
+        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, 0, block_probe<int, 1>>);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, int, 1>() == celerity::algorithm::detail::access_type::chunk);
+
+        celerity::buffer<int, 1> b{{10}};
+
+        auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<1, 0, 1, int>(f);
+
+        static_assert(std::is_same_v<celerity::access::neighborhood<1>, decltype(mapper)>);
+
+        using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>>;
+
+        static_assert(std::is_same_v<proxy_type, hla::experimental::block<accessor_t>>);
+    }
+
+    {
+        auto f = [](AnyBlock auto x, AnySlice auto y) {
+            x.configure({0});
+            y.configure(0);
+
+            std::for_each(begin(x), end(x), [](auto) {});
+            std::for_each(begin(y), end(y), [](auto) {});
+
+            return x[{0}] + y[0];
+        };
+
+        using f_t = decltype(f);
+
+        static_assert(std::is_base_of_v<celerity::hla::inactive_probe_t, celerity::hla::concrete_inactive_probe<int>>);
+        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 0, block_probe<int, 1>>);
+        static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 0, slice_probe<int>>);
+
+        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 1, slice_probe<int>>);
+        static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 1, block_probe<int, 1>>);
+
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 2, 0, int, 1>() == celerity::algorithm::detail::access_type::chunk);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 2, 1, int, 1>() == celerity::algorithm::detail::access_type::slice);
+
+        celerity::buffer<int, 1> b{{10}};
+
+        {
+            auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<2, 0, 1, int>(f);
+
+            static_assert(std::is_same_v<celerity::access::neighborhood<1>, decltype(mapper)>);
+
+            using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>>;
+
+            static_assert(std::is_same_v<proxy_type, hla::experimental::block<accessor_t>>);
+        }
+
+        {
+            auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<2, 1, 1, int>(f);
+
+        static_assert(std::is_same_v<celerity::access::slice<1>, decltype(mapper)>);
+
+        using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>, cl::sycl::range<1>>;
+
+        static_assert(std::is_same_v<proxy_type, hla::experimental::slice<accessor_t>>);
+    }
+
 }
 
 int main(int, char *[])
