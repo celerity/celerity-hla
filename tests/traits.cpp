@@ -116,6 +116,7 @@ void static_assert_kernel_traits()
 #include "../include/experimental/accessor_traits.h"
 #include "../include/experimental/probing.h"
 #include "../include/experimental/accessor_iterator.h"
+#include "../include/policy.h"
 
 void static_assert_kernel_probing()
 {
@@ -323,7 +324,7 @@ void static_assert_kernel_probing()
         static_assert(celerity::hla::experimental::get_access_concept<f_t, 2, 1, int, 1>() == celerity::algorithm::detail::access_type::slice);
 
         celerity::buffer<int, 1> b{{10}};
-
+ 
         {
             auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<2, 0, 1, int>(f);
 
@@ -337,13 +338,18 @@ void static_assert_kernel_probing()
         {
             auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<2, 1, 1, int>(f);
 
-        static_assert(std::is_same_v<celerity::access::slice<1>, decltype(mapper)>);
+            static_assert(std::is_same_v<celerity::access::slice<1>, decltype(mapper)>);
 
-        using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>, cl::sycl::range<1>>;
+            using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>, cl::sycl::range<1>>;
 
-        static_assert(std::is_same_v<proxy_type, hla::experimental::slice<accessor_t>>);
+            static_assert(std::is_same_v<proxy_type, hla::experimental::slice<accessor_t>>);
+        }
+
+        using execution_policy_type = celerity::algorithm::detail::distributed_execution_policy;
+
+        static_assert(!std::is_void_v<decltype(get_access<execution_policy_type, cl::sycl::access::mode::read, 0, 2>(std::declval<celerity::handler&>(), begin(b), end(b), f))>);
+        static_assert(!std::is_void_v<decltype(get_access<execution_policy_type, cl::sycl::access::mode::read, 1, 2>(std::declval<celerity::handler&>(), begin(b), end(b), f))>);
     }
-
 }
 
 int main(int, char *[])
