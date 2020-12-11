@@ -17,7 +17,7 @@ namespace celerity::hla::experimental
 
         slice_probe() = default;
 
-        void set_dim(int dim)
+        void configure(int dim)
         {
             assert(dim_ >= 0 && "invalid dim");
             dim_ = dim;
@@ -70,6 +70,8 @@ namespace celerity::hla::experimental
         {
         }
 
+        void configure(int) {}
+
         int get_range() const { return range_; }
 
         value_type operator*() const
@@ -116,6 +118,9 @@ namespace celerity::hla::experimental
 
     template <typename T>
     concept AnySlice = celerity::hla::experimental::is_slice<T>::value || InactiveProbe<T>;
+
+    template <typename T>
+    concept StrictSlice = is_slice<T>::value;
 
 } // namespace celerity::hla::experimental
 

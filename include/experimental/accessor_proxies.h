@@ -2,5 +2,6 @@
 #define CELERITY_HLA_ACCESSOR_PROXIES_H
 
 #include "slice.h"
+#include "block.h"
 
 #endif // CELERITY_HLA_ACCESSOR_PROXIES_H

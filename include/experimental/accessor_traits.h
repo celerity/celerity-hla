@@ -8,12 +8,15 @@
 
 namespace celerity::hla::experimental::traits
 {
-    template <AnySlice T>
+    template <StrictSlice T>
     constexpr auto get_access_type() { return celerity::algorithm::detail::access_type::slice; }
+
+    template <StrictBlock T>
+    constexpr auto get_access_type() { return celerity::algorithm::detail::access_type::chunk; }
 
     // clang-format off
     template <typename T>
-        requires(!AnySlice<T>/* && !AnyBlock<T>*/)                    
+        requires(!AnySlice<T> && !AnyBlock<T>)                    
     constexpr auto get_access_type() { return celerity::algorithm::detail::access_type::one_to_one; }
     // clang-format on
 
@@ -24,6 +27,14 @@ namespace celerity::hla::experimental::traits
 
     template <typename T>
     inline constexpr auto is_slice_v = is_slice<T>::value;
+
+    template <typename T>
+    struct is_block : std::bool_constant<get_access_type<T>() == celerity::algorithm::detail::access_type::chunk>
+    {
+    };
+
+    template <typename T>
+    inline constexpr auto is_block_v = is_block<T>::value;
 
     // template <typename T>
     // struct is_item : std::false_type
