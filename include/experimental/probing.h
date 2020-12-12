@@ -6,33 +6,29 @@
 #include "../celerity_helper.h"
 #include "accessor_proxies.h"
 
+#include "traits.h"
+
 namespace celerity::hla::experimental
 {
     template <typename T>
     concept CallableObject = celerity::algorithm::traits::has_call_operator_v<std::remove_cv_t<T>>;
 
-    template <typename F, typename T, size_t Max, typename... Args>
-    constexpr size_t get_kernel_arity()
+    template <typename F, size_t Idx, typename ValueType, size_t Rank>
+    constexpr inline auto get_access_concept()
     {
-        if constexpr (!std::is_invocable_v<F, Args...>)
+        if constexpr (is_invocable_using_probes_v<F, Idx, slice_probe<ValueType>>)
         {
-            static_assert(sizeof...(Args) < Max, "not incovable with < Max probes");
-            return get_kernel_arity<F, T, Max, Args..., T>();
+            return algorithm::detail::access_type::slice;
+        }
+        else if constexpr (is_invocable_using_probes_v<F, Idx, block_probe<ValueType, Rank>>)
+        {
+            return algorithm::detail::access_type::chunk;
         }
         else
         {
-            return sizeof...(Args);
+            return algorithm::detail::access_type::invalid;
         }
     }
-
-    template <typename F, typename T>
-    constexpr size_t get_kernel_arity()
-    {
-        return get_kernel_arity<F, concrete_inactive_probe<T>, 2>();
-    }
-
-    template <typename KernelType, typename ValueType>
-    constexpr inline auto kernel_arity_v = get_kernel_arity<KernelType, ValueType>();
 
     template <size_t Arity, size_t Idx, typename F, typename T>
     constexpr auto probing_invoke(F f, T probe)
@@ -58,46 +54,6 @@ namespace celerity::hla::experimental
         else
         {
             static_assert(std::is_void_v<T>, "only unary and binary functions supported");
-        }
-    }
-    template <typename F, size_t Rank, size_t Idx, typename T>
-    struct is_invocable_using_probes;
-
-    template <typename F, typename T>
-    struct is_invocable_using_probes<F, 1, 0, T>
-        : std::bool_constant<std::is_invocable_v<F, T>>
-    {
-    };
-
-    template <typename F, typename T>
-    struct is_invocable_using_probes<F, 2, 0, T>
-        : std::bool_constant<std::is_invocable_v<F, T, concrete_inactive_probe<typename T::value_type>>>
-    {
-    };
-
-    template <typename F, typename T>
-    struct is_invocable_using_probes<F, 2, 1, T>
-        : std::bool_constant<std::is_invocable_v<F, concrete_inactive_probe<typename T::value_type>, T>>
-    {
-    };
-
-    template <typename F, size_t Idx, typename T>
-    constexpr inline bool is_invocable_using_probes_v = is_invocable_using_probes<F, kernel_arity_v<F, typename T::value_type>, Idx, T>::value;
-
-    template <typename F, size_t Idx, typename ValueType, size_t Rank>
-    constexpr inline auto get_access_concept()
-    {
-        if constexpr (is_invocable_using_probes_v<F, Idx, slice_probe<ValueType>>)
-        {
-            return celerity::algorithm::detail::access_type::slice;
-        }
-        else if constexpr (is_invocable_using_probes_v<F, Idx, block_probe<ValueType, Rank>>)
-        {
-            return celerity::algorithm::detail::access_type::chunk;
-        }
-        else
-        {
-            return celerity::algorithm::detail::access_type::invalid;
         }
     }
 
@@ -182,6 +138,7 @@ namespace celerity::hla::experimental
             return std::tuple{factory, one_to_one<Rank>()};
         }
     }
+
 } // namespace celerity::hla::experimental
 
 #endif // CELERITY_HLA_PROBING_H
