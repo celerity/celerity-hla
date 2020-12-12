@@ -97,13 +97,13 @@ namespace celerity::hla::experimental
     //     }
     // }
 
-    template <typename ExecutionPolicy, cl::sycl::access::mode Mode, size_t KernelArgumentIdx, size_t KernelArity, typename KernelType, template <typename, int> typename Iterator, typename T, int Rank>
+    template <typename ExecutionPolicy, cl::sycl::access::mode Mode, size_t KernelArgumentIdx, typename KernelType, template <typename, int> typename Iterator, typename T, int Rank>
     auto get_access(celerity::handler &cgh, Iterator<T, Rank> beg, Iterator<T, Rank> end, KernelType kernel)
     {
-        const auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<KernelArity, KernelArgumentIdx, Rank, T>(kernel);
+        const auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<KernelArgumentIdx, Rank, T>(kernel);
         const auto acc = beg.get_buffer().template get_access<Mode>(cgh, mapper);
 
-        return create_accessor<get_access_concept<KernelType, KernelArity, KernelArgumentIdx, T, Rank>()>(factory, acc, beg, end);
+        return create_accessor<get_access_concept<KernelType, KernelArgumentIdx, T, Rank>()>(factory, acc, beg, end);
     }
 
 } // namespace celerity::hla::experimental
