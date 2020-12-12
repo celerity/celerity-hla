@@ -9,6 +9,9 @@
 #include "../partially_packaged_task.h"
 #include "../accessor_type.h"
 
+// experimental
+#include "../experimental/traits.h"
+
 namespace celerity::algorithm
 {
 
@@ -114,6 +117,32 @@ namespace celerity::algorithm
             return partially_packaged_transform_0<InputAccessType, FunctorType, KernelFunctor>(functor);
         }
 
+
+        template <typename Functor, typename KernelFunctor>
+        class partially_packaged_transform_0_experimental
+        {
+        public:
+            explicit partially_packaged_transform_0_experimental(Functor f)
+                : f_(f) {}
+
+            template <typename Iterator>
+            auto complete(Iterator beg, Iterator end) const
+            {
+                using namespace celerity::hla::experimental;
+                constexpr auto access_type = get_access_concept<KernelFunctor, 0, typename Iterator::value_type, Iterator::rank>();
+                return package_transform<access_type, KernelFunctor>(f_, beg, end);
+            }
+
+        private:
+            Functor f_;
+        };
+
+        template <typename KernelFunctor, typename FunctorType>
+        auto package_transform_experimental(FunctorType functor)
+        {
+            return partially_packaged_transform_0_experimental<FunctorType, KernelFunctor>(functor);
+        }
+
     } // namespace detail
 
     namespace traits
@@ -133,6 +162,12 @@ namespace celerity::algorithm
 
         template <detail::access_type InputAccessType, typename Functor, typename KernelFunctor>
         struct is_partially_packaged_task<detail::partially_packaged_transform_0<InputAccessType, Functor, KernelFunctor>>
+            : std::true_type
+        {
+        };
+
+        template <typename Functor, typename KernelFunctor>
+        struct is_partially_packaged_task<detail::partially_packaged_transform_0_experimental<Functor, KernelFunctor>>
             : std::true_type
         {
         };
@@ -174,7 +209,6 @@ namespace celerity::algorithm
         {
             static constexpr auto rank = -1;
             static constexpr auto computation_type = detail::computation_type::transform;
-            static constexpr auto access_type = InputAccessType;
 
             using input_iterator_type = void;
             using input_value_type = void;
@@ -184,6 +218,25 @@ namespace celerity::algorithm
 
         template <detail::access_type InputAccessType, typename Functor, typename KernelFunctor>
         struct partially_packaged_task_traits<detail::partially_packaged_transform_0<InputAccessType, Functor, KernelFunctor>>
+        {
+            static constexpr auto requirement = detail::stage_requirement::input;
+        };
+
+        template <typename Functor, typename KernelFunctor>
+        struct packaged_task_traits<detail::partially_packaged_transform_0_experimental<Functor, KernelFunctor>>
+        {
+            static constexpr auto rank = -1;
+            static constexpr auto computation_type = detail::computation_type::transform;
+            //static constexpr auto access_type = InputAccessType;
+
+            using input_iterator_type = void;
+            using input_value_type = void;
+            using output_value_type = kernel_result_t<KernelFunctor>;
+            using output_iterator_type = void;
+        };
+
+        template <typename Functor, typename KernelFunctor>
+        struct partially_packaged_task_traits<detail::partially_packaged_transform_0_experimental<Functor, KernelFunctor>>
         {
             static constexpr auto requirement = detail::stage_requirement::input;
         };

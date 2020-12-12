@@ -327,6 +327,33 @@ SCENARIO("transforming a buffer", "[celerity::algorithm]")
     }
 }
 
+#include "../include/experimental/transform.h"
+SCENARIO("transforming a buffer (experimental)", "[celerity::algorithm::experimental]")
+{
+    distr_queue q;
+
+    GIVEN("A one-dimensional buffer of a hundred 1s")
+    {
+        constexpr auto size = 100;
+
+        buffer<int, 1> buf(cl::sycl::range<1>{size});
+        fill<class _340>(q, buf, 1);
+
+        WHEN("tripling all elements into another buffer")
+        {
+            buffer<int, 1> buf_out(buf.get_range());
+
+            hla::experimental::transform(distr<class _346>(q), begin(buf), end(buf), begin(buf_out), [](hla::experimental::AnyBlock auto x) { x.configure({1}); return 3 * (*x); });
+
+            THEN("every element is 3 in the target buffer")
+            {
+                const auto r = copy_to_host(q, buf_out);
+                REQUIRE(elements_equal_to<3>(r));
+            }
+        }
+    }
+}
+
 // SCENARIO("iterating a buffer on the master", "[celerity::algorithm]")
 // {
 //     distr_queue q;
@@ -357,89 +384,89 @@ SCENARIO("transforming a buffer", "[celerity::algorithm]")
 //         }
 //     }
 
-    // GIVEN("A three-dimensional buffer of 10x10x10 1s")
-    // {
-    //     constexpr auto size = 10;
+// GIVEN("A three-dimensional buffer of 10x10x10 1s")
+// {
+//     constexpr auto size = 10;
 
-    //     buffer<int, 3> buf({size, size, size});
+//     buffer<int, 3> buf({size, size, size});
 
-    //     fill<class fill_x_2>(q, buf, 1);
+//     fill<class fill_x_2>(q, buf, 1);
 
-    //     WHEN("checking if all are 1")
-    //     {
-    //         auto all_one = true;
-    //         auto checked = 0;
+//     WHEN("checking if all are 1")
+//     {
+//         auto all_one = true;
+//         auto checked = 0;
 
-    //         for_each(master_blocking(q), buf, [&](cl::sycl::item<3> it, int x) {
-    //             all_one = all_one && x == 1;
-    //             checked++;
-    //         });
+//         for_each(master_blocking(q), buf, [&](cl::sycl::item<3> it, int x) {
+//             all_one = all_one && x == 1;
+//             checked++;
+//         });
 
-    //         THEN("the outcome is true")
-    //         {
-    //             REQUIRE(all_one);
-    //             REQUIRE(checked == 1000);
-    //         }
-    //     }
-    // }
+//         THEN("the outcome is true")
+//         {
+//             REQUIRE(all_one);
+//             REQUIRE(checked == 1000);
+//         }
+//     }
+// }
 
-    // GIVEN("A one-dimensional buffer of 100 1s")
-    // {
-    //     constexpr auto size = 100;
+// GIVEN("A one-dimensional buffer of 100 1s")
+// {
+//     constexpr auto size = 100;
 
-    //     buffer<int, 1> buf(cl::sycl::range<1>{size});
+//     buffer<int, 1> buf(cl::sycl::range<1>{size});
 
-    //     fill<class fill_x_3>(q, buf, 1);
+//     fill<class fill_x_3>(q, buf, 1);
 
-    //     WHEN("checking if all are 1 using master all<> access")
-    //     {
-    //         auto all_one = false;
-    //         auto checked = 0;
+//     WHEN("checking if all are 1 using master all<> access")
+//     {
+//         auto all_one = false;
+//         auto checked = 0;
 
-    //         master_task(
-    //             master(q), buf, [&](algorithm::all<int, 1> b) {
-    //                 checked = 1000;
-    //                 all_one = std::all_of(begin(b), end(b), [](int x) { return x == 1; });
-    //             });
+//         master_task(
+//             master(q), buf, [&](algorithm::all<int, 1> b) {
+//                 checked = 1000;
+//                 all_one = std::all_of(begin(b), end(b), [](int x) { return x == 1; });
+//             });
 
-    //         q.slow_full_sync();
+//         q.slow_full_sync();
 
-    //         THEN("the outcome is true")
-    //         {
-    //             REQUIRE(checked == 1000);
-    //             REQUIRE(all_one);
-    //         }
-    //     }
-    // }
+//         THEN("the outcome is true")
+//         {
+//             REQUIRE(checked == 1000);
+//             REQUIRE(all_one);
+//         }
+//     }
+// }
 
-    // GIVEN("Two one-dimensional buffer of 100 1s")
-    // {
-    //     constexpr auto size = 100;
+// GIVEN("Two one-dimensional buffer of 100 1s")
+// {
+//     constexpr auto size = 100;
 
-    //     buffer<int, 1> buf_a(cl::sycl::range<1>{size});
-    //     buffer<int, 1> buf_b(cl::sycl::range<1>{size});
+//     buffer<int, 1> buf_a(cl::sycl::range<1>{size});
+//     buffer<int, 1> buf_b(cl::sycl::range<1>{size});
 
-    //     fill<class fill_x_4>(q, buf_a, 1);
-    //     fill<class fill_x_5>(q, buf_b, 2);
+//     fill<class fill_x_4>(q, buf_a, 1);
+//     fill<class fill_x_5>(q, buf_b, 2);
 
-    //     WHEN("checking if all are 1 using master all<> access")
-    //     {
-    //         auto all_one = false;
-    //         auto checked = 0;
+//     WHEN("checking if all are 1 using master all<> access")
+//     {
+//         auto all_one = false;
+//         auto checked = 0;
 
-    //         master_task(master(q), pack(buf_a, buf_b), [&](algorithm::all<int, 1> a, algorithm::all<int, 1> b) {
-    //             checked = 1000;
-    //             all_one = std::all_of(begin(a), end(a), [](int x) { return x == 1; });
-    //             all_one = all_one && std::all_of(begin(b), end(b), [](int x) { return x == 2; });
-    //         });
+//         master_task(master(q), pack(buf_a, buf_b), [&](algorithm::all<int, 1> a, algorithm::all<int, 1> b) {
+//             checked = 1000;
+//             all_one = std::all_of(begin(a), end(a), [](int x) { return x == 1; });
+//             all_one = all_one && std::all_of(begin(b), end(b), [](int x) { return x == 2; });
+//         });
 
-    //         q.slow_full_sync();
+//         q.slow_full_sync();
 
-    //         THEN("the outcome is true")
-    //         {
-    //             REQUIRE(checked == 1000);
-    //             REQUIRE(all_one);
-    //         }
-    //     }
-    // }
+//         THEN("the outcome is true")
+//         {
+//             REQUIRE(checked == 1000);
+//             REQUIRE(all_one);
+//         }
+//     }
+// }
 //}

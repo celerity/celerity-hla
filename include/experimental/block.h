@@ -56,9 +56,12 @@ namespace celerity::hla::experimental
 
         template <typename AccessorType>
         block(const block_probe<value_type, rank> &probe, AccessorType acc, cl::sycl::item<rank> item)
-            : item_(item), range_(probe.size()), acc_(acc)
+            : item_(item), size_(probe.size()), acc_(acc)
         {
         }
+
+        void configure(cl::sycl::range<rank>) {}
+        auto size() const -> cl::sycl::range<rank> { return size_; }
 
         auto item() const { return item_; }
 
@@ -129,7 +132,7 @@ namespace celerity::hla::experimental
 
     private:
         const cl::sycl::item<rank> item_;
-        const cl::sycl::range<rank> range_;
+        const cl::sycl::range<rank> size_;
         accessor_type acc_;
 
         template <size_t... Is>
@@ -137,8 +140,8 @@ namespace celerity::hla::experimental
         {
             const auto id = item_.get_id();
 
-            return ((id[Is] < (range_[Is] / 2)) || ...) ||
-                   ((static_cast<int>(id[Is]) > static_cast<int>(range[Is]) - static_cast<int>(range_[Is] / 2) - 1) || ...);
+            return ((id[Is] < (size_[Is] / 2)) || ...) ||
+                   ((static_cast<int>(id[Is]) > static_cast<int>(range[Is]) - static_cast<int>(size_[Is] / 2) - 1) || ...);
         }
     };
 

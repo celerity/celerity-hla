@@ -15,7 +15,7 @@ namespace celerity::hla::experimental
         using factory_type = ProxyFactoryType;
 
         template <typename... Args>
-        auto construct_proxy(Args &&... args)
+        auto construct_proxy(Args &&... args) const
         {
             return std::invoke(factory_, std::forward<Args>(args)...);
         }
@@ -39,7 +39,7 @@ namespace celerity::hla::experimental
 
         decltype(auto) operator[](const auto item) const
         {
-            return base::construct_proxy()[item];
+            return base::construct_proxy(item);
         }
     };
 
@@ -104,6 +104,12 @@ namespace celerity::hla::experimental
         const auto acc = beg.get_buffer().template get_access<Mode>(cgh, mapper);
 
         return create_accessor<get_access_concept<KernelType, KernelArgumentIdx, T, Rank>()>(factory, acc, beg, end);
+    }
+
+    template <typename ExecutionPolicy, cl::sycl::access::mode Mode, template <typename, int> typename Iterator, typename T, int Rank>
+    auto get_out_access(celerity::handler &cgh, Iterator<T, Rank> beg, Iterator<T, Rank> end)
+    {
+        return beg.get_buffer().template get_access<Mode>(cgh, celerity::access::one_to_one<Rank>());
     }
 
 } // namespace celerity::hla::experimental
