@@ -35,7 +35,7 @@ namespace celerity::hla::experimental
     {
         if constexpr (!std::is_invocable_v<F, Args...>)
         {
-            static_assert(sizeof...(Args) < Max, "not incovable with < Max probes");
+            static_assert(sizeof...(Args) <= Max, "not incovable with < Max probes");
             return get_kernel_arity<F, T, Max, Args..., T>();
         }
         else

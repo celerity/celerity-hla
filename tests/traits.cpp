@@ -211,7 +211,7 @@ void static_assert_kernel_probing()
 
         using f_t = decltype(f);
 
-        static_assert(std::is_base_of_v<celerity::hla::inactive_probe_t, celerity::hla::concrete_inactive_probe<int>>);
+        static_assert(std::is_base_of_v<celerity::hla::experimental::inactive_probe_t, celerity::hla::experimental::concrete_inactive_probe<int>>);
         static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 0, block_probe<int, 1>>);
         static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 0, slice_probe<int>>);
 
@@ -315,7 +315,7 @@ void static_assert_kernel_probing()
 
         using f_t = decltype(f);
 
-        static_assert(std::is_base_of_v<celerity::hla::inactive_probe_t, celerity::hla::concrete_inactive_probe<int>>);
+        static_assert(std::is_base_of_v<celerity::hla::experimental::inactive_probe_t, celerity::hla::experimental::concrete_inactive_probe<int>>);
         static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 0, block_probe<int, 1>>);
         static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 0, slice_probe<int>>);
 

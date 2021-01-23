@@ -65,7 +65,7 @@ namespace celerity::algorithm::detail
 					return t_joint.complete(begin(last), end(last));
 				}
 			}
-			else if constexpr (is_transiently_linkable_source_v<decltype(last)> && has_transiently_linkable_second_input_v<T>)
+			else if constexpr (is_linkable_source_v<decltype(last)> && has_transiently_linkable_second_input_v<T>)
 			{
 				const auto linked = link_transiently(get_last_element(secondary), t_joint.get_task());
 
@@ -98,7 +98,9 @@ namespace celerity::algorithm::detail
 			auto l = link_internally(lhs);
 			auto r = link_internally(rhs);
 
-			if constexpr (is_transiently_linkable_source_v<decltype(l)> && has_transiently_linkable_first_input_v<decltype(r)>)
+			//using l_output_type = 
+
+			if constexpr (is_linkable_source_v<decltype(l)> && has_transiently_linkable_first_input_v<decltype(r), decltype(l)>) // TODO
 			{
 				return link_transiently(l, r);
 			}

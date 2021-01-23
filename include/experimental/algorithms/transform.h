@@ -1,19 +1,18 @@
 #ifndef CELERITY_HLA_TRANSFORM_H
 #define CELERITY_HLA_TRANSFORM_H
 
-#include "../iterator.h"
-#include "../task.h"
-#include "../policy.h"
-#include "../sequencing.h"
-#include "../require.h"
+#include "../../iterator.h"
+#include "../../task.h"
+#include "../../policy.h"
+#include "../../require.h"
 
-#include "../experimental/accessor_proxies.h"
+#include "../../experimental/packaged_tasks/packaged_transform.h"
+#include "../../experimental/accessor_proxies.h"
 
 using celerity::algorithm::buffer_iterator;
 
 namespace celerity::hla::experimental
 {
-
     namespace detail
     {
         template <typename ExecutionPolicy, template <typename, int> typename InIterator, template <typename, int> typename OutIterator, typename U, typename T, int Rank, Kernel<T> F>
@@ -130,8 +129,8 @@ namespace celerity::hla::experimental
         template <typename ExecutionPolicy, typename F>
         auto transform(const F &f)
         {
-            return algorithm::detail::package_transform_experimental<F>(
-                [f](auto beg, auto end, auto out) { return task<ExecutionPolicy>(transform_impl<ExecutionPolicy>(beg, end, out, f)); });
+            return package_transform<F>(
+                [f](auto beg, auto end, auto out) { return algorithm::detail::task<ExecutionPolicy>(transform_impl<ExecutionPolicy>(beg, end, out, f)); });
         }
 
         // template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,

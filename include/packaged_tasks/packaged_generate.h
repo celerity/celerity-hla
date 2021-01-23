@@ -103,7 +103,9 @@ struct packaged_task_traits<detail::packaged_generate<FunctorType, OutputValueTy
 {
     static constexpr auto rank = Rank;
     static constexpr auto computation_type = detail::computation_type::generate;
-    static constexpr auto access_type = detail::access_type::invalid;
+
+    template<typename>
+    static constexpr detail::access_type access_type = detail::access_type::invalid;
 
     using input_value_type = void;
     using input_iterator_type = void;
@@ -116,7 +118,9 @@ struct packaged_task_traits<detail::partially_packaged_generate<FunctorType, Out
 {
     static constexpr auto rank = Rank;
     static constexpr auto computation_type = detail::computation_type::generate;
-    static constexpr auto access_type = detail::access_type::invalid;
+
+    template<typename>
+    static constexpr detail::access_type access_type = detail::access_type::invalid;
 
     using input_value_type = void;
     using input_iterator_type = void;

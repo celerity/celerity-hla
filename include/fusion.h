@@ -198,7 +198,8 @@ auto fuse(T lhs, U rhs)
 {
     using namespace traits;
 
-    return package_zip<access_type_v<T>, second_input_access_type_v<T>>(fuse(lhs.get_task(), rhs.get_task()),
+    struct unused {};
+    return package_zip<access_type_v<T, unused>, second_input_access_type_v<T>>(fuse(lhs.get_task(), rhs.get_task()),
                                                                         lhs.get_in_beg(),
                                                                         lhs.get_in_end(),
                                                                         lhs.get_second_in_beg(),
@@ -217,7 +218,7 @@ auto fuse(T joint)
         auto fused_secondary = fuse(joint.get_secondary());
         using secondary_input_sequence = decltype(fused_secondary);
 
-        constexpr auto first_input_access_type = traits::packaged_task_traits<T>::access_type;
+        constexpr auto first_input_access_type = traits::packaged_task_traits<T>::template access_type<void>; // TODO
         constexpr auto second_input_access_type = traits::extended_packaged_task_traits<T, computation_type::zip>::second_input_access_type;
 
         auto in_beg = joint.get_task().get_in_beg();

@@ -298,7 +298,9 @@ struct packaged_task_traits<detail::packaged_zip<FunctorType, FirstInputIterator
 {
     static constexpr auto rank = Rank;
     static constexpr auto computation_type = detail::computation_type::zip;
-    static constexpr auto access_type = FirstInputAccessType;
+
+    template<typename>
+    static constexpr detail::access_type access_type = FirstInputAccessType;
 
     using input_value_type = typename std::iterator_traits<FirstInputIteratorType>::value_type;
     using output_value_type = typename std::iterator_traits<OutputIteratorType>::value_type;
@@ -333,7 +335,9 @@ struct packaged_task_traits<detail::partially_packaged_zip_2<FunctorType, Kernel
 {
     static constexpr auto rank = Rank;
     static constexpr auto computation_type = detail::computation_type::zip;
-    static constexpr auto access_type = FirstInputAccessType;
+
+    template<typename>
+    static constexpr detail::access_type access_type = FirstInputAccessType;
 
     using input_value_type = typename std::iterator_traits<FirstInputIteratorType>::value_type;
     using output_value_type = kernel_result_t<KernelType>;
@@ -367,7 +371,9 @@ struct packaged_task_traits<detail::partially_packaged_zip_1<FunctorType, Kernel
 {
     static constexpr auto rank = Rank;
     static constexpr auto computation_type = detail::computation_type::zip;
-    static constexpr auto access_type = FirstInputAccessType;
+
+    template<typename>
+    static constexpr detail::access_type access_type = FirstInputAccessType;
 
     using input_value_type = void;
     using output_value_type = kernel_result_t<KernelType>;
@@ -398,7 +404,9 @@ struct packaged_task_traits<detail::partially_packaged_zip_0<FunctorType, Kernel
 {
     static constexpr auto rank = -1;
     static constexpr auto computation_type = detail::computation_type::zip;
-    static constexpr auto access_type = FirstInputAccessType;
+
+    template<typename>
+    static constexpr detail::access_type access_type = FirstInputAccessType;
 
     using input_value_type = void;
     using output_value_type = kernel_result_t<KernelType>;

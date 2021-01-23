@@ -10,8 +10,8 @@ namespace celerity::hla::experimental
     template <class T, class U>
     concept same_as = std::is_same_v<T, U> &&std::is_same_v<U, T>;
 
-    template <typename T, typename R = void, typename... Args>
-    concept Callable = std::is_invocable_v<R(Args...)>;
+    template <typename T, typename... Args>
+    concept Callable = std::is_invocable_v<T, Args...>;
 
     template <typename T, typename Value>
     concept Kernel = is_kernel_v<T, Value>;
