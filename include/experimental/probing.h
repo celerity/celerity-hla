@@ -4,7 +4,9 @@
 #include "concepts.h"
 #include "../accessor_type.h"
 #include "../celerity_helper.h"
-#include "accessor_proxies.h"
+
+#include "slice.h"
+#include "block.h"
 
 #include "traits.h"
 
@@ -29,6 +31,32 @@ namespace celerity::hla::experimental
             return algorithm::detail::access_type::invalid;
         }
     }
+
+    template <typename F, size_t Idx, typename ValueType, size_t Rank>
+    constexpr inline auto access_concept_v = get_access_concept<F, Idx, ValueType, Rank>();
+
+    template <size_t Idx, size_t Rank, typename ValueType, typename F>
+    auto get_probe_type(F)
+    {
+        using celerity::algorithm::detail::access_type;
+        using namespace celerity::access;
+
+        if constexpr (get_access_concept<F, Idx, ValueType, Rank>() == access_type::slice)
+        {
+            return slice_probe<ValueType>{};
+        }
+        else if constexpr (get_access_concept<F, Idx, ValueType, Rank>() == access_type::chunk)
+        {
+            return block_probe<ValueType, Rank>{};
+        }
+        else
+        {
+            return ValueType{};
+        }
+    }
+
+    template <size_t Idx, size_t Rank, typename ValueType, typename F>
+    using probe_type_t = std::decay_t<decltype(get_probe_type<Idx, Rank, ValueType>(std::declval<F>()))>;
 
     template <size_t Arity, size_t Idx, typename F, typename T>
     constexpr auto probing_invoke(F f, T probe)
@@ -138,7 +166,6 @@ namespace celerity::hla::experimental
             return std::tuple{factory, one_to_one<Rank>()};
         }
     }
-
 } // namespace celerity::hla::experimental
 
 #endif // CELERITY_HLA_PROBING_H
