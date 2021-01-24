@@ -27,8 +27,8 @@ namespace celerity::hla::experimental
         }
     }
 
-    template <typename F, typename T>
-    constexpr inline bool is_kernel_v = is_kernel<F, concrete_inactive_probe<T>, 2>();
+    template <typename F, typename...Args>
+    constexpr inline bool is_kernel_v = std::is_invocable_v<F, concrete_inactive_probe<Args>...>;
 
     template <typename F, typename T, size_t Max, typename... Args>
     constexpr size_t get_kernel_arity()

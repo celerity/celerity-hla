@@ -13,8 +13,8 @@ namespace celerity::hla::experimental
     template <typename T, typename... Args>
     concept Callable = std::is_invocable_v<T, Args...>;
 
-    template <typename T, typename Value>
-    concept Kernel = is_kernel_v<T, Value>;
+    template <typename T, typename... Args>
+    concept Kernel = is_kernel_v<T, Args...>;
 
     template <class T>
     concept InactiveProbe = std::is_base_of_v<inactive_probe_t, T>;

@@ -52,39 +52,35 @@ namespace celerity::hla::experimental
         //     };
         // }
 
-        // template <typename ExecutionPolicy,
-        //           template <typename, int> typename FirstInputIteratorType,
-        //           template <typename, int> typename SecondInputIteratorType,
-        //           template <typename, int> typename OutputIteratorType,
-        //           typename F,
-        //           typename T,
-        //           typename U,
-        //           typename V,
-        //           int Rank,
-        //           require<traits::function_traits<F>::arity == 2> = yes>
-        // auto transform_impl(FirstInputIteratorType<T, Rank> beg,
-        //                     FirstInputIteratorType<T, Rank> end,
-        //                     SecondInputIteratorType<U, Rank> beg2,
-        //                     OutputIteratorType<V, Rank> out,
-        //                     const F &f)
-        // {
-        //     using namespace traits;
-        //     using namespace cl::sycl::access;
+        template <typename ExecutionPolicy,
+                  template <typename, int> typename FirstInputIteratorType,
+                  template <typename, int> typename SecondInputIteratorType,
+                  template <typename, int> typename OutputIteratorType,
+                  typename T,
+                  typename U,
+                  typename V,
+                  Kernel<T, U> F,
+                  int Rank>
+        auto transform_impl(FirstInputIteratorType<T, Rank> beg,
+                            FirstInputIteratorType<T, Rank> end,
+                            SecondInputIteratorType<U, Rank> beg2,
+                            OutputIteratorType<V, Rank> out,
+                            const F &f)
+        {
+            using namespace cl::sycl::access;
 
-        //     using policy_type = strip_queue_t<ExecutionPolicy>;
-        //     using first_accessor_type = accessor_type_t<F, 0, T>;
-        //     using second_accessor_type = accessor_type_t<F, 1, U>;
+            using policy_type = algorithm::traits::strip_queue_t<ExecutionPolicy>;
 
-        //     return [=](celerity::handler &cgh) {
-        //         auto first_in_acc = get_access<policy_type, mode::read, first_accessor_type>(cgh, beg, end);
-        //         auto second_in_acc = get_access<policy_type, mode::read, second_accessor_type>(cgh, beg2, beg2);
-        //         auto out_acc = get_access<policy_type, mode::discard_write, one_to_one>(cgh, out, out);
+            return [=](celerity::handler &cgh) {
+                auto first_in_acc = get_access<policy_type, mode::read, 0>(cgh, beg, end, f);
+                auto second_in_acc = get_access<policy_type, mode::read, 1>(cgh, beg2, beg2, f);
+                auto out_acc = get_out_access<policy_type, mode::discard_write>(cgh, out, out);
 
-        //         return [=](item_context<Rank, V(T, U)> &ctx) {
-        //             out_acc[ctx.get_out()] = f(first_in_acc[ctx.template get_in<0>()], second_in_acc[ctx.template get_in<1>()]);
-        //         };
-        //     };
-        // }
+                return [=](algorithm::detail::item_context<Rank, V(T, U)> &ctx) {
+                    out_acc[ctx.get_out()] = f(first_in_acc[ctx.template get_in<0>()], second_in_acc[ctx.template get_in<1>()]);
+                };
+            };
+        }
 
         // template <typename ExecutionPolicy,
         //           template <typename, int> typename FirstInputIteratorType,
@@ -153,14 +149,12 @@ namespace celerity::hla::experimental
         //         [f](auto beg, auto end, auto out) { return task<ExecutionPolicy>(transform_impl<ExecutionPolicy>(beg, end, out, f)); });
         // }
 
-        // template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
-        //           require<traits::arity_v<F> == 2,
-        //                   traits::get_accessor_type<F, 0>() != access_type::item> = yes>
-        // auto transform(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
-        // {
-        //     const auto t = task<ExecutionPolicy>(transform_impl<ExecutionPolicy>(beg, end, beg2, out, f));
-        //     return [=](distr_queue q) { t(q, beg, end); };
-        // }
+        template <typename ExecutionPolicy, typename T, typename U, int Rank, Kernel<T, U> F>
+        auto transform(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
+        {
+            const auto t = algorithm::detail::task<ExecutionPolicy>(transform_impl<ExecutionPolicy>(beg, end, beg2, out, f));
+            return [=](distr_queue q) { t(q, beg, end); };
+        }
 
         // template <typename ExecutionPolicy, typename F,
         //           require<traits::arity_v<F> == 2,
@@ -201,13 +195,11 @@ namespace celerity::hla::experimental
         return std::invoke(detail::transform<ExecutionPolicy>(beg, end, out, f), p.q);
     }
 
-    // template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, typename F,
-    //           require<traits::get_accessor_type<F, 0>() != detail::access_type::invalid,
-    //                   traits::get_accessor_type<F, 1>() != detail::access_type::invalid> = yes>
-    // auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<V, Rank> beg2, buffer_iterator<U, Rank> out, const F &f)
-    // {
-    //     return std::invoke(detail::transform<ExecutionPolicy>(beg, end, beg2, out, f), p.q);
-    // }
+    template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, Kernel<T, V> F>
+    auto transform(ExecutionPolicy p, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<V, Rank> beg2, buffer_iterator<U, Rank> out, const F &f)
+    {
+        return std::invoke(detail::transform<ExecutionPolicy>(beg, end, beg2, out, f), p.q);
+    }
 
     template <typename KernelName, typename F>
     auto transform(const F &f)
