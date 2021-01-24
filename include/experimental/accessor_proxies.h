@@ -52,7 +52,7 @@ namespace celerity::hla::experimental
         }
         else
         {
-            const auto range = celerity::algorithm::detail::distance(beg, end);
+            const auto range = beg.get_buffer().get_range();
 
             const auto proxy_factory = [&, range]() {
                 if constexpr (ProxyConcept == celerity::algorithm::detail::access_type::slice)
