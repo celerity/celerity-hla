@@ -7,6 +7,7 @@
 
 #include "slice.h"
 #include "block.h"
+#include "all.h"
 
 #include "traits.h"
 
@@ -25,6 +26,10 @@ namespace celerity::hla::experimental
         else if constexpr (is_invocable_using_probes_v<F, Idx, block_probe<ValueType, Rank>>)
         {
             return algorithm::detail::access_type::chunk;
+        }
+        else if constexpr (is_invocable_using_probes_v<F, Idx, all_probe<ValueType, Rank>>)
+        {
+            return algorithm::detail::access_type::all;
         }
         else
         {
@@ -48,6 +53,10 @@ namespace celerity::hla::experimental
         else if constexpr (get_access_concept<F, Idx, ValueType, Rank>() == access_type::chunk)
         {
             return block_probe<ValueType, Rank>{};
+        }
+        else if constexpr (get_access_concept<F, Idx, ValueType, Rank>() == access_type::all)
+        {
+            return all_probe<ValueType, Rank>{};
         }
         else
         {
@@ -102,9 +111,9 @@ namespace celerity::hla::experimental
             return slice_probe<ValueType>{};
         }();
 
-        const auto factory = [probe]<typename Acc, typename... Args>(Acc acc, Args && ... args)
+        const auto factory = [dim = probe.get_dim()]<typename Acc, typename... Args>(Acc acc, Args && ... args)
         {
-            return slice<Acc>(probe, acc, std::forward<Args>(args)...);
+            return slice<Acc>{dim, acc, std::forward<Args>(args)...};
         };
 
         return std::tuple{factory, celerity::access::slice<Rank>{static_cast<size_t>(probe.get_dim())}};
@@ -143,6 +152,17 @@ namespace celerity::hla::experimental
         return std::tuple{factory, range_mapper};
     }
 
+    template <size_t Arity, size_t Idx, size_t Rank, typename ValueType, typename F>
+    auto create_all_proxy_factory_and_range_mapper(F f)
+    {
+        const auto factory = []<typename Acc, typename... Args>(Acc acc, Args && ... args)
+        {
+            return all<Acc>{acc, std::forward<Args>(args)...};
+        };
+
+        return std::tuple{factory, celerity::access::all<Rank, Rank>{}};
+    }
+
     template <size_t Idx, size_t Rank, typename ValueType, typename F>
     auto create_proxy_factory_and_range_mapper(F f)
     {
@@ -159,11 +179,18 @@ namespace celerity::hla::experimental
         {
             return create_block_proxy_factory_and_range_mapper<arity, Idx, Rank, ValueType>(f);
         }
-        else
+        else if constexpr (get_access_concept<F, Idx, ValueType, Rank>() == access_type::all)
+        {
+            return create_all_proxy_factory_and_range_mapper<arity, Idx, Rank, ValueType>(f);
+        }
+        else if constexpr (get_access_concept<F, Idx, ValueType, Rank>() == access_type::one_to_one)
         {
             const auto factory = [](auto acc, auto...) { return acc; };
-
             return std::tuple{factory, one_to_one<Rank>()};
+        }
+        else
+        {
+            static_assert(std::is_void_v<F>, "unrecognized access type");
         }
     }
 } // namespace celerity::hla::experimental

@@ -52,14 +52,21 @@ namespace celerity::hla::experimental
         }
         else
         {
-            const auto proxy_factory = [&]() {
+            const auto range = celerity::algorithm::detail::distance(beg, end);
+
+            const auto proxy_factory = [&, range]() {
                 if constexpr (ProxyConcept == celerity::algorithm::detail::access_type::slice)
                 {
-                    return [=](auto item) { return std::invoke(factory, acc, item, celerity::algorithm::detail::distance(beg, end)); };
+                    return [=](auto item) { return std::invoke(factory, acc, item, range); };
                 }
                 else if constexpr (ProxyConcept == celerity::algorithm::detail::access_type::chunk)
                 {
+                    (void)range;
                     return [=](auto item) { return std::invoke(factory, acc, item); };
+                }
+                else if constexpr (ProxyConcept == celerity::algorithm::detail::access_type::all)
+                {
+                    return [=](auto item) { return std::invoke(factory, acc, range); };
                 }
             }();
 

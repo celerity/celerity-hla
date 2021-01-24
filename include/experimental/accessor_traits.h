@@ -3,6 +3,7 @@
 
 #include "slice.h"
 #include "block.h"
+#include "all.h"
 
 #include "../accessor_type.h"
 
@@ -14,9 +15,12 @@ namespace celerity::hla::experimental::traits
     template <StrictBlock T>
     constexpr auto get_access_type() { return celerity::algorithm::detail::access_type::chunk; }
 
+    template <StrictAll T>
+    constexpr auto get_access_type() { return celerity::algorithm::detail::access_type::all; }
+
     // clang-format off
     template <typename T>
-        requires(!AnySlice<T> && !AnyBlock<T>)                    
+        requires(!AnySlice<T> && !AnyBlock<T> && !All<T>)                    
     constexpr auto get_access_type() { return celerity::algorithm::detail::access_type::one_to_one; }
     // clang-format on
 
@@ -36,6 +40,14 @@ namespace celerity::hla::experimental::traits
     template <typename T>
     inline constexpr auto is_block_v = is_block<T>::value;
 
+    template <typename T>
+    struct is_all : std::bool_constant<get_access_type<T>() == celerity::algorithm::detail::access_type::all>
+    {
+    };
+
+    template <typename T>
+    inline constexpr auto is_all_v = is_all<T>::value;
+
     // template <typename T>
     // struct is_item : std::false_type
     // {
@@ -48,19 +60,6 @@ namespace celerity::hla::experimental::traits
 
     // template <typename T>
     // inline constexpr auto is_item_v = is_item<T>::value;
-
-    // template <typename T>
-    // struct is_all : std::false_type
-    // {
-    // };
-
-    // template <typename T, int Rank>
-    // struct is_all<all<T, Rank>> : std::true_type
-    // {
-    // };
-
-    // template <typename T>
-    // inline constexpr auto is_all_v = is_all<T>::value;
 
 } // namespace celerity::hla::experimental::traits
 

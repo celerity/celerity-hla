@@ -1,7 +1,10 @@
 #ifndef CELERITY_HLA_ACCESSOR_ITERATOR_H
 #define CELERITY_HLA_ACCESSOR_ITERATOR_H
 
-#include "accessor_proxies.h"
+#include "slice.h"
+#include "block.h"
+#include "all.h"
+
 #include "../iterator.h"
 
 namespace celerity::hla::experimental
@@ -45,13 +48,13 @@ namespace celerity::hla::experimental
     slice_iterator(const SliceType &slice, cl::sycl::id<SliceType::rank> pos,
                    cl::sycl::range<SliceType::rank> range) -> slice_iterator<SliceType>;
 
-    template<StrictSlice SliceType>
+    template <StrictSlice SliceType>
     auto begin(const SliceType &s)
     {
         return slice_iterator{s, {}, s.get_range()};
     }
 
-    template<StrictSlice SliceType>
+    template <StrictSlice SliceType>
     auto end(const SliceType &s)
     {
         return slice_iterator{s, s.get_range(), s.get_range()};
@@ -144,79 +147,71 @@ namespace celerity::hla::experimental
         [[nodiscard]] constexpr cl::sycl::id<rank> get_id() const { return {}; }
     };
 
-    template<InactiveProbe ProbeType>
+    template <InactiveProbe ProbeType>
     auto begin(const ProbeType &s)
     {
         return inactive_probe_iterator<ProbeType>{};
     }
 
-    template<InactiveProbe ProbeType>
+    template <InactiveProbe ProbeType>
     auto end(const ProbeType &s)
     {
         return inactive_probe_iterator<ProbeType>{};
     }
 
-    // template <typename AllType, int Rank>
-    // class all_iterator
-    // {
-    // public:
-    //     all_iterator(const AllType &all, cl::sycl::id<Rank> pos,
-    //                     cl::sycl::range<Rank> range)
-    //         : it_(pos, range), all_(all) {}
+    template <StrictAll AllType>
+    class all_iterator
+    {
+    public:
+        static constexpr auto rank = AllType::rank;
 
-    //     bool operator==(const all_iterator &rhs) const
-    //     {
-    //         return detail::equals(get_id(), rhs.get_id());
-    //     }
+        all_iterator(const AllType &all, cl::sycl::id<rank> pos,
+                     cl::sycl::range<rank> range)
+            : it_(pos, range), all_(all) {}
 
-    //     bool operator!=(const all_iterator &rhs) const
-    //     {
-    //         return !detail::equals(get_id(), rhs.get_id());
-    //     }
+        bool operator==(const all_iterator &rhs) const
+        {
+            return equals(get_id(), rhs.get_id());
+        }
 
-    //     all_iterator &operator++()
-    //     {
-    //         ++it_;
-    //         return *this;
-    //     }
+        bool operator!=(const all_iterator &rhs) const
+        {
+            return !equals(get_id(), rhs.get_id());
+        }
 
-    //     [[nodiscard]] auto operator*() const { return all_[get_id()]; }
+        all_iterator &operator++()
+        {
+            ++it_;
+            return *this;
+        }
 
-    //     [[nodiscard]] cl::sycl::id<Rank> get_id() const { return *it_; }
+        [[nodiscard]] auto operator*() const { return all_[get_id()]; }
 
-    // private:
-    //     iterator<Rank> it_;
-    //     const AllType &all_;
-    // };
+        [[nodiscard]] cl::sycl::id<rank> get_id() const { return *it_; }
 
-    // template <typename T, int Rank>
-    // auto begin(const all<T, Rank> &all)
-    // {
-    //     return all_iterator{all, {}, all.get_range()};
-    // }
+    private:
+        celerity::algorithm::iterator<rank> it_;
+        const AllType &all_;
+    };
 
-    // template <typename T, int Rank>
-    // auto end(const all<T, Rank> &all)
-    // {
-    //     return all_iterator{all, cl::sycl::id<Rank>{all.get_range()},
-    //                         all.get_range()};
-    // }
+    template <typename T, int Rank>
+    auto begin(const StrictAll auto &all)
+    {
+        return all_iterator{all, {}, all.get_range()};
+    }
 
-} // namespace celerity::algorithm
+    template <typename T, int Rank>
+    auto end(const StrictAll auto &all)
+    {
+        return all_iterator{all, cl::sycl::id<Rank>{all.get_range()},
+                            all.get_range()};
+    }
+
+} // namespace celerity::hla::experimental
 
 namespace std
 {
-    // template <typename AllType, int Rank>
-    // struct iterator_traits<celerity::algorithm::all_iterator<AllType, Rank>>
-    // {
-    //     using difference_type = long;
-    //     using value_type = typename AllType::value_type;
-    //     using pointer = std::add_pointer_t<value_type>;
-    //     using reference = std::add_lvalue_reference_t<value_type>;
-    //     using iterator_category = std::forward_iterator_tag;
-    // };
-
-    template <celerity::hla::experimental::AnySlice SliceType>
+    template <celerity::hla::experimental::StrictSlice SliceType>
     struct iterator_traits<celerity::hla::experimental::slice_iterator<SliceType>>
     {
         using difference_type = long;
@@ -226,11 +221,21 @@ namespace std
         using iterator_category = std::forward_iterator_tag;
     };
 
-    template <celerity::hla::experimental::AnyBlock BlockType>
+    template <celerity::hla::experimental::StrictBlock BlockType>
     struct iterator_traits<celerity::hla::experimental::block_iterator<BlockType>>
     {
         using difference_type = long;
         using value_type = typename BlockType::value_type;
+        using pointer = std::add_pointer_t<value_type>;
+        using reference = std::add_lvalue_reference_t<value_type>;
+        using iterator_category = std::forward_iterator_tag;
+    };
+
+    template <celerity::hla::experimental::StrictAll AllType>
+    struct iterator_traits<celerity::hla::experimental::all_iterator<AllType>>
+    {
+        using difference_type = long;
+        using value_type = typename AllType::value_type;
         using pointer = std::add_pointer_t<value_type>;
         using reference = std::add_lvalue_reference_t<value_type>;
         using iterator_category = std::forward_iterator_tag;
