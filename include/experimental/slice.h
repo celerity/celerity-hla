@@ -19,7 +19,7 @@ namespace celerity::hla::experimental
 
         void configure(int dim)
         {
-            assert(dim_ >= 0 && "invalid dim");
+            //assert(dim_ >= 0 && "invalid dim");
             dim_ = dim;
 
             throw *this;
@@ -27,7 +27,7 @@ namespace celerity::hla::experimental
 
         int get_dim() const
         {
-            assert(dim_ >= 0 && "dim not set");
+            //assert(dim_ >= 0 && "dim not set");
             return dim_;
         }
 
@@ -65,8 +65,8 @@ namespace celerity::hla::experimental
         using value_type = algo::traits::accessor_value_type_t<Acc>;
         static constexpr auto rank = algo::traits::accessor_rank_v<Acc>;
 
-        slice(const slice_probe<value_type> &probe, Acc acc, const cl::sycl::item<rank> item, const cl::sycl::range<rank> range)
-            : dim_(probe.get_dim()), range_(range[dim_]), item_(std::move(item)), acc_(std::move(acc))
+        slice(const int dim, Acc acc, const cl::sycl::item<rank> item, const cl::sycl::range<rank> range)
+            : dim_(dim), range_(range[dim_]), item_(std::move(item)), acc_(std::move(acc))
         {
         }
 
