@@ -78,7 +78,7 @@ namespace celerity::hla::experimental::detail
         InputIteratorType get_in_beg() const { return in_beg_; }
         InputIteratorType get_in_end() const { return in_end_; }
 
-        cl::sycl::range<Rank> get_range() const { return distance(in_beg_, in_end_); }
+        cl::sycl::range<Rank> get_range() const { return algorithm::detail::distance(in_beg_, in_end_); }
 
     private:
         Functor f_;
@@ -143,7 +143,9 @@ namespace celerity::algorithm::traits
     {
         static constexpr auto rank = Rank;
         static constexpr auto computation_type = detail::computation_type::transform;
-        static constexpr auto access_type = InputAccessType;
+
+        template <typename>
+        static constexpr detail::access_type access_type = InputAccessType;
 
         using input_iterator_type = InputIteratorType;
         using input_value_type = typename std::iterator_traits<InputIteratorType>::value_type;
@@ -156,7 +158,9 @@ namespace celerity::algorithm::traits
     {
         static constexpr auto rank = Rank;
         static constexpr auto computation_type = detail::computation_type::transform;
-        static constexpr auto access_type = InputAccessType;
+
+        template <typename>
+        static constexpr detail::access_type access_type = InputAccessType;
 
         using input_iterator_type = InputIteratorType;
         using input_value_type = typename std::iterator_traits<InputIteratorType>::value_type;
@@ -177,9 +181,9 @@ namespace celerity::algorithm::traits
         static constexpr auto computation_type = detail::computation_type::transform;
 
         template <typename Input>
-        static constexpr auto access_type = hla::experimental::access_concept_v<KernelFunctor, 0, 1,
-                                                                                typename packaged_task_traits<Input>::output_value_type,
-                                                                                packaged_task_traits<Input>::rank>;
+        static constexpr detail::access_type access_type = hla::experimental::access_concept_v<KernelFunctor, 1, 0,
+                                                                                               typename packaged_task_traits<Input>::output_value_type,
+                                                                                               packaged_task_traits<Input>::rank>;
 
         using input_iterator_type = void;
         using input_value_type = void;

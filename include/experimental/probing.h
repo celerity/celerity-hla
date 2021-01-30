@@ -41,8 +41,8 @@ namespace celerity::hla::experimental
         // }
     }
 
-    template <typename F, size_t Idx, typename ValueType, size_t Rank>
-    constexpr inline auto access_concept_v = get_access_concept<F, Idx, ValueType, Rank>();
+    template <typename F, size_t Arity, size_t Idx, typename ValueType, size_t Rank>
+    constexpr inline auto access_concept_v = get_access_concept<F, Arity, Idx, ValueType, Rank>();
 
     template <size_t Arity, size_t Idx, size_t Rank, typename ValueType, typename F>
     auto get_probe_type(F)
