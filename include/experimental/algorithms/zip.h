@@ -7,6 +7,7 @@
 #include "../../require.h"
 
 #include "../../experimental/packaged_tasks/packaged_transform.h"
+#include "../../experimental/packaged_tasks/packaged_zip.h"
 #include "../../experimental/accessor_proxies.h"
 
 using celerity::algorithm::buffer_iterator;
@@ -89,7 +90,7 @@ namespace celerity::hla::experimental
         auto zip(const F &f)
         {
             return package_zip<F>([f](auto beg, auto end, auto beg2, auto out) {
-                return task<ExecutionPolicy>(zip_impl<ExecutionPolicy>(beg, end, beg2, out, f));
+                return algorithm::detail::task<ExecutionPolicy>(zip_impl<ExecutionPolicy>(beg, end, beg2, out, f));
             });
         }
 

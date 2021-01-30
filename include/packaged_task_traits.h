@@ -49,12 +49,12 @@ namespace celerity::algorithm::traits
 		using second_input_iterator_type = void;
 	};
 
-	template <typename T>
+	template <typename T, typename Input>
 	constexpr detail::access_type get_second_input_access_type()
 	{
 		if constexpr (packaged_task_traits<T>::computation_type == detail::computation_type::zip)
 		{
-			return extended_packaged_task_traits<T, detail::computation_type::zip>::second_input_access_type;
+			return extended_packaged_task_traits<T, detail::computation_type::zip>::template second_input_access_type<Input>;
 		}
 		else
 		{
@@ -62,8 +62,8 @@ namespace celerity::algorithm::traits
 		}
 	}
 
-	template <typename T>
-	constexpr inline auto second_input_access_type_v = get_second_input_access_type<T>();
+	template <typename T, typename Input>
+	constexpr inline auto second_input_access_type_v = get_second_input_access_type<T, Input>();
 
 	template <typename T>
 	struct partially_packaged_task_traits

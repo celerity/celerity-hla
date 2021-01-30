@@ -1,16 +1,14 @@
 #ifndef CELERITY_HLA_ZIP_DECORATOR_H
 #define CELERITY_HLA_ZIP_DECORATOR_H
 
-#include "../iterator.h"
-#include "../celerity_helper.h"
-#include "../accessor_type.h"
-#include "../computation_type.h"
-#include "../packaged_task_traits.h"
-#include "../partially_packaged_task.h"
-
+#include "../../iterator.h"
+#include "../../celerity_helper.h"
+#include "../../accessor_type.h"
+#include "../../computation_type.h"
+#include "../../packaged_task_traits.h"
+#include "../../partially_packaged_task.h"
 namespace celerity::hla::experimental::detail
 {
-
     template <typename FunctorType,
               typename FirstInputIteratorType,
               typename SecondInputIteratorType,
@@ -28,9 +26,9 @@ namespace celerity::hla::experimental::detail
                      OutputIteratorType out_beg)
             : functor_(functor), in_beg_(in_beg), in_end_(in_end), second_in_beg_(second_in_beg), out_beg_(out_beg)
         {
-            assert(are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
-            assert(FirstInputAccessType == detail::access_type::one_to_one || !are_equal(in_beg_.get_buffer(), out_beg_.get_buffer()));
-            assert(SecondInputAccessType == detail::access_type::one_to_one || !are_equal(second_in_beg_.get_buffer(), out_beg_.get_buffer()));
+            assert(algorithm::detail::are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
+            assert(FirstInputAccessType == algorithm::detail::access_type::one_to_one || !algorithm::detail::are_equal(in_beg_.get_buffer(), out_beg_.get_buffer()));
+            assert(SecondInputAccessType == algorithm::detail::access_type::one_to_one || !algorithm::detail::are_equal(second_in_beg_.get_buffer(), out_beg_.get_buffer()));
             //assert(distance(in_beg_, in_end_) <= distance(out_beg_, end(out_beg_.get_buffer())));
         }
 
@@ -98,15 +96,15 @@ namespace celerity::hla::experimental::detail
                                  SecondInputIteratorType second_in_beg)
             : functor_(functor), in_beg_(in_beg), in_end_(in_end), second_in_beg_(second_in_beg)
         {
-            assert(are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
-            assert(!are_equal(in_beg_.get_buffer(), second_in_beg_.get_buffer()));
+            assert(algorithm::detail::are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
+            //assert(!algorithm::detail::are_equal(in_beg_.get_buffer(), second_in_beg_.get_buffer()));
         }
 
         template <typename Iterator>
         auto complete(Iterator beg, Iterator)
         {
             const auto f = std::invoke(functor_, in_beg_, in_end_, second_in_beg_, beg);
-            return package_zip<FirstInputAccessType, SecondInputAccessType>(
+            return hla::experimental::detail::package_zip<FirstInputAccessType, SecondInputAccessType>(
                 f, in_beg_, in_end_, second_in_beg_, beg);
         }
 
@@ -159,13 +157,13 @@ namespace celerity::hla::experimental::detail
                                  SecondInputIteratorType in_end)
             : functor_(functor), in_beg_(in_beg), in_end_(in_end)
         {
-            assert(are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
+            assert(algorithm::detail::are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
         }
 
         template <typename Iterator>
         auto complete(Iterator beg, Iterator end)
         {
-            constexpr auto second_access_type = get_access_concept<KernelFunctor, 1, typename Iterator::value_type, Iterator::rank>();
+            constexpr auto second_access_type = get_access_concept<KernelType, 2, 1, typename Iterator::value_type, Iterator::rank>();
 
             return package_zip<FirstInputAccessType, second_access_type, KernelType>(
                 functor_, beg, end, in_beg_);
@@ -200,7 +198,7 @@ namespace celerity::hla::experimental::detail
     }
 
     template <typename FunctorType,
-              typename KernelTypee>
+              typename KernelType>
     class partially_packaged_zip_0
     {
     public:
@@ -212,7 +210,7 @@ namespace celerity::hla::experimental::detail
         template <typename Iterator>
         auto complete(Iterator beg, Iterator end)
         {
-            constexpr auto first_access_type = get_access_concept<KernelFunctor, 0, typename Iterator::value_type, Iterator::rank>();
+            constexpr auto first_access_type = get_access_concept<KernelType, 2, 0, typename Iterator::value_type, Iterator::rank>();
             return package_zip<first_access_type, KernelType>(
                 functor_, beg, end);
         }
@@ -374,12 +372,11 @@ namespace celerity::algorithm::traits
               typename KernelType,
               typename SecondInputIteratorType,
               int Rank,
-              detail::access_type FirstInputAccessType,
-              detail::access_type SecondInputAccessType>
+              detail::access_type FirstInputAccessType>
     struct extended_packaged_task_traits<hla::experimental::detail::partially_packaged_zip_1<FunctorType, KernelType, SecondInputIteratorType, Rank, FirstInputAccessType>, detail::computation_type::zip>
     {
         template <typename Input>
-        static constexpr auto second_input_access_type = hla::experimental::access_concept_v<KernelFunctor,
+        static constexpr auto second_input_access_type = hla::experimental::access_concept_v<KernelType,
                                                                                              1,
                                                                                              typename packaged_task_traits<Input>::output_value_type,
                                                                                              packaged_task_traits<Input>::rank>;
@@ -396,7 +393,7 @@ namespace celerity::algorithm::traits
         static constexpr auto computation_type = detail::computation_type::zip;
 
         template <typename Input>
-        static constexpr auto access_type = hla::experimental::access_concept_v<KernelFunctor,
+        static constexpr auto access_type = hla::experimental::access_concept_v<KernelType,
                                                                                 0,
                                                                                 typename packaged_task_traits<Input>::output_value_type,
                                                                                 packaged_task_traits<Input>::rank>;
@@ -412,7 +409,8 @@ namespace celerity::algorithm::traits
               typename KernelType>
     struct extended_packaged_task_traits<hla::experimental::detail::partially_packaged_zip_0<FunctorType, KernelType>, detail::computation_type::zip>
     {
-        static constexpr auto second_input_access_type = hla::experimental::access_concept_v<KernelFunctor,
+        template <typename Input>
+        static constexpr auto second_input_access_type = hla::experimental::access_concept_v<KernelType,
                                                                                              1,
                                                                                              typename packaged_task_traits<Input>::output_value_type,
                                                                                              packaged_task_traits<Input>::rank>;
