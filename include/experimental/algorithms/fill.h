@@ -65,7 +65,7 @@ namespace celerity::hla::experimental
     template <typename KernelName, typename T, int Rank>
     auto fill(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
     {
-        return fill(distr<KernelName>(q), beg, end, value);
+        return hla::experimental::fill(algorithm::distr<KernelName>(q), beg, end, value);
     }
 
     template <typename ExecutionPolicy, typename T, int Rank>
@@ -77,7 +77,7 @@ namespace celerity::hla::experimental
     template <typename KernelName, typename T, int Rank>
     auto fill(celerity::distr_queue q, buffer<T, Rank> in, const T &value)
     {
-        return celerity::hla::experimental::fill(celerity::algorithm::distr<KernelName>(q), begin(in), end(in), value);
+        return hla::experimental::fill(algorithm::distr<KernelName>(q), begin(in), end(in), value);
     }
 
 } // namespace celerity::hla::experimental

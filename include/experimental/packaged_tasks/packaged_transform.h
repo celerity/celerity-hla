@@ -102,8 +102,7 @@ namespace celerity::hla::experimental::detail
         template <typename Iterator>
         auto complete(Iterator beg, Iterator end) const
         {
-            using namespace celerity::hla::experimental;
-            constexpr auto access_type = get_access_concept<KernelFunctor, 0, typename Iterator::value_type, Iterator::rank>();
+            constexpr auto access_type = get_access_concept<KernelFunctor, 1, 0, typename Iterator::value_type, Iterator::rank>();
             return package_transform<access_type, KernelFunctor>(f_, beg, end);
         }
 
@@ -178,7 +177,7 @@ namespace celerity::algorithm::traits
         static constexpr auto computation_type = detail::computation_type::transform;
 
         template <typename Input>
-        static constexpr auto access_type = hla::experimental::access_concept_v<KernelFunctor, 0,
+        static constexpr auto access_type = hla::experimental::access_concept_v<KernelFunctor, 0, 1,
                                                                                 typename packaged_task_traits<Input>::output_value_type,
                                                                                 packaged_task_traits<Input>::rank>;
 

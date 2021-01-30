@@ -33,6 +33,8 @@ namespace celerity::hla::experimental
 
         template <typename... Args>
         T discern(Args...) { return {}; }
+
+        operator T() { return {}; }
     };
 
 } // namespace celerity::hla::experimental

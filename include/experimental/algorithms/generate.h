@@ -92,7 +92,7 @@ namespace celerity::hla::experimental
     template <typename KernelName, typename T, int Rank, typename F>
     auto generate(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
     {
-        return generate(distr<KernelName>(q), beg, end, f);
+        return algorithm::generate(algorithm::distr<KernelName>(q), beg, end, f);
     }
 
     template <typename ExecutionPolicy, typename T, int Rank, typename F>
@@ -104,7 +104,7 @@ namespace celerity::hla::experimental
     template <typename KernelName, typename T, int Rank, typename F>
     auto generate(celerity::distr_queue q, buffer<T, Rank> in, const F &f)
     {
-        return celerity::hla::experimental::generate(celerity::algorithm::distr<KernelName>(q), begin(in), end(in), f);
+        return hla::experimental::generate(algorithm::distr<KernelName>(q), begin(in), end(in), f);
     }
 
 } // namespace celerity::hla::experimental

@@ -4,6 +4,8 @@
 #include "../celerity_helper.h"
 #include "../celerity_accessor_traits.h"
 
+#include "function_traits.h"
+
 namespace algo = celerity::algorithm;
 
 namespace celerity::hla::experimental

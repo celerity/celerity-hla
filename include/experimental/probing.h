@@ -16,45 +16,49 @@ namespace celerity::hla::experimental
     template <typename T>
     concept CallableObject = celerity::algorithm::traits::has_call_operator_v<std::remove_cv_t<T>>;
 
-    template <typename F, size_t Idx, typename ValueType, size_t Rank>
+    template <typename F, size_t Arity, size_t Idx, typename ValueType, size_t Rank>
     constexpr inline auto get_access_concept()
     {
-        if constexpr (is_invocable_using_probes_v<F, Idx, slice_probe<ValueType>>)
+        if constexpr (is_invocable_using_probes_v<F, Arity, Idx, slice_probe<ValueType>>)
         {
             return algorithm::detail::access_type::slice;
         }
-        else if constexpr (is_invocable_using_probes_v<F, Idx, block_probe<ValueType, Rank>>)
+        else if constexpr (is_invocable_using_probes_v<F, Arity, Idx, block_probe<ValueType, Rank>>)
         {
             return algorithm::detail::access_type::chunk;
         }
-        else if constexpr (is_invocable_using_probes_v<F, Idx, all_probe<ValueType, Rank>>)
+        else if constexpr (is_invocable_using_probes_v<F, Arity, Idx, all_probe<ValueType, Rank>>)
         {
             return algorithm::detail::access_type::all;
         }
-        else
+        else //if constexpr (is_invocable_using_probes_v<F, Arity, Idx, ValueType>)
         {
-            return algorithm::detail::access_type::invalid;
+            return algorithm::detail::access_type::one_to_one;
         }
+        // else
+        // {
+        //     return algorithm::detail::access_type::invalid;
+        // }
     }
 
     template <typename F, size_t Idx, typename ValueType, size_t Rank>
     constexpr inline auto access_concept_v = get_access_concept<F, Idx, ValueType, Rank>();
 
-    template <size_t Idx, size_t Rank, typename ValueType, typename F>
+    template <size_t Arity, size_t Idx, size_t Rank, typename ValueType, typename F>
     auto get_probe_type(F)
     {
         using celerity::algorithm::detail::access_type;
         using namespace celerity::access;
 
-        if constexpr (get_access_concept<F, Idx, ValueType, Rank>() == access_type::slice)
+        if constexpr (get_access_concept<F, Arity, Idx, ValueType, Rank>() == access_type::slice)
         {
             return slice_probe<ValueType>{};
         }
-        else if constexpr (get_access_concept<F, Idx, ValueType, Rank>() == access_type::chunk)
+        else if constexpr (get_access_concept<F, Arity, Idx, ValueType, Rank>() == access_type::chunk)
         {
             return block_probe<ValueType, Rank>{};
         }
-        else if constexpr (get_access_concept<F, Idx, ValueType, Rank>() == access_type::all)
+        else if constexpr (get_access_concept<F, Arity, Idx, ValueType, Rank>() == access_type::all)
         {
             return all_probe<ValueType, Rank>{};
         }
@@ -64,8 +68,8 @@ namespace celerity::hla::experimental
         }
     }
 
-    template <size_t Idx, size_t Rank, typename ValueType, typename F>
-    using probe_type_t = std::decay_t<decltype(get_probe_type<Idx, Rank, ValueType>(std::declval<F>()))>;
+    template <size_t Arity, size_t Idx, size_t Rank, typename ValueType, typename F>
+    using probe_type_t = std::decay_t<decltype(get_probe_type<Arity, Idx, Rank, ValueType>(std::declval<F>()))>;
 
     template <size_t Arity, size_t Idx, typename F, typename T>
     constexpr auto probing_invoke(F f, T probe)
@@ -163,27 +167,25 @@ namespace celerity::hla::experimental
         return std::tuple{factory, celerity::access::all<Rank, Rank>{}};
     }
 
-    template <size_t Idx, size_t Rank, typename ValueType, typename F>
+    template <size_t Idx, size_t Rank, size_t Arity, typename ValueType, typename F>
     auto create_proxy_factory_and_range_mapper(F f)
     {
         using celerity::algorithm::detail::access_type;
         using namespace celerity::access;
 
-        static constexpr auto arity = kernel_arity_v<F, ValueType>;
-
-        if constexpr (get_access_concept<F, Idx, ValueType, Rank>() == access_type::slice)
+        if constexpr (get_access_concept<F, Arity, Idx, ValueType, Rank>() == access_type::slice)
         {
-            return create_slice_proxy_factory_and_range_mapper<arity, Idx, Rank, ValueType>(f);
+            return create_slice_proxy_factory_and_range_mapper<Arity, Idx, Rank, ValueType>(f);
         }
-        else if constexpr (get_access_concept<F, Idx, ValueType, Rank>() == access_type::chunk)
+        else if constexpr (get_access_concept<F, Arity, Idx, ValueType, Rank>() == access_type::chunk)
         {
-            return create_block_proxy_factory_and_range_mapper<arity, Idx, Rank, ValueType>(f);
+            return create_block_proxy_factory_and_range_mapper<Arity, Idx, Rank, ValueType>(f);
         }
-        else if constexpr (get_access_concept<F, Idx, ValueType, Rank>() == access_type::all)
+        else if constexpr (get_access_concept<F, Arity, Idx, ValueType, Rank>() == access_type::all)
         {
-            return create_all_proxy_factory_and_range_mapper<arity, Idx, Rank, ValueType>(f);
+            return create_all_proxy_factory_and_range_mapper<Arity, Idx, Rank, ValueType>(f);
         }
-        else if constexpr (get_access_concept<F, Idx, ValueType, Rank>() == access_type::one_to_one)
+        else if constexpr (get_access_concept<F, Arity, Idx, ValueType, Rank>() == access_type::one_to_one)
         {
             const auto factory = [](auto acc, auto...) { return acc; };
             return std::tuple{factory, one_to_one<Rank>()};

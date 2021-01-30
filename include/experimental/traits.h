@@ -7,7 +7,6 @@
 
 #include "inactive_probe.h"
 
-
 namespace celerity::hla::experimental
 {
     template <typename F, typename T, size_t Max, typename... Args>
@@ -27,8 +26,45 @@ namespace celerity::hla::experimental
         }
     }
 
-    template <typename F, typename...Args>
-    constexpr inline bool is_kernel_v = std::is_invocable_v<F, concrete_inactive_probe<Args>...>;
+    template <typename First, typename...>
+    struct first
+    {
+        using type = First;
+    };
+
+    template <typename... Args>
+    using first_t = typename first<Args...>::type;
+
+    template <typename, typename Second, typename...>
+    struct second
+    {
+        using type = Second;
+    };
+
+    template <typename... Args>
+    using second_t = typename second<Args...>::type;
+
+    template <typename F, typename... Args>
+    constexpr bool is_kernel()
+    {
+        static_assert(sizeof...(Args) <= 2);
+
+        if constexpr (sizeof...(Args) == 1)
+        {
+            return std::is_invocable_v<F, concrete_inactive_probe<Args>...> ||
+                   std::is_invocable_v<F, Args...>;
+        }
+        else
+        {
+            return std::is_invocable_v<F, concrete_inactive_probe<Args>...> ||
+                   std::is_invocable_v<F, Args...> ||
+                   std::is_invocable_v<F, concrete_inactive_probe<first_t<Args...>>, second_t<Args...>> ||
+                   std::is_invocable_v<F, first_t<Args...>, concrete_inactive_probe<second_t<Args...>>>;
+        }
+    }
+
+    template <typename F, typename... Args>
+    constexpr inline bool is_kernel_v = is_kernel<F, Args...>();
 
     template <typename F, typename T, size_t Max, typename... Args>
     constexpr size_t get_kernel_arity()
@@ -44,14 +80,18 @@ namespace celerity::hla::experimental
         }
     }
 
-    template <typename F, typename T>
-    constexpr size_t get_kernel_arity()
-    {
-        return get_kernel_arity<F, concrete_inactive_probe<T>, 2>();
-    }
+    // template <typename F, typename T>
+    // constexpr size_t get_kernel_arity()
+    // {
+    //     if constexpr (is_kernel_v<F, T>)
+    //     {
+    //         return 1;
+    //     }
+    //     else if constexpr (is_kernel_v<F, T, T)
+    // }
 
-    template <typename KernelType, typename ValueType>
-    constexpr inline auto kernel_arity_v = get_kernel_arity<KernelType, ValueType>();
+    //template <typename KernelType, typename ValueType>
+    //constexpr inline auto kernel_arity_v = get_kernel_arity<KernelType, ValueType>();
 
     template <typename F, size_t Rank, size_t Idx, typename T>
     struct is_invocable_using_probes;
@@ -74,8 +114,8 @@ namespace celerity::hla::experimental
     {
     };
 
-    template <typename F, size_t Idx, typename T>
-    constexpr inline bool is_invocable_using_probes_v = is_invocable_using_probes<F, kernel_arity_v<F, typename T::value_type>, Idx, T>::value;
+    template <typename F, size_t Arity, size_t Idx, typename T>
+    constexpr inline bool is_invocable_using_probes_v = is_invocable_using_probes<F, Arity, Idx, T>::value;
 } // namespace celerity::hla::experimental
 
 #endif // CELERITY_HLA_TRAITS_H
