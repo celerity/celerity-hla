@@ -5,8 +5,37 @@
 #include "packaged_task_traits.h"
 #include "t_joint.h"
 
+#include "experimental/traits.h"
+
+namespace celerity::hla::experimental
+{
+    template <typename ValueType, size_t Rank>
+    struct is_kernel_input<algorithm::buffer_iterator<ValueType, Rank>> : std::bool_constant<true>
+    {
+    };
+
+    template <typename ValueType, size_t Rank>
+    struct is_kernel_input<algorithm::detail::transient_iterator<ValueType, Rank>> : std::bool_constant<true>
+    {
+    };
+} // namespace celerity::hla::experimental
 namespace celerity::algorithm::traits
 {
+    template <typename T>
+    struct as_kernel_input
+    {
+        using type = hla::experimental::kernel_input<typename packaged_task_traits<T>::output_value_type, packaged_task_traits<T>::rank>;
+    };
+
+    template <typename ValueType, size_t Rank>
+    struct as_kernel_input<hla::experimental::kernel_input<ValueType, Rank>>
+    {
+        using type = hla::experimental::kernel_input<ValueType, Rank>;
+    };
+
+    template <typename T>
+    using as_kernel_input_t = typename as_kernel_input<T>::type;
+
     template <typename T>
     inline constexpr bool is_source_v = computation_type_of_v<T, detail::computation_type::generate>;
 
@@ -17,12 +46,13 @@ namespace celerity::algorithm::traits
     template <typename T>
     inline constexpr bool is_linkable_sink_v = is_partially_packaged_task_v<T> &&stage_requirement_v<T> == detail::stage_requirement::input;
 
-    template <typename Sink, typename Source>
-    inline constexpr bool has_transiently_linkable_first_input_v = is_linkable_sink_v<Sink> && packaged_task_traits<Sink>::template access_type<Source> == detail::access_type::one_to_one;
+    template <typename Sink, typename... Sources>
+    inline constexpr bool has_transiently_linkable_first_input_v = is_linkable_sink_v<Sink> &&packaged_task_traits<Sink>::template access_type<as_kernel_input_t<Sources>...> == detail::access_type::one_to_one;
 
-    template <typename T>
+    template <typename Sink, typename... Sources>
     inline constexpr bool has_transiently_linkable_second_input_v =
-        is_linkable_sink_v<T> &&computation_type_of_v<T, detail::computation_type::zip> &&second_input_access_type_v<T> == detail::access_type::one_to_one;
+        is_linkable_sink_v<Sink> &&computation_type_of_v<Sink, detail::computation_type::zip> &&
+            second_input_access_type_v<Sink, as_kernel_input_t<Sources>...> == detail::access_type::one_to_one;
 
     template <typename T>
     constexpr inline bool first_input_stage_completed_v =

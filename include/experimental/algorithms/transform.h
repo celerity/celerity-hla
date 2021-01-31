@@ -23,7 +23,7 @@ namespace celerity::hla::experimental
             using policy_type = algorithm::traits::strip_queue_t<ExecutionPolicy>;
 
             return [=](celerity::handler &cgh) {
-                auto in_acc = get_access<policy_type, mode::read, 0, 1>(cgh, beg, end, f);
+                auto in_acc = get_access<policy_type, mode::read, 0>(cgh, beg, end, f);
                 auto out_acc = get_out_access<policy_type, mode::discard_write>(cgh, out, out);
 
                 return [=](algorithm::detail::item_context<Rank, U(T)> &ctx) {

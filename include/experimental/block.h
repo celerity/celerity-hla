@@ -10,6 +10,9 @@ namespace algo = celerity::algorithm;
 
 namespace celerity::hla::experimental
 {
+    template <typename T, typename... Args>
+    concept Callable = std::is_invocable_v<T, Args...>;
+
     template <typename T, size_t Rank>
     class block_probe
     {

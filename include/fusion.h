@@ -201,11 +201,11 @@ namespace celerity::algorithm
                 struct unused
                 {
                 };
-                return package_zip<access_type_v<T, unused>, second_input_access_type_v<T, unused>>(fuse(lhs.get_task(), rhs.get_task()),
-                                                                                                    lhs.get_in_beg(),
-                                                                                                    lhs.get_in_end(),
-                                                                                                    lhs.get_second_in_beg(),
-                                                                                                    rhs.get_out_beg());
+                return package_zip<access_type_v<T, unused>, second_input_access_type_v<T, unused, unused>>(fuse(lhs.get_task(), rhs.get_task()),
+                                                                                                            lhs.get_in_beg(),
+                                                                                                            lhs.get_in_end(),
+                                                                                                            lhs.get_second_in_beg(),
+                                                                                                            rhs.get_out_beg());
             }
 
             template <typename T,
@@ -221,7 +221,7 @@ namespace celerity::algorithm
                     using secondary_input_sequence = decltype(fused_secondary);
 
                     constexpr auto first_input_access_type = traits::packaged_task_traits<T>::template access_type<void>; // TODO
-                    constexpr auto second_input_access_type = traits::extended_packaged_task_traits<T, computation_type::zip>::second_input_access_type;
+                    constexpr auto second_input_access_type = traits::extended_packaged_task_traits<T, computation_type::zip>::template second_input_access_type<>;
 
                     auto in_beg = joint.get_task().get_in_beg();
                     auto in_end = joint.get_task().get_in_end();

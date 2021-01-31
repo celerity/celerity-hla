@@ -23,8 +23,8 @@ namespace celerity::algorithm::traits
         return packaged_task_traits<T>::access_type;
     }
 
-    template <typename T, typename InputType>
-    inline constexpr auto access_type_v = packaged_task_traits<T>::template access_type<InputType>;
+    template <typename T, typename... InputTypes>
+    inline constexpr auto access_type_v = packaged_task_traits<T>::template access_type<InputTypes...>;
 
     template <typename T, std::enable_if_t<computation_type_of_v<T, detail::computation_type::zip>, int> = 0>
     constexpr detail::access_type get_first_access_type()

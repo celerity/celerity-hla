@@ -29,7 +29,7 @@ namespace celerity::algorithm::traits
 		static constexpr auto rank = 0;
 		static constexpr auto computation_type = detail::computation_type::none;
 
-		template <typename>
+		template <typename, typename>
 		static constexpr detail::access_type access_type = detail::access_type::invalid;
 
 		using input_value_type = void;
@@ -41,20 +41,23 @@ namespace celerity::algorithm::traits
 	template <typename T, detail::computation_type Computation>
 	struct extended_packaged_task_traits
 	{
+		using second_input_iterator_type = void;
+		static constexpr detail::access_type second_input_access_type = detail::access_type::invalid;
 	};
 
 	template <typename T>
 	struct extended_packaged_task_traits<T, detail::computation_type::zip>
 	{
 		using second_input_iterator_type = void;
+		static constexpr detail::access_type second_input_access_type = detail::access_type::invalid;
 	};
 
-	template <typename T, typename Input>
+	template <typename T, typename... Sources>
 	constexpr detail::access_type get_second_input_access_type()
 	{
 		if constexpr (packaged_task_traits<T>::computation_type == detail::computation_type::zip)
 		{
-			return extended_packaged_task_traits<T, detail::computation_type::zip>::template second_input_access_type<Input>;
+			return extended_packaged_task_traits<T, detail::computation_type::zip>::template second_input_access_type<Sources...>;
 		}
 		else
 		{
@@ -62,8 +65,8 @@ namespace celerity::algorithm::traits
 		}
 	}
 
-	template <typename T, typename Input>
-	constexpr inline auto second_input_access_type_v = get_second_input_access_type<T, Input>();
+	template <typename T, typename... Sources>
+	constexpr inline detail::access_type second_input_access_type_v = get_second_input_access_type<T, Sources...>();
 
 	template <typename T>
 	struct partially_packaged_task_traits

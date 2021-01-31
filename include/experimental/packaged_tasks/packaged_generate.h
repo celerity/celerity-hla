@@ -61,7 +61,7 @@ namespace celerity::hla::experimental::detail
         auto complete(OutIteratorType beg, OutIteratorType end) const
         {
             const auto f = std::invoke(functor_, beg, end);
-            return package_generate<OutputValueType>(f, beg, end);
+            return hla::experimental::detail::package_generate<OutputValueType>(f, beg, end);
         }
 
         cl::sycl::range<Rank> get_range() { return range_; }

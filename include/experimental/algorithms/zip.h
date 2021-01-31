@@ -36,8 +36,8 @@ namespace celerity::hla::experimental
             using policy_type = algorithm::traits::strip_queue_t<ExecutionPolicy>;
 
             return [=](celerity::handler &cgh) {
-                auto first_in_acc = get_access<policy_type, mode::read, 0, 2>(cgh, beg, end, f);
-                auto second_in_acc = get_access<policy_type, mode::read, 1, 2>(cgh, beg2, beg2, f);
+                auto first_in_acc = get_access<policy_type, mode::read, 0, FirstInputIteratorType<T, Rank>, SecondInputIteratorType<U, Rank>>(cgh, beg, end, f);
+                auto second_in_acc = get_access<policy_type, mode::read, 1, FirstInputIteratorType<T, Rank>, SecondInputIteratorType<U, Rank>>(cgh, beg2, beg2, f);
                 auto out_acc = get_out_access<policy_type, mode::discard_write>(cgh, out, out);
 
                 return [=](algorithm::detail::item_context<Rank, V(T, U)> &ctx) {

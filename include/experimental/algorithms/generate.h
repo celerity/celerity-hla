@@ -45,7 +45,7 @@ namespace celerity::hla::experimental
         {
             //static_assert(traits::get_accessor_type<F, 0>() == algorithm::detail::access_type::item);
             static_assert(std::is_invocable_v<F, cl::sycl::item<Rank>>, "generate kernels may only take cl::sycl::item<Rank> as input");
-            const auto t = algorithm::detail::task<ExecutionPolicy>(generate_impl<ExecutionPolicy>(beg, end, f));
+            const auto t = algorithm::detail::task<ExecutionPolicy>(hla::experimental::detail::generate_impl<ExecutionPolicy>(beg, end, f));
             return [=](distr_queue q) { t(q, beg, end); };
         }
 
@@ -58,7 +58,7 @@ namespace celerity::hla::experimental
             using value_type = std::invoke_result_t<F, cl::sycl::item<Rank>>;
 
             return package_generate<value_type>(
-                [f](auto beg, auto end) { return task<ExecutionPolicy>(generate_impl<ExecutionPolicy>(beg, end, f)); },
+                [f](auto beg, auto end) { return algorithm::detail::task<ExecutionPolicy>(hla::experimental::detail::generate_impl<ExecutionPolicy>(beg, end, f)); },
                 range);
         }
 

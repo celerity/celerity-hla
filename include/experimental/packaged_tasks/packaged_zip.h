@@ -147,8 +147,7 @@ namespace celerity::hla::experimental::detail
     template <typename FunctorType,
               typename KernelType,
               typename SecondInputIteratorType,
-              int Rank,
-              algorithm::detail::access_type FirstInputAccessType>
+              int Rank>
     class partially_packaged_zip_1
     {
     public:
@@ -163,9 +162,11 @@ namespace celerity::hla::experimental::detail
         template <typename Iterator>
         auto complete(Iterator beg, Iterator end)
         {
-            constexpr auto second_access_type = get_access_concept<KernelType, 2, 1, typename Iterator::value_type, Iterator::rank>();
+            using traits = kernel_traits<KernelType, Iterator, SecondInputIteratorType>;
+            constexpr auto first_access_type = traits::template argument<0>::access_concept;
+            constexpr auto second_access_type = traits::template argument<1>::access_concept;
 
-            return hla::experimental::detail::package_zip<FirstInputAccessType, second_access_type, KernelType>(
+            return hla::experimental::detail::package_zip<first_access_type, second_access_type, KernelType>(
                 functor_, beg, end, in_beg_);
         }
 
@@ -180,21 +181,19 @@ namespace celerity::hla::experimental::detail
         SecondInputIteratorType in_end_;
     };
 
-    template <algorithm::detail::access_type FirstInputAccessType,
-              typename KernelType,
+    template <typename KernelType,
               typename FunctorType,
               template <typename, int> typename InIteratorType,
-              typename FirstInputValueType,
+              typename SecondInputValueType,
               int Rank>
     auto package_zip(FunctorType functor,
-                     InIteratorType<FirstInputValueType, Rank> in_beg,
-                     InIteratorType<FirstInputValueType, Rank> in_end)
+                     InIteratorType<SecondInputValueType, Rank> in_beg,
+                     InIteratorType<SecondInputValueType, Rank> in_end)
     {
         return partially_packaged_zip_1<FunctorType,
                                         KernelType,
-                                        InIteratorType<FirstInputValueType, Rank>,
-                                        Rank,
-                                        FirstInputAccessType>(functor, in_beg, in_end);
+                                        InIteratorType<SecondInputValueType, Rank>,
+                                        Rank>(functor, in_beg, in_end);
     }
 
     template <typename FunctorType,
@@ -207,11 +206,10 @@ namespace celerity::hla::experimental::detail
         {
         }
 
-        template <typename Iterator>
+        template <KernelInput Iterator>
         auto complete(Iterator beg, Iterator end)
         {
-            constexpr auto first_access_type = get_access_concept<KernelType, 2, 0, typename Iterator::value_type, Iterator::rank>();
-            return package_zip<first_access_type, KernelType>(
+            return package_zip<KernelType>(
                 functor_, beg, end);
         }
 
@@ -258,9 +256,8 @@ namespace celerity::algorithm::traits
     template <typename FunctorType,
               typename KernelType,
               typename SecondInputIterator,
-              int Rank,
-              detail::access_type FirstInputAccessType>
-    struct is_partially_packaged_task<hla::experimental::detail::partially_packaged_zip_1<FunctorType, KernelType, SecondInputIterator, Rank, FirstInputAccessType>>
+              int Rank>
+    struct is_partially_packaged_task<hla::experimental::detail::partially_packaged_zip_1<FunctorType, KernelType, SecondInputIterator, Rank>>
         : std::bool_constant<true>
     {
     };
@@ -284,10 +281,12 @@ namespace celerity::algorithm::traits
         static constexpr auto rank = Rank;
         static constexpr auto computation_type = detail::computation_type::zip;
 
-        template <typename>
+        template <typename = hla::experimental::unused, typename = hla::experimental::unused>
         static constexpr detail::access_type access_type = FirstInputAccessType;
 
         using input_value_type = typename std::iterator_traits<FirstInputIteratorType>::value_type;
+
+        template <typename = hla::experimental::unused, typename = hla::experimental::unused>
         using output_value_type = typename std::iterator_traits<OutputIteratorType>::value_type;
 
         using input_iterator_type = FirstInputIteratorType;
@@ -303,7 +302,7 @@ namespace celerity::algorithm::traits
               detail::access_type SecondInputAccessType>
     struct extended_packaged_task_traits<hla::experimental::detail::packaged_zip<FunctorType, FirstInputIteratorType, SecondInputIteratorType, OutputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType>, detail::computation_type::zip>
     {
-        template <typename>
+        template <typename = hla::experimental::unused, typename = hla::experimental::unused>
         static constexpr detail::access_type second_input_access_type = SecondInputAccessType;
 
         using second_input_value_type = typename std::iterator_traits<SecondInputIteratorType>::value_type;
@@ -322,11 +321,13 @@ namespace celerity::algorithm::traits
         static constexpr auto rank = Rank;
         static constexpr auto computation_type = detail::computation_type::zip;
 
-        template <typename>
+        template <typename, typename>
         static constexpr detail::access_type access_type = FirstInputAccessType;
 
         using input_value_type = typename std::iterator_traits<FirstInputIteratorType>::value_type;
-        using output_value_type = kernel_result_t<KernelType>;
+
+        template <typename = hla::experimental::unused, typename = hla::experimental::unused>
+        using output_value_type = typename hla::experimental::kernel_traits<KernelType, FirstInputIteratorType, SecondInputIteratorType>::kernel_result;
 
         using input_iterator_type = FirstInputIteratorType;
         using output_iterator_type = void;
@@ -341,7 +342,7 @@ namespace celerity::algorithm::traits
               detail::access_type SecondInputAccessType>
     struct extended_packaged_task_traits<hla::experimental::detail::partially_packaged_zip_2<FunctorType, KernelType, FirstInputIteratorType, SecondInputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType>, detail::computation_type::zip>
     {
-        template <typename>
+        template <typename = hla::experimental::unused, typename = hla::experimental::unused>
         static constexpr detail::access_type second_input_access_type = SecondInputAccessType;
 
         using second_input_value_type = typename std::iterator_traits<SecondInputIteratorType>::value_type;
@@ -351,18 +352,19 @@ namespace celerity::algorithm::traits
     template <typename FunctorType,
               typename KernelType,
               typename SecondInputIteratorType,
-              int Rank,
-              detail::access_type FirstInputAccessType>
-    struct packaged_task_traits<hla::experimental::detail::partially_packaged_zip_1<FunctorType, KernelType, SecondInputIteratorType, Rank, FirstInputAccessType>>
+              int Rank>
+    struct packaged_task_traits<hla::experimental::detail::partially_packaged_zip_1<FunctorType, KernelType, SecondInputIteratorType, Rank>>
     {
         static constexpr auto rank = Rank;
         static constexpr auto computation_type = detail::computation_type::zip;
 
-        template <typename>
-        static constexpr detail::access_type access_type = FirstInputAccessType;
+        template <hla::experimental::KernelInput FirstInput, typename = hla::experimental::unused>
+        static constexpr detail::access_type access_type = hla::experimental::kernel_traits<KernelType, FirstInput, SecondInputIteratorType>::template argument<0>::access_concept;
 
         using input_value_type = void;
-        using output_value_type = kernel_result_t<KernelType>;
+
+        template <hla::experimental::KernelInput FirstInput, typename = hla::experimental::unused>
+        using output_value_type = typename hla::experimental::kernel_traits<KernelType, FirstInput, SecondInputIteratorType>::kernel_result;
 
         using input_iterator_type = void;
         using output_iterator_type = void;
@@ -371,17 +373,14 @@ namespace celerity::algorithm::traits
     template <typename FunctorType,
               typename KernelType,
               typename SecondInputIteratorType,
-              int Rank,
-              detail::access_type FirstInputAccessType>
-    struct extended_packaged_task_traits<hla::experimental::detail::partially_packaged_zip_1<FunctorType, KernelType, SecondInputIteratorType, Rank, FirstInputAccessType>, detail::computation_type::zip>
+              int Rank>
+    struct extended_packaged_task_traits<hla::experimental::detail::partially_packaged_zip_1<FunctorType, KernelType, SecondInputIteratorType, Rank>, detail::computation_type::zip>
     {
-        template <typename Input>
-        static constexpr detail::access_type second_input_access_type = hla::experimental::access_concept_v<KernelType, 2, 1,
-                                                                                                            typename packaged_task_traits<Input>::output_value_type,
-                                                                                                            packaged_task_traits<Input>::rank>;
-
         using second_input_value_type = typename std::iterator_traits<SecondInputIteratorType>::value_type;
         using second_input_iterator_type = SecondInputIteratorType;
+
+        template <hla::experimental::KernelInput Input, typename = hla::experimental::unused>
+        static constexpr detail::access_type second_input_access_type = hla::experimental::kernel_traits<KernelType, Input, second_input_iterator_type>::template argument<1>::access_concept;
     };
 
     template <typename FunctorType,
@@ -391,13 +390,13 @@ namespace celerity::algorithm::traits
         static constexpr auto rank = -1;
         static constexpr auto computation_type = detail::computation_type::zip;
 
-        template <typename Input>
-        static constexpr auto access_type = hla::experimental::access_concept_v<KernelType, 2, 0,
-                                                                                typename packaged_task_traits<Input>::output_value_type,
-                                                                                packaged_task_traits<Input>::rank>;
+        template <hla::experimental::KernelInput FirstInput, hla::experimental::KernelInput SecondInput>
+        static constexpr detail::access_type access_type = hla::experimental::kernel_traits<KernelType, FirstInput, SecondInput>::template argument<0>::access_concept;
 
         using input_value_type = void;
-        using output_value_type = kernel_result_t<KernelType>;
+
+        template <hla::experimental::KernelInput FirstInput, hla::experimental::KernelInput SecondInput>
+        using output_value_type = typename hla::experimental::kernel_traits<KernelType, FirstInput, SecondInput>::kernel_result;
 
         using input_iterator_type = void;
         using output_iterator_type = void;
@@ -407,10 +406,8 @@ namespace celerity::algorithm::traits
               typename KernelType>
     struct extended_packaged_task_traits<hla::experimental::detail::partially_packaged_zip_0<FunctorType, KernelType>, detail::computation_type::zip>
     {
-        template <typename Input>
-        static constexpr auto second_input_access_type = hla::experimental::access_concept_v<KernelType, 2, 1,
-                                                                                             typename packaged_task_traits<Input>::output_value_type,
-                                                                                             packaged_task_traits<Input>::rank>;
+        template <hla::experimental::KernelInput FirstInput, hla::experimental::KernelInput SecondInput>
+        static constexpr detail::access_type second_input_access_type = hla::experimental::kernel_traits<KernelType, FirstInput, SecondInput>::template argument<1>::access_concept;
 
         using second_input_value_type = void;
         using second_input_iterator_type = void;
@@ -431,9 +428,8 @@ namespace celerity::algorithm::traits
     template <typename FunctorType,
               typename KernelType,
               typename SecondInputIteratorType,
-              int Rank,
-              detail::access_type FirstInputAccessType>
-    struct partially_packaged_task_traits<hla::experimental::detail::partially_packaged_zip_1<FunctorType, KernelType, SecondInputIteratorType, Rank, FirstInputAccessType>>
+              int Rank>
+    struct partially_packaged_task_traits<hla::experimental::detail::partially_packaged_zip_1<FunctorType, KernelType, SecondInputIteratorType, Rank>>
     {
         static constexpr auto requirement = detail::stage_requirement::input;
     };

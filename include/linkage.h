@@ -46,7 +46,7 @@ namespace celerity::algorithm::detail
 #endif
 		}
 
-		template <typename T, require<!traits::is_internally_linked_v<T>> = yes>
+		template <typename Source, typename T, require<!traits::is_internally_linked_v<T>> = yes>
 		auto link_internally(T t_joint)
 		{
 			using namespace traits;
@@ -65,7 +65,7 @@ namespace celerity::algorithm::detail
 					return t_joint.complete(begin(last), end(last));
 				}
 			}
-			else if constexpr (is_linkable_source_v<decltype(last)> && has_transiently_linkable_second_input_v<T>)
+			else if constexpr (is_linkable_source_v<decltype(last)> && has_transiently_linkable_second_input_v<T, Source, decltype(last)>)
 			{
 				const auto linked = link_transiently(get_last_element(secondary), t_joint.get_task());
 
@@ -83,7 +83,7 @@ namespace celerity::algorithm::detail
 			}
 		}
 
-		template <typename T, require<traits::is_internally_linked_v<T>> = yes>
+		template <typename = hla::experimental::unused, typename T, require<traits::is_internally_linked_v<T>> = yes>
 		auto link_internally(T task)
 		{
 			return task;
@@ -96,9 +96,9 @@ namespace celerity::algorithm::detail
 			using namespace detail;
 
 			auto l = link_internally(lhs);
-			auto r = link_internally(rhs);
+			auto r = link_internally<decltype(l)>(rhs);
 
-			//using l_output_type = 
+			//using l_output_type =
 
 			if constexpr (is_linkable_source_v<decltype(l)> && has_transiently_linkable_first_input_v<decltype(r), decltype(l)>) // TODO
 			{
@@ -133,19 +133,19 @@ namespace celerity::algorithm::detail
 		template <typename T, int Rank, typename U, require<algorithm::traits::is_linkable_sink_v<U>> = yes>
 		auto operator+(const celerity::buffer<T, Rank> &lhs, U rhs)
 		{
-			return detail::sequence(link_internally(rhs).complete(begin(lhs), end(lhs)));
+			return detail::sequence(link_internally<hla::experimental::kernel_input<T, Rank>>(rhs).complete(begin(lhs), end(lhs)));
 		}
 
 		template <typename T, int Rank, typename U, require<algorithm::traits::is_linkable_sink_v<U>> = yes>
 		auto operator+(const buffer_range<T, Rank> &lhs, U rhs)
 		{
-			return detail::sequence(link_internally(rhs).complete(begin(lhs), end(lhs)));
+			return detail::sequence(link_internally<hla::experimental::kernel_input<T, Rank>>(rhs).complete(begin(lhs), end(lhs)));
 		}
 
 		template <typename T, int Rank, typename U, require<algorithm::traits::is_linkable_source_v<U>> = yes>
 		auto operator+(U lhs, const celerity::buffer<T, Rank> &rhs)
 		{
-			return detail::sequence(link_internally(lhs).complete(begin(rhs), end(rhs)));
+			return detail::sequence(link_internally<U>(lhs).complete(begin(rhs), end(rhs)));
 		}
 
 		template <typename T, typename U,

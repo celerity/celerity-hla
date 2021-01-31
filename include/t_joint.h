@@ -132,8 +132,8 @@ namespace celerity::algorithm
 			static constexpr auto rank = traits::rank;
 			static constexpr auto computation_type = traits::computation_type;
 
-			template <typename T>
-			static constexpr detail::access_type access_type = traits::template access_type<T>;
+			template <typename...>
+			static constexpr detail::access_type access_type = traits::template access_type<>;
 
 			using input_iterator_type = typename traits::input_iterator_type;
 			using input_value_type = typename traits::input_value_type;
@@ -146,7 +146,8 @@ namespace celerity::algorithm
 		{
 			using traits = extended_packaged_task_traits<Task, detail::computation_type::zip>;
 
-			static constexpr auto second_input_access_type = traits::second_input_access_type;
+			template <typename...>
+			static constexpr detail::access_type second_input_access_type = traits::template second_input_access_type<>;
 
 			using second_input_value_type = typename traits::second_input_value_type;
 			using second_input_iterator_type = typename traits::second_input_iterator_type;
@@ -170,7 +171,7 @@ namespace celerity::algorithm
 
 			using input_iterator_type = typename traits::input_iterator_type;
 			using input_value_type = typename traits::input_value_type;
-			using output_value_type = typename traits::output_value_type;
+			using output_value_type = typename traits::template output_value_type;
 			using output_iterator_type = typename traits::output_iterator_type;
 		};
 

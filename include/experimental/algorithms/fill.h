@@ -35,7 +35,7 @@ namespace celerity::hla::experimental
         template <typename ExecutionPolicy, typename T, int Rank>
         auto fill(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
         {
-            const auto t = celerity::algorithm::detail::task<ExecutionPolicy>(fill_impl<ExecutionPolicy>(beg, end, value));
+            const auto t = algorithm::detail::task<ExecutionPolicy>(experimental::detail::fill_impl<ExecutionPolicy>(beg, end, value));
             return [=](distr_queue q) { t(q, beg, end); };
         }
 
@@ -43,7 +43,7 @@ namespace celerity::hla::experimental
         auto fill(cl::sycl::range<Rank> range, const T &value)
         {
             return package_generate<T>(
-                [value](auto beg, auto end) { return task<ExecutionPolicy>(fill_impl<ExecutionPolicy>(beg, end, value)); },
+                [value](auto beg, auto end) { return algorithm::detail::task<ExecutionPolicy>(experimental::detail::fill_impl<ExecutionPolicy>(beg, end, value)); },
                 range);
         }
 

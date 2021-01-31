@@ -4,6 +4,7 @@
 #include "../celerity_helper.h"
 #include "../celerity_accessor_traits.h"
 #include "concepts.h"
+#include "inactive_probe.h"
 
 namespace algo = celerity::algorithm;
 
