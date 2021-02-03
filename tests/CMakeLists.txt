@@ -44,6 +44,7 @@ add_tests(accessors.cpp
           fusion_experimental.cpp
           sequencing.cpp
           subranges.cpp
+          subranges_experimental.cpp
           #minimal.cpp
           minimal_experimental.cpp
           accessors_experimental.cpp

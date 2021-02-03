@@ -172,11 +172,9 @@ void static_assert_kernel_probing()
 
         celerity::buffer<int, 1> b{{10}};
 
-        auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>>(f);
+        auto [factory, _] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>>(f, begin(b), end(b));
 
-        static_assert(std::is_same_v<celerity::access::slice<1>, decltype(mapper)>);
-
-        using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>, cl::sycl::range<1>>;
+        using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>>;
 
         static_assert(std::is_same_v<proxy_type, hla::experimental::slice<accessor_t>>);
     }
@@ -194,9 +192,7 @@ void static_assert_kernel_probing()
 
         celerity::buffer<int, 1> b{{10}};
 
-        auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>>(f);
-
-        static_assert(std::is_same_v<celerity::access::neighborhood<1>, decltype(mapper)>);
+        auto [factory, _] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>>(f, begin(b), end(b));
 
         using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>>;
 
@@ -226,9 +222,7 @@ void static_assert_kernel_probing()
         celerity::buffer<int, 1> b{{10}};
 
         {
-            auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>, kernel_input<int, 1>>(f);
-
-            static_assert(std::is_same_v<celerity::access::neighborhood<1>, decltype(mapper)>);
+            auto [factory, _] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>, kernel_input<int, 1>>(f, begin(b), end(b));
 
             using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>>;
 
@@ -236,11 +230,9 @@ void static_assert_kernel_probing()
         }
 
         {
-            auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<1, kernel_input<int, 1>, kernel_input<int, 1>>(f);
+            auto [factory, _] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<1, kernel_input<int, 1>, kernel_input<int, 1>>(f, begin(b), end(b));
 
-            static_assert(std::is_same_v<celerity::access::slice<1>, decltype(mapper)>);
-
-            using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>, cl::sycl::range<1>>;
+            using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>>;
 
             static_assert(std::is_same_v<proxy_type, hla::experimental::slice<accessor_t>>);
         }
@@ -265,11 +257,9 @@ void static_assert_kernel_probing()
 
         celerity::buffer<int, 1> b{{10}};
 
-        auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>>(f);
+        auto [factory, _] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>>(f, begin(b), end(b));
 
-        static_assert(std::is_same_v<celerity::access::slice<1>, decltype(mapper)>);
-
-        using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>, cl::sycl::range<1>>;
+        using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>>;
 
         static_assert(std::is_same_v<proxy_type, hla::experimental::slice<accessor_t>>);
     }
@@ -293,9 +283,7 @@ void static_assert_kernel_probing()
 
         celerity::buffer<int, 1> b{{10}};
 
-        auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>>(f);
-
-        static_assert(std::is_same_v<celerity::access::neighborhood<1>, decltype(mapper)>);
+        auto [factory, _] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>>(f, begin(b), end(b));
 
         using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>>;
 
@@ -328,21 +316,17 @@ void static_assert_kernel_probing()
         celerity::buffer<int, 1> b{{10}};
 
         {
-            auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>, kernel_input<int, 1>>(f);
+            auto [factory, _] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>, kernel_input<int, 1>>(f, begin(b), end(b));
 
-            static_assert(std::is_same_v<celerity::access::neighborhood<1>, decltype(mapper)>);
-
-            using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>>;
+             using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>>;
 
             static_assert(std::is_same_v<proxy_type, hla::experimental::block<accessor_t>>);
         }
 
         {
-            auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<1, kernel_input<int, 1>, kernel_input<int, 1>>(f);
+            auto [factory, _] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<1, kernel_input<int, 1>, kernel_input<int, 1>>(f, begin(b), end(b));
 
-            static_assert(std::is_same_v<celerity::access::slice<1>, decltype(mapper)>);
-
-            using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>, cl::sycl::range<1>>;
+            using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>>;
 
             static_assert(std::is_same_v<proxy_type, hla::experimental::slice<accessor_t>>);
         }

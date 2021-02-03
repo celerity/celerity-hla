@@ -10,6 +10,7 @@
 #include "all.h"
 
 #include "traits.h"
+#include "../iterator.h"
 
 namespace celerity::hla::experimental
 {
@@ -63,19 +64,23 @@ namespace celerity::hla::experimental
     }
 
     template <size_t Idx, KernelInput... Args, typename F>
-    auto create_slice_proxy_factory_and_range_mapper(F f)
+    auto create_slice_proxy_factory_and_range_mapper(F f, auto beg, auto)
     {
         using nth_type = nth_t<Idx, Args...>;
         using probe_type = slice_probe<typename nth_type::value_type>;
 
         const auto p = probe<Idx, Args...>(f, probe_type{});
+        const auto range = beg.get_buffer().get_range();
 
-        const auto factory = [dim = p.get_dim()]<typename Acc, typename... _Args>(Acc acc, _Args && ... args)
-        {
-            return slice<Acc>{dim, acc, std::forward<_Args>(args)...};
+        const auto factory = [dim = p.get_dim(), range]<typename Acc>(Acc acc, auto item) {
+            return slice<Acc>{dim, acc, item, range};
         };
 
-        return std::tuple{factory, celerity::access::slice<nth_type::rank>{static_cast<size_t>(p.get_dim())}};
+        const auto acc_meta_factory = [p, beg](auto f) {
+            return std::invoke(f, beg.get_buffer(), celerity::access::slice<nth_type::rank>{static_cast<size_t>(p.get_dim())});
+        };
+
+        return std::tuple{factory, acc_meta_factory};
     }
 
     template <int Rank, size_t... Is>
@@ -85,37 +90,51 @@ namespace celerity::hla::experimental
     }
 
     template <size_t Idx, KernelInput... Args, typename F>
-    auto create_block_proxy_factory_and_range_mapper(F f)
+    auto create_block_proxy_factory_and_range_mapper(F f, auto beg, auto)
     {
         using nth_type = nth_t<Idx, Args...>;
         using probe_type = block_probe<typename nth_type::value_type, nth_type::rank>;
 
         const auto p = probe<Idx, Args...>(f, probe_type{});
 
-        const auto factory = [p]<typename Acc, typename... _Args>(Acc acc, _Args && ... args)
-        {
-            return block<Acc>(p, acc, std::forward<_Args>(args)...);
+        const auto factory = [p]<typename Acc>(Acc acc, auto item) {
+            return block<Acc>(p, acc, item);
         };
 
-        const auto range_mapper = create_neighbourhood_range_mapper(p.size(), std::make_index_sequence<probe_type::rank>{});
+        const auto acc_meta_factory = [p, beg](auto f) {
+            return std::invoke(f, beg.get_buffer(), create_neighbourhood_range_mapper(p.size(), std::make_index_sequence<probe_type::rank>{}));
+        };
 
-        return std::tuple{factory, range_mapper};
+        return std::tuple{factory, acc_meta_factory};
     }
 
     template <size_t Idx, KernelInput... Args, typename F>
-    auto create_all_proxy_factory_and_range_mapper(F f)
+    auto create_all_proxy_factory_and_range_mapper(F f, auto beg, auto end)
     {
-        const auto factory = []<typename Acc, typename... _Args>(Acc acc, _Args && ... args)
-        {
-            return all<Acc>{acc, std::forward<_Args>(args)...};
+        const auto range = beg.get_buffer().get_range();
+        const auto factory = [range]<typename Acc>(Acc acc, auto) {
+            return all<Acc>{acc, range};
         };
 
         constexpr auto rank = nth_t<Idx, Args...>::rank;
-        return std::tuple{factory, celerity::access::all<rank, rank>{}};
+
+        const auto acc_meta_factory = [beg, end](auto f) {
+            if (algorithm::detail::is_subrange(beg, end))
+            {
+                // return std::invoke(f, beg.get_buffer(), celerity::access::fixed<rank>{{*beg, algorithm::detail::distance(beg, end)}});
+                return std::invoke(f, beg.get_buffer(), celerity::access::fixed<rank>{{*beg, {}}});
+            }
+            else
+            {
+                return std::invoke(f, beg.get_buffer(), celerity::access::all<rank, rank>{});
+            }
+        };
+
+        return std::tuple{factory, acc_meta_factory};
     }
 
     template <size_t Idx, KernelInput... Args, typename F>
-    auto create_proxy_factory_and_range_mapper(F f)
+    auto create_proxy_factory_and_range_mapper(F f, auto beg, auto end)
     {
         using celerity::algorithm::detail::access_type;
         using namespace celerity::access;
@@ -124,20 +143,24 @@ namespace celerity::hla::experimental
 
         if constexpr (arg_traits::access_concept == access_type::slice)
         {
-            return create_slice_proxy_factory_and_range_mapper<Idx, Args...>(f);
+            return create_slice_proxy_factory_and_range_mapper<Idx, Args...>(f, beg, end);
         }
         else if constexpr (arg_traits::access_concept == access_type::chunk)
         {
-            return create_block_proxy_factory_and_range_mapper<Idx, Args...>(f);
+            return create_block_proxy_factory_and_range_mapper<Idx, Args...>(f, beg, end);
         }
         else if constexpr (arg_traits::access_concept == access_type::all)
         {
-            return create_all_proxy_factory_and_range_mapper<Idx, Args...>(f);
+            return create_all_proxy_factory_and_range_mapper<Idx, Args...>(f, beg, end);
         }
         else if constexpr (arg_traits::access_concept == access_type::one_to_one)
         {
             const auto factory = [](auto acc, auto...) { return acc; };
-            return std::tuple{factory, one_to_one<arg_traits::rank>()};
+            const auto acc_meta_factory = [beg](auto f) {
+                return std::invoke(f, beg.get_buffer(), one_to_one<arg_traits::rank>());
+            };
+
+            return std::tuple{factory, acc_meta_factory};
         }
         else
         {

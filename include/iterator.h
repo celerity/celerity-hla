@@ -131,7 +131,7 @@ namespace celerity::algorithm
 		template <typename T, int Rank>
 		bool is_subrange(buffer_iterator<T, Rank> from, buffer_iterator<T, Rank> to)
 		{
-			assert(from.get_buffer().get_id() == to.get_buffer().get_id() && "invalid iterator pair");
+			//assert(from.get_buffer().get_id() == to.get_buffer().get_id() && "invalid iterator pair");
 			return from == begin(from.get_buffer()) && to == end(to.get_buffer());
 		}
 
@@ -211,10 +211,10 @@ namespace celerity
 
 namespace celerity::hla::experimental
 {
-    template <typename ValueType, size_t Rank>
-    struct is_kernel_input<algorithm::buffer_iterator<ValueType, Rank>> : std::bool_constant<true>
-    {
-    };
-}
+	template <typename ValueType, size_t Rank>
+	struct is_kernel_input<algorithm::buffer_iterator<ValueType, Rank>> : std::bool_constant<true>
+	{
+	};
+} // namespace celerity::hla::experimental
 
 #endif

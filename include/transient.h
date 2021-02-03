@@ -44,7 +44,7 @@ namespace celerity::algorithm
                 : range_(range), id_(curr_id++) {}
 
             template <cl::sycl::access::mode Mode, typename RangeMapper>
-            auto get_access(handler &cgh, RangeMapper)
+            auto get_access(handler &cgh, RangeMapper) const
             {
                 return transient_accessor<T, Rank, Mode>{};
             }

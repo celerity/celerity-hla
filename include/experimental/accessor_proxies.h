@@ -15,7 +15,7 @@ namespace celerity::hla::experimental
         using factory_type = ProxyFactoryType;
 
         template <typename... Args>
-        auto construct_proxy(Args &&... args) const
+        auto construct_proxy(Args &&...args) const
         {
             return std::invoke(factory_, std::forward<Args>(args)...);
         }
@@ -52,67 +52,9 @@ namespace celerity::hla::experimental
         }
         else
         {
-            const auto range = beg.get_buffer().get_range();
-
-            const auto proxy_factory = [&, range]() {
-                if constexpr (ProxyConcept == celerity::algorithm::detail::access_type::slice)
-                {
-                    return [=](auto item) { return std::invoke(factory, acc, item, range); };
-                }
-                else if constexpr (ProxyConcept == celerity::algorithm::detail::access_type::chunk)
-                {
-                    (void)range;
-                    return [=](auto item) { return std::invoke(factory, acc, item); };
-                }
-                else if constexpr (ProxyConcept == celerity::algorithm::detail::access_type::all)
-                {
-                    return [=](auto item) { return std::invoke(factory, acc, range); };
-                }
-            }();
-
+            const auto proxy_factory = [factory, acc](auto item) { return std::invoke(factory, acc, item); };
             return accessor<decltype(proxy_factory), ProxyConcept>{proxy_factory};
         }
-    }
-
-    // template <typename ExecutionPolicy, cl::sycl::access::mode Mode, template <typename, int> typename Iterator, typename T, int Rank>
-    // auto create_accessor(celerity::handler &cgh, Iterator<T, Rank> beg, Iterator<T, Rank> end)
-    // {
-    //     using namespace celerity::algorithm;
-    //     // TODO: move accessor creation into proxy
-    //     if constexpr (traits::policy_traits<ExecutionPolicy>::is_distributed)
-    //     {
-    //         if constexpr (traits::get_accessor_type_<AccessorType>() != algorithm::detail::access_type::all)
-    //         {
-    //             return beg.get_buffer().template get_access<Mode>(cgh, traits::accessor_traits<Rank, AccessorType>::range_mapper());
-    //         }
-    //         else
-    //         {
-    //             if (is_subrange(beg, end)) // TODO
-    //             {
-    //                 return beg.get_buffer().template get_access<Mode>(cgh, celerity::access::fixed<Rank>({*beg, distance(beg, end)}));
-    //             }
-    //             else
-    //             {
-    //                 return beg.get_buffer().template get_access<Mode>(cgh, traits::accessor_traits<Rank, AccessorType>::range_mapper());
-    //             }
-    //         }
-    //     }
-    //     else
-    //     {
-    //         static_assert(traits::is_all_v<AccessorType>, "for master node tasks only all<> is supported");
-    //         return beg.get_buffer().template get_access<Mode, cl::sycl::access::target::host_buffer>(cgh, traits::accessor_traits<Rank, AccessorType>::range_mapper());
-    //     }
-    // }
-
-    template <typename ExecutionPolicy, cl::sycl::access::mode Mode, size_t KernelArgumentIdx, typename KernelType, KernelInput InIterator, KernelInput InSentinel>
-    auto get_access(celerity::handler &cgh, InIterator beg, InSentinel end, KernelType kernel)
-    {
-        using arg_traits = typename kernel_traits<KernelType, InIterator>::template argument<KernelArgumentIdx>;
-
-        const auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<KernelArgumentIdx, InIterator>(kernel);
-        const auto acc = beg.get_buffer().template get_access<Mode>(cgh, mapper);
-
-        return create_accessor<arg_traits::access_concept>(factory, acc, beg, end);
     }
 
     template <typename ExecutionPolicy, cl::sycl::access::mode Mode, size_t KernelArgumentIdx, KernelInput Arg, KernelInput... Args, typename KernelType, KernelInput InIterator, KernelInput InSentinel>
@@ -120,10 +62,16 @@ namespace celerity::hla::experimental
     {
         using arg_traits = typename kernel_traits<KernelType, Arg, Args...>::template argument<KernelArgumentIdx>;
 
-        const auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<KernelArgumentIdx, Arg, Args...>(kernel);
-        const auto acc = beg.get_buffer().template get_access<Mode>(cgh, mapper);
+        const auto [factory, acc_meta_factory] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<KernelArgumentIdx, Arg, Args...>(kernel, beg, end);
+        const auto acc = std::invoke(acc_meta_factory, [&](const auto &buffer, const auto &mapper) { return buffer.template get_access<Mode>(cgh, mapper); });
 
         return create_accessor<arg_traits::access_concept>(factory, acc, beg, end);
+    }
+
+    template <typename ExecutionPolicy, cl::sycl::access::mode Mode, size_t KernelArgumentIdx, typename KernelType, KernelInput InIterator, KernelInput InSentinel>
+    auto get_access(celerity::handler &cgh, InIterator beg, InSentinel end, KernelType kernel)
+    {
+        return get_access<ExecutionPolicy, Mode, KernelArgumentIdx, InIterator>(cgh, beg, end, kernel);
     }
 
     template <typename ExecutionPolicy, cl::sycl::access::mode Mode, template <typename, int> typename Iterator, typename T, int Rank>

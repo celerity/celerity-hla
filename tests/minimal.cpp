@@ -20,7 +20,7 @@ TEST_CASE("transforming a buffer", "[celerity::algorithm]")
 
     {
         constexpr auto size = 100;
-        std::vector<int> v(size, 1);
+        std::vector<int> v(size, 1); 
         buffer<int, 1> buf(v.data(), cl::sycl::range<1>{v.size()});
 
         buffer<int, 1> buf_out(buf.get_range());

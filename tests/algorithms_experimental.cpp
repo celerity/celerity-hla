@@ -126,7 +126,7 @@ SCENARIO("transforming a buffer (experimental)", "[celerity::algorithm::experime
 
             buffer<int, 1> buf_out(buf.get_range());
 
-            hla::experimental::transform<class _346>(q, begin(buf), end(buf), begin(buf_out), [](AnyBlock auto x) { x.configure({1}); return 3 * (*x); });
+            hla::experimental::transform<class _346>(q, begin(buf), end(buf), begin(buf_out), [](int x) { return 3 * x; });
 
             THEN("every element is 3 in the target buffer")
             {
