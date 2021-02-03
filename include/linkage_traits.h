@@ -24,7 +24,7 @@ namespace celerity::algorithm::traits
     template <typename T>
     struct as_kernel_input
     {
-        using type = hla::experimental::kernel_input<typename packaged_task_traits<T>::output_value_type, packaged_task_traits<T>::rank>;
+        using type = hla::experimental::kernel_input<typename packaged_task_traits<T>::template output_value_type<>, packaged_task_traits<T>::rank>;
     };
 
     template <typename ValueType, size_t Rank>
@@ -56,9 +56,7 @@ namespace celerity::algorithm::traits
 
     template <typename T>
     constexpr inline bool first_input_stage_completed_v =
-        is_packaged_task_v<
-            T> ||
-        (computation_type_of_v<T, algorithm::detail::computation_type::zip> && !std::is_void_v<typename extended_packaged_task_traits<T, algorithm::detail::computation_type::zip>::second_input_iterator_type>) || stage_requirement_v<T> == detail::stage_requirement::output;
+        is_packaged_task_v<T> || stage_requirement_v<T> == detail::stage_requirement::output;
 
     template <typename T>
     constexpr inline bool is_internally_linked_v = !is_t_joint_v<T> || first_input_stage_completed_v<T>;

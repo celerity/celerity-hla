@@ -2,6 +2,7 @@
 #define T_JOINT_H
 
 #include "packaged_task_traits.h"
+#include "experimental/traits.h"
 
 namespace celerity::algorithm
 {
@@ -137,7 +138,9 @@ namespace celerity::algorithm
 
 			using input_iterator_type = typename traits::input_iterator_type;
 			using input_value_type = typename traits::input_value_type;
-			using output_value_type = typename traits::output_value_type;
+
+			template <typename...>
+			using output_value_type = typename traits::template output_value_type<>;
 			using output_iterator_type = typename traits::output_iterator_type;
 		};
 
@@ -171,7 +174,10 @@ namespace celerity::algorithm
 
 			using input_iterator_type = typename traits::input_iterator_type;
 			using input_value_type = typename traits::input_value_type;
-			using output_value_type = typename traits::template output_value_type;
+
+			template <typename FirstInput = hla::experimental::unused, typename SecondInput = hla::experimental::unused>
+			using output_value_type = typename traits::template output_value_type<FirstInput, SecondInput>;
+
 			using output_iterator_type = typename traits::output_iterator_type;
 		};
 

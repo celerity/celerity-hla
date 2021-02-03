@@ -321,13 +321,13 @@ namespace celerity::algorithm::traits
         static constexpr auto rank = Rank;
         static constexpr auto computation_type = detail::computation_type::zip;
 
-        template <typename, typename>
+        template <typename = hla::experimental::unused, typename = hla::experimental::unused>
         static constexpr detail::access_type access_type = FirstInputAccessType;
 
         using input_value_type = typename std::iterator_traits<FirstInputIteratorType>::value_type;
 
         template <typename = hla::experimental::unused, typename = hla::experimental::unused>
-        using output_value_type = typename hla::experimental::kernel_traits<KernelType, FirstInputIteratorType, SecondInputIteratorType>::kernel_result;
+        using output_value_type = typename hla::experimental::kernel_traits<KernelType, FirstInputIteratorType, SecondInputIteratorType>::result_type;
 
         using input_iterator_type = FirstInputIteratorType;
         using output_iterator_type = void;

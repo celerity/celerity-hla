@@ -8,6 +8,10 @@
 #include "packaged_tasks/packaged_transform.h"
 #include "packaged_tasks/packaged_zip.h"
 
+#include "experimental/packaged_tasks/packaged_generate.h"
+#include "experimental/packaged_tasks/packaged_transform.h"
+#include "experimental/packaged_tasks/packaged_zip.h"
+
 #include "task.h"
 #include "t_joint.h"
 
@@ -63,7 +67,7 @@ namespace celerity::algorithm
             //
             // [a] computes first input of c
             //   \
-//    +----{c} computes output of c
+            //    +----{c} computes output of c
             //   /
             // [b] computes second input of c
             template <typename ExecutionPolicyA, typename KernelA,
@@ -118,7 +122,7 @@ namespace celerity::algorithm
             //
             // [ ]
             //   \
-//    +----{c} computes output of c
+            //    +----{c} computes output of c
             //   /
             // [b] computes second (right) input of c
             template <typename ExecutionPolicyB, typename KernelB,
@@ -161,10 +165,10 @@ namespace celerity::algorithm
                               !traits::is_t_joint_v<T>> = yes>
             auto fuse(T lhs, U rhs)
             {
-                return package_transform<access_type::one_to_one>(fuse(lhs.get_task(), rhs.get_task()),
-                                                                  lhs.get_in_beg(),
-                                                                  lhs.get_in_end(),
-                                                                  rhs.get_out_beg());
+                return hla::experimental::detail::package_transform<access_type::one_to_one>(fuse(lhs.get_task(), rhs.get_task()),
+                                                                                     lhs.get_in_beg(),
+                                                                                     lhs.get_in_end(),
+                                                                                     rhs.get_out_beg());
 
                 // Results in a linker error. Not sure why -> need further clarification from philip/peter
                 //
@@ -181,12 +185,12 @@ namespace celerity::algorithm
                               !traits::is_t_joint_v<T>> = yes>
             auto fuse(T lhs, U rhs)
             {
-                using output_value_type = typename traits::packaged_task_traits<U>::output_value_type;
+                using output_value_type = typename traits::packaged_task_traits<U>::template output_value_type<>;
 
                 auto out_beg = rhs.get_out_beg();
                 auto out_end = end(out_beg.get_buffer());
 
-                return package_generate<output_value_type>(fuse(lhs.get_task(), rhs.get_task()), out_beg, out_end);
+                return hla::experimental::detail::package_generate<output_value_type>(fuse(lhs.get_task(), rhs.get_task()), out_beg, out_end);
             }
 
             template <typename T, typename U,
@@ -198,14 +202,11 @@ namespace celerity::algorithm
             {
                 using namespace traits;
 
-                struct unused
-                {
-                };
-                return package_zip<access_type_v<T, unused>, second_input_access_type_v<T, unused, unused>>(fuse(lhs.get_task(), rhs.get_task()),
-                                                                                                            lhs.get_in_beg(),
-                                                                                                            lhs.get_in_end(),
-                                                                                                            lhs.get_second_in_beg(),
-                                                                                                            rhs.get_out_beg());
+                return hla::experimental::detail::package_zip<access_type_v<T, hla::experimental::unused>, second_input_access_type_v<T, hla::experimental::unused, hla::experimental::unused>>(fuse(lhs.get_task(), rhs.get_task()),
+                                                                                                                                                                     lhs.get_in_beg(),
+                                                                                                                                                                     lhs.get_in_end(),
+                                                                                                                                                                     lhs.get_second_in_beg(),
+                                                                                                                                                                     rhs.get_out_beg());
             }
 
             template <typename T,
@@ -234,16 +235,16 @@ namespace celerity::algorithm
                         auto fused = fuse_right(other_t_joint.get_task().get_task(),
                                                 joint.get_task().get_task());
 
-                        auto zip = package_zip<first_input_access_type, second_input_access_type>(fused,
-                                                                                                  in_beg,
-                                                                                                  in_end,
-                                                                                                  secondary_out_beg,
-                                                                                                  out_beg);
+                        auto zip = hla::experimental::detail::package_zip<first_input_access_type, second_input_access_type>(fused,
+                                                                                                                     in_beg,
+                                                                                                                     in_end,
+                                                                                                                     secondary_out_beg,
+                                                                                                                     out_beg);
 
-                        auto transform = package_transform<first_input_access_type>(zip.get_task(),
-                                                                                    in_beg,
-                                                                                    in_end,
-                                                                                    out_beg);
+                        auto transform = hla::experimental::detail::package_transform<first_input_access_type>(zip.get_task(),
+                                                                                                       in_beg,
+                                                                                                       in_end,
+                                                                                                       out_beg);
 
                         if constexpr (traits::size_v<secondary_input_sequence> == 1)
                         {
@@ -259,16 +260,16 @@ namespace celerity::algorithm
                         const auto fused = fuse_right(get_last_element(fused_secondary).get_task(),
                                                       joint.get_task().get_task());
 
-                        auto zip = package_zip<first_input_access_type, second_input_access_type>(fused,
-                                                                                                  in_beg,
-                                                                                                  in_end,
-                                                                                                  secondary_out_beg,
-                                                                                                  out_beg);
+                        auto zip = hla::experimental::detail::package_zip<first_input_access_type, second_input_access_type>(fused,
+                                                                                                                     in_beg,
+                                                                                                                     in_end,
+                                                                                                                     secondary_out_beg,
+                                                                                                                     out_beg);
 
-                        auto transform = package_transform<first_input_access_type>(zip.get_task(),
-                                                                                    in_beg,
-                                                                                    in_end,
-                                                                                    out_beg);
+                        auto transform = hla::experimental::detail::package_transform<first_input_access_type>(zip.get_task(),
+                                                                                                       in_beg,
+                                                                                                       in_end,
+                                                                                                       out_beg);
 
                         if constexpr (traits::size_v<secondary_input_sequence> == 1)
                         {

@@ -69,6 +69,8 @@ namespace celerity::algorithm
             using pointer = std::add_pointer_t<T>;
             using reference = std::add_lvalue_reference_t<T>;
 
+            static constexpr auto rank = Rank;
+
             transient_iterator(cl::sycl::id<Rank> pos, transient_buffer<T, Rank> buffer)
                 : iterator<Rank>(pos, buffer.get_range()), buffer_(buffer) {}
 

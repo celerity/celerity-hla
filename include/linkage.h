@@ -17,7 +17,7 @@ namespace celerity::algorithm::detail
 		template <typename T, typename U>
 		auto link(T lhs, U rhs)
 		{
-			using value_type = typename traits::packaged_task_traits<T>::output_value_type;
+			using value_type = typename traits::packaged_task_traits<T>::template output_value_type<>;
 			constexpr auto rank = traits::packaged_task_traits<T>::rank;
 
 			buffer<value_type, rank> out_buf{lhs.get_range()};
@@ -34,7 +34,7 @@ namespace celerity::algorithm::detail
 #ifdef CELERITY_STD_DISABLE_FUSION
 			return link(lhs, rhs);
 #else
-			using value_type = typename traits::packaged_task_traits<T>::output_value_type;
+			using value_type = typename traits::packaged_task_traits<T>::template output_value_type<>;
 			constexpr auto rank = traits::packaged_task_traits<T>::rank;
 
 			transient_buffer<value_type, rank> out_buf{lhs.get_range()};
@@ -216,7 +216,7 @@ namespace celerity::algorithm::detail
 	auto terminate(T task)
 	{
 		using traits = traits::packaged_task_traits<T>;
-		using value_type = typename traits::output_value_type;
+		using value_type = typename traits::template output_value_type<>;
 
 		constexpr auto rank = traits::rank;
 

@@ -7,6 +7,7 @@
 #include "../../computation_type.h"
 #include "../../packaged_task_traits.h"
 #include "../../partially_packaged_task.h"
+#include "../traits.h"
 
 namespace celerity::hla::experimental::detail
 {
@@ -100,12 +101,15 @@ namespace celerity::algorithm::traits
         static constexpr auto rank = Rank;
         static constexpr auto computation_type = detail::computation_type::generate;
 
-        template <typename>
+        template <typename = hla::experimental::unused>
         static constexpr detail::access_type access_type = detail::access_type::invalid;
 
         using input_value_type = void;
         using input_iterator_type = void;
+
+        template <typename = hla::experimental::unused>
         using output_value_type = OutputValueType;
+
         using output_iterator_type = OutputIteratorType;
     };
 
@@ -115,12 +119,15 @@ namespace celerity::algorithm::traits
         static constexpr auto rank = Rank;
         static constexpr auto computation_type = detail::computation_type::generate;
 
-        template <typename>
+        template <typename = hla::experimental::unused>
         static constexpr detail::access_type access_type = detail::access_type::invalid;
 
         using input_value_type = void;
         using input_iterator_type = void;
+
+        template <typename = hla::experimental::unused>
         using output_value_type = OutputValueType;
+
         using output_iterator_type = void;
     };
 

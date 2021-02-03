@@ -144,12 +144,15 @@ namespace celerity::algorithm::traits
         static constexpr auto rank = Rank;
         static constexpr auto computation_type = detail::computation_type::transform;
 
-        template <typename>
+        template <typename = hla::experimental::unused, typename = hla::experimental::unused>
         static constexpr detail::access_type access_type = InputAccessType;
 
         using input_iterator_type = InputIteratorType;
         using input_value_type = typename std::iterator_traits<InputIteratorType>::value_type;
+
+        template <typename = hla::experimental::unused, typename = hla::experimental::unused>
         using output_value_type = typename std::iterator_traits<OutputIteratorType>::value_type;
+
         using output_iterator_type = OutputIteratorType;
     };
 
@@ -159,12 +162,13 @@ namespace celerity::algorithm::traits
         static constexpr auto rank = Rank;
         static constexpr auto computation_type = detail::computation_type::transform;
 
-        template <typename = hla::experimental::unused>
+        template <typename = hla::experimental::unused, typename = hla::experimental::unused>
         static constexpr detail::access_type access_type = InputAccessType;
 
-        using input_iterator_type = InputIteratorType;
         using input_value_type = typename std::iterator_traits<InputIteratorType>::value_type;
-        using output_value_type = typename hla::experimental::kernel_traits<KernelFunctor, input_iterator_type>::result_type;
+        template <typename = hla::experimental::unused, typename = hla::experimental::unused>
+        using output_value_type = typename hla::experimental::kernel_traits<KernelFunctor, InputIteratorType>::result_type;
+
         using output_iterator_type = void;
     };
 
@@ -180,12 +184,14 @@ namespace celerity::algorithm::traits
         static constexpr auto rank = -1;
         static constexpr auto computation_type = detail::computation_type::transform;
 
-        template <hla::experimental::KernelInput Input>
+        template <hla::experimental::KernelInput Input, typename = hla::experimental::unused>
         static constexpr detail::access_type access_type = hla::experimental::kernel_traits<KernelFunctor, Input>::template argument<0>::access_concept;
 
         using input_iterator_type = void;
         using input_value_type = void;
-        using output_value_type = void;
+        template <hla::experimental::KernelInput Input, typename = hla::experimental::unused>
+        using output_value_type = typename hla::experimental::kernel_traits<KernelFunctor, Input>::result_type;
+
         using output_iterator_type = void;
     };
 
