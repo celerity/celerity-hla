@@ -8,7 +8,7 @@
 #include "buffer_range.h"
 #include "iterator_transform.h"
 
-namespace celerity::algorithm::detail
+namespace celerity::hla::detail
 {
   template <typename... Actions>
   auto resolve_subranges(const sequence<Actions...> &s);
@@ -115,9 +115,9 @@ namespace celerity::algorithm::detail
     }
   }
 
-} // namespace celerity::algorithm::detail
+} // namespace celerity::hla::detail
 
-namespace celerity::algorithm
+namespace celerity::hla
 {
   template <size_t Rank>
   auto skip(cl::sycl::id<Rank> distance)
@@ -142,6 +142,6 @@ namespace celerity::algorithm
         }};
   }
 
-} // namespace celerity::algorithm
+} // namespace celerity::hla
 
 #endif // !SUBRANGE_H

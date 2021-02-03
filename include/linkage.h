@@ -7,7 +7,7 @@
 #include "transient.h"
 #include "buffer_range.h"
 
-namespace celerity::algorithm::detail
+namespace celerity::hla::detail
 {
 	template <typename... Actions>
 	auto link(const sequence<Actions...> &s);
@@ -130,28 +130,28 @@ namespace celerity::algorithm::detail
 			static_assert(std::is_void_v<T>, "invalid sequence");
 		}
 
-		template <typename T, int Rank, typename U, require<algorithm::traits::is_linkable_sink_v<U>> = yes>
+		template <typename T, int Rank, typename U, require<hla::traits::is_linkable_sink_v<U>> = yes>
 		auto operator+(const celerity::buffer<T, Rank> &lhs, U rhs)
 		{
 			return detail::sequence(link_internally<hla::experimental::kernel_input<T, Rank>>(rhs).complete(begin(lhs), end(lhs)));
 		}
 
-		template <typename T, int Rank, typename U, require<algorithm::traits::is_linkable_sink_v<U>> = yes>
+		template <typename T, int Rank, typename U, require<hla::traits::is_linkable_sink_v<U>> = yes>
 		auto operator+(const buffer_range<T, Rank> &lhs, U rhs)
 		{
 			return detail::sequence(link_internally<hla::experimental::kernel_input<T, Rank>>(rhs).complete(begin(lhs), end(lhs)));
 		}
 
-		template <typename T, int Rank, typename U, require<algorithm::traits::is_linkable_source_v<U>> = yes>
+		template <typename T, int Rank, typename U, require<hla::traits::is_linkable_source_v<U>> = yes>
 		auto operator+(U lhs, const celerity::buffer<T, Rank> &rhs)
 		{
 			return detail::sequence(link_internally<U>(lhs).complete(begin(rhs), end(rhs)));
 		}
 
 		template <typename T, typename U,
-				  require<algorithm::traits::is_sequence_v<T>,
-						  algorithm::traits::is_linkable_source_v<traits::last_element_t<T>>,
-						  algorithm::traits::is_linkable_sink_v<U> || algorithm::traits::is_celerity_buffer_v<U>> = yes>
+				  require<hla::traits::is_sequence_v<T>,
+						  hla::traits::is_linkable_source_v<traits::last_element_t<T>>,
+						  hla::traits::is_linkable_sink_v<U> || hla::traits::is_celerity_buffer_v<U>> = yes>
 		auto operator+(T lhs, U rhs)
 		{
 			constexpr auto op = [](auto &&a, auto &&b) { return link_impl::operator+(std::forward<decltype(a)>(a), std::forward<decltype(b)>(b)); };
@@ -238,6 +238,6 @@ namespace celerity::algorithm::detail
 		return append(remove_last_element(seq), get_first_element(terminate(get_last_element(seq))));
 	}
 
-} // namespace celerity::algorithm::detail
+} // namespace celerity::hla::detail
 
 #endif // LINKAGE_H

@@ -5,7 +5,7 @@
 #include "partially_packaged_task.h"
 #include "require.h"
 
-namespace celerity::algorithm::traits
+namespace celerity::hla::traits
 {
 	template <typename T>
 	struct is_packaged_task : std::false_type
@@ -104,6 +104,6 @@ namespace celerity::algorithm::traits
 	template <typename F>
 	constexpr inline bool is_packaged_task_sequence_v = is_packaged_task_sequence<F>();
 
-} // namespace celerity::algorithm::traits
+} // namespace celerity::hla::traits
 
 #endif // PACKAGED_TASK_TRAITS_H

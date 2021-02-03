@@ -15,7 +15,7 @@
 namespace celerity::hla::experimental::detail
 {
 
-    template <int Rank, celerity::algorithm::detail::access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType>
+    template <int Rank, celerity::hla::detail::access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType>
     class packaged_transform
     {
     public:
@@ -25,8 +25,8 @@ namespace celerity::hla::experimental::detail
         packaged_transform(Functor functor, InputIteratorType in_beg, InputIteratorType in_end, OutputIteratorType out_beg)
             : functor_(functor), in_beg_(in_beg), in_end_(in_end), out_beg_(out_beg)
         {
-            assert(algorithm::detail::are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
-            assert(InputAccessType == celerity::algorithm::detail::access_type::one_to_one || !algorithm::detail::are_equal(in_beg_.get_buffer(), out_beg_.get_buffer()));
+            assert(hla::detail::are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
+            assert(InputAccessType == celerity::hla::detail::access_type::one_to_one || !hla::detail::are_equal(in_beg_.get_buffer(), out_beg_.get_buffer()));
             //assert(distance(in_beg_, in_end_) <= distance(out_beg_, end(out_beg_.get_buffer())));
         }
 
@@ -49,7 +49,7 @@ namespace celerity::hla::experimental::detail
         OutputIteratorType out_beg_;
     };
 
-    template <celerity::algorithm::detail::access_type InputAccessType, typename FunctorType, template <typename, int> typename InIteratorType, template <typename, int> typename OutIteratorType, typename InputValueType, typename OutputValueType, int Rank>
+    template <celerity::hla::detail::access_type InputAccessType, typename FunctorType, template <typename, int> typename InIteratorType, template <typename, int> typename OutIteratorType, typename InputValueType, typename OutputValueType, int Rank>
     auto package_transform(FunctorType task,
                            InIteratorType<InputValueType, Rank> in_beg,
                            InIteratorType<InputValueType, Rank> in_end,
@@ -59,7 +59,7 @@ namespace celerity::hla::experimental::detail
             task, in_beg, in_end, out_beg);
     }
 
-    template <int Rank, celerity::algorithm::detail::access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputIteratorType>
+    template <int Rank, celerity::hla::detail::access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputIteratorType>
     class partially_packaged_transform_1
     {
     public:
@@ -78,7 +78,7 @@ namespace celerity::hla::experimental::detail
         InputIteratorType get_in_beg() const { return in_beg_; }
         InputIteratorType get_in_end() const { return in_end_; }
 
-        cl::sycl::range<Rank> get_range() const { return algorithm::detail::distance(in_beg_, in_end_); }
+        cl::sycl::range<Rank> get_range() const { return hla::detail::distance(in_beg_, in_end_); }
 
     private:
         Functor f_;
@@ -86,7 +86,7 @@ namespace celerity::hla::experimental::detail
         InputIteratorType in_end_;
     };
 
-    template <celerity::algorithm::detail::access_type InputAccessType, typename KernelFunctor, typename FunctorType, int Rank, template <typename, int> typename InIteratorType, typename InputValueType>
+    template <celerity::hla::detail::access_type InputAccessType, typename KernelFunctor, typename FunctorType, int Rank, template <typename, int> typename InIteratorType, typename InputValueType>
     auto package_transform(FunctorType functor, InIteratorType<InputValueType, Rank> beg, InIteratorType<InputValueType, Rank> end)
     {
         return partially_packaged_transform_1<Rank, InputAccessType, FunctorType, KernelFunctor, InIteratorType<InputValueType, Rank>>(functor, beg, end);
@@ -117,7 +117,7 @@ namespace celerity::hla::experimental::detail
     }
 } // namespace celerity::hla::experimental::detail
 
-namespace celerity::algorithm::traits
+namespace celerity::hla::traits
 {
 
     template <int Rank, detail::access_type InputAccessType, typename Functor, typename InputIteratorType, typename OutputIteratorType>
@@ -207,6 +207,6 @@ namespace celerity::algorithm::traits
         static constexpr auto requirement = detail::stage_requirement::input;
     };
 
-} // namespace celerity::algorithm::traits
+} // namespace celerity::hla::traits
 
 #endif // CELERITY_HLA_PACKAGED_TRANSFORM_H

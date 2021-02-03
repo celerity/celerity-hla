@@ -6,7 +6,7 @@
 
 #include "function_traits.h"
 
-namespace algo = celerity::algorithm;
+namespace algo = celerity::hla;
 
 namespace celerity::hla::experimental
 {

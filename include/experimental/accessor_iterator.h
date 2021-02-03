@@ -21,12 +21,12 @@ namespace celerity::hla::experimental
 
         bool operator==(const slice_iterator &rhs) const
         {
-            return celerity::algorithm::detail::equals(get_id(), rhs.get_id());
+            return celerity::hla::detail::equals(get_id(), rhs.get_id());
         }
 
         bool operator!=(const slice_iterator &rhs) const
         {
-            return !celerity::algorithm::detail::equals(get_id(), rhs.get_id());
+            return !celerity::hla::detail::equals(get_id(), rhs.get_id());
         }
 
         slice_iterator &operator++()
@@ -40,7 +40,7 @@ namespace celerity::hla::experimental
         [[nodiscard]] cl::sycl::id<rank> get_id() const { return *it_; }
 
     private:
-        celerity::algorithm::iterator<rank> it_;
+        celerity::hla::iterator<rank> it_;
         const SliceType &slice_;
     };
 
@@ -75,12 +75,12 @@ namespace celerity::hla::experimental
 
         bool operator==(const block_iterator &rhs) const
         {
-            return celerity::algorithm::detail::equals(get_id(), rhs.get_id());
+            return celerity::hla::detail::equals(get_id(), rhs.get_id());
         }
 
         bool operator!=(const block_iterator &rhs) const
         {
-            return !celerity::algorithm::detail::equals(get_id(), rhs.get_id());
+            return !celerity::hla::detail::equals(get_id(), rhs.get_id());
         }
 
         block_iterator &operator++()
@@ -101,7 +101,7 @@ namespace celerity::hla::experimental
     private:
         const cl::sycl::id<rank> offset_;
         cl::sycl::id<rank> center_;
-        celerity::algorithm::iterator<rank> it_;
+        celerity::hla::iterator<rank> it_;
         const BlockType &block;
     };
 
@@ -190,7 +190,7 @@ namespace celerity::hla::experimental
         [[nodiscard]] cl::sycl::id<rank> get_id() const { return *it_; }
 
     private:
-        celerity::algorithm::iterator<rank> it_;
+        celerity::hla::iterator<rank> it_;
         const AllType &all_;
     };
 

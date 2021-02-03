@@ -3,18 +3,18 @@
 
 #include "kernel_traits.h"
 
-namespace celerity::algorithm::detail
+namespace celerity::hla::detail
 {
 
-enum class computation_type
-{
-    generate,
-    transform,
-    reduce,
-    zip,
-    none
-};
+    enum class computation_type
+    {
+        generate,
+        transform,
+        reduce,
+        zip,
+        none
+    };
 
-} // namespace celerity::algorithm::detail
+} // namespace celerity::hla::detail
 
 #endif // COMPUTATION_TYPE_H

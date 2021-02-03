@@ -6,7 +6,7 @@
 #include "packaged_task_traits.h"
 #include "sequence.h"
 
-namespace celerity::algorithm::seq
+namespace celerity::hla::seq
 {
     enum class step : size_t
     {
@@ -142,9 +142,9 @@ namespace celerity::algorithm::seq
         return lhs;
     }*/
 
-} // namespace celerity::algorithm::seq
+} // namespace celerity::hla::seq
 
-namespace celerity::algorithm::detail
+namespace celerity::hla::detail
 {
 
     namespace depth_first_impl
@@ -208,6 +208,6 @@ namespace celerity::algorithm::detail
 
         return out;
     }
-} // namespace celerity::algorithm::detail
+} // namespace celerity::hla::detail
 
 #endif // !DEPTH_FIRST_H

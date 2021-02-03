@@ -10,7 +10,7 @@
 #include "../accessor_proxies.h"
 #include "../packaged_tasks/packaged_generate.h"
 
-using celerity::algorithm::buffer_iterator;
+using celerity::hla::buffer_iterator;
 
 namespace celerity::hla::experimental
 {
@@ -21,13 +21,13 @@ namespace celerity::hla::experimental
         {
             using namespace cl::sycl::access;
 
-            using policy_type = algorithm::traits::strip_queue_t<ExecutionPolicy>;
+            using policy_type = hla::traits::strip_queue_t<ExecutionPolicy>;
 
             return [=](celerity::handler &cgh) {
                 auto out_acc = get_out_access<policy_type, mode::discard_write>(cgh, beg, end);
 
-                return [=](algorithm::detail::item_context<Rank, T()> &ctx) {
-                    if constexpr (algorithm::traits::arity_v<F> == 1)
+                return [=](hla::detail::item_context<Rank, T()> &ctx) {
+                    if constexpr (hla::traits::arity_v<F> == 1)
                     {
                         out_acc[ctx.get_out()] = f(ctx.get_item());
                     }
@@ -40,17 +40,17 @@ namespace celerity::hla::experimental
         }
 
         template <typename ExecutionPolicy, typename F, typename T, int Rank,
-                  celerity::algorithm::require<celerity::algorithm::traits::arity_v<F> == 1> = celerity::algorithm::yes>
+                  celerity::hla::require<celerity::hla::traits::arity_v<F> == 1> = celerity::hla::yes>
         auto generate(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
         {
-            //static_assert(traits::get_accessor_type<F, 0>() == algorithm::detail::access_type::item);
+            //static_assert(traits::get_accessor_type<F, 0>() == hla::detail::access_type::item);
             static_assert(std::is_invocable_v<F, cl::sycl::item<Rank>>, "generate kernels may only take cl::sycl::item<Rank> as input");
-            const auto t = algorithm::detail::task<ExecutionPolicy>(hla::experimental::detail::generate_impl<ExecutionPolicy>(beg, end, f));
+            const auto t = hla::detail::task<ExecutionPolicy>(hla::experimental::detail::generate_impl<ExecutionPolicy>(beg, end, f));
             return [=](distr_queue q) { t(q, beg, end); };
         }
 
         template <typename ExecutionPolicy, typename F, int Rank,
-                  celerity::algorithm::require<celerity::algorithm::traits::arity_v<F> == 1> = celerity::algorithm::yes>
+                  celerity::hla::require<celerity::hla::traits::arity_v<F> == 1> = celerity::hla::yes>
         auto generate(cl::sycl::range<Rank> range, const F &f)
         {
             //static_assert(traits::get_accessor_type<F, 0>() == access_type::item);
@@ -58,13 +58,13 @@ namespace celerity::hla::experimental
             using value_type = std::invoke_result_t<F, cl::sycl::item<Rank>>;
 
             return package_generate<value_type>(
-                [f](auto beg, auto end) { return algorithm::detail::task<ExecutionPolicy>(hla::experimental::detail::generate_impl<ExecutionPolicy>(beg, end, f)); },
+                [f](auto beg, auto end) { return hla::detail::task<ExecutionPolicy>(hla::experimental::detail::generate_impl<ExecutionPolicy>(beg, end, f)); },
                 range);
         }
 
         // DISABLED
         template <typename ExecutionPolicy, typename F, typename T, int Rank,
-                  celerity::algorithm::require<celerity::algorithm::traits::arity_v<F> == 0> = celerity::algorithm::yes>
+                  celerity::hla::require<celerity::hla::traits::arity_v<F> == 0> = celerity::hla::yes>
         auto generate(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
         {
             static_assert(std::is_void_v<F>,
@@ -85,14 +85,14 @@ namespace celerity::hla::experimental
     template <typename KernelName, typename F, int Rank>
     auto generate_n(cl::sycl::range<Rank> range, const F &f)
     {
-        using execution_policy = algorithm::detail::named_distributed_execution_policy<KernelName>;
+        using execution_policy = hla::detail::named_distributed_execution_policy<KernelName>;
         return detail::generate<execution_policy>(range, f);
     }
 
     template <typename KernelName, typename T, int Rank, typename F>
     auto generate(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const F &f)
     {
-        return algorithm::generate(algorithm::distr<KernelName>(q), beg, end, f);
+        return hla::generate(hla::distr<KernelName>(q), beg, end, f);
     }
 
     template <typename ExecutionPolicy, typename T, int Rank, typename F>
@@ -104,7 +104,7 @@ namespace celerity::hla::experimental
     template <typename KernelName, typename T, int Rank, typename F>
     auto generate(celerity::distr_queue q, buffer<T, Rank> in, const F &f)
     {
-        return hla::experimental::generate(algorithm::distr<KernelName>(q), begin(in), end(in), f);
+        return hla::experimental::generate(hla::distr<KernelName>(q), begin(in), end(in), f);
     }
 
 } // namespace celerity::hla::experimental

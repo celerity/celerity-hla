@@ -14,8 +14,8 @@ namespace celerity::hla::experimental::detail
               typename SecondInputIteratorType,
               typename OutputIteratorType,
               int Rank,
-              algorithm::detail::access_type FirstInputAccessType,
-              algorithm::detail::access_type SecondInputAccessType>
+              hla::detail::access_type FirstInputAccessType,
+              hla::detail::access_type SecondInputAccessType>
     class packaged_zip
     {
     public:
@@ -26,9 +26,9 @@ namespace celerity::hla::experimental::detail
                      OutputIteratorType out_beg)
             : functor_(functor), in_beg_(in_beg), in_end_(in_end), second_in_beg_(second_in_beg), out_beg_(out_beg)
         {
-            assert(algorithm::detail::are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
-            assert(FirstInputAccessType == algorithm::detail::access_type::one_to_one || !algorithm::detail::are_equal(in_beg_.get_buffer(), out_beg_.get_buffer()));
-            assert(SecondInputAccessType == algorithm::detail::access_type::one_to_one || !algorithm::detail::are_equal(second_in_beg_.get_buffer(), out_beg_.get_buffer()));
+            assert(hla::detail::are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
+            assert(FirstInputAccessType == hla::detail::access_type::one_to_one || !hla::detail::are_equal(in_beg_.get_buffer(), out_beg_.get_buffer()));
+            assert(SecondInputAccessType == hla::detail::access_type::one_to_one || !hla::detail::are_equal(second_in_beg_.get_buffer(), out_beg_.get_buffer()));
             //assert(distance(in_beg_, in_end_) <= distance(out_beg_, end(out_beg_.get_buffer())));
         }
 
@@ -45,7 +45,7 @@ namespace celerity::hla::experimental::detail
         SecondInputIteratorType get_second_in_beg() const { return second_in_beg_; }
         OutputIteratorType get_out_beg() const { return out_beg_; }
 
-        cl::sycl::range<Rank> get_range() const { return algorithm::detail::distance(in_beg_, in_end_); }
+        cl::sycl::range<Rank> get_range() const { return hla::detail::distance(in_beg_, in_end_); }
 
     private:
         FunctorType functor_;
@@ -55,8 +55,8 @@ namespace celerity::hla::experimental::detail
         OutputIteratorType out_beg_;
     };
 
-    template <algorithm::detail::access_type FirstInputAccessType,
-              algorithm::detail::access_type SecondInputAccessType,
+    template <hla::detail::access_type FirstInputAccessType,
+              hla::detail::access_type SecondInputAccessType,
               typename FunctorType,
               template <typename, int> typename InIteratorType,
               template <typename, int> typename SecondInIteratorType,
@@ -85,8 +85,8 @@ namespace celerity::hla::experimental::detail
               typename FirstInputIteratorType,
               typename SecondInputIteratorType,
               int Rank,
-              algorithm::detail::access_type FirstInputAccessType,
-              algorithm::detail::access_type SecondInputAccessType>
+              hla::detail::access_type FirstInputAccessType,
+              hla::detail::access_type SecondInputAccessType>
     class partially_packaged_zip_2
     {
     public:
@@ -96,8 +96,8 @@ namespace celerity::hla::experimental::detail
                                  SecondInputIteratorType second_in_beg)
             : functor_(functor), in_beg_(in_beg), in_end_(in_end), second_in_beg_(second_in_beg)
         {
-            assert(algorithm::detail::are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
-            //assert(!algorithm::detail::are_equal(in_beg_.get_buffer(), second_in_beg_.get_buffer()));
+            assert(hla::detail::are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
+            //assert(!hla::detail::are_equal(in_beg_.get_buffer(), second_in_beg_.get_buffer()));
         }
 
         template <typename Iterator>
@@ -112,7 +112,7 @@ namespace celerity::hla::experimental::detail
         FirstInputIteratorType get_in_end() const { return in_end_; }
         SecondInputIteratorType get_second_in_beg() const { return second_in_beg_; }
 
-        cl::sycl::range<Rank> get_range() const { return algorithm::detail::distance(in_beg_, in_end_); }
+        cl::sycl::range<Rank> get_range() const { return hla::detail::distance(in_beg_, in_end_); }
 
     private:
         FunctorType functor_;
@@ -121,8 +121,8 @@ namespace celerity::hla::experimental::detail
         SecondInputIteratorType second_in_beg_;
     };
 
-    template <algorithm::detail::access_type FirstInputAccessType,
-              algorithm::detail::access_type SecondInputAccessType,
+    template <hla::detail::access_type FirstInputAccessType,
+              hla::detail::access_type SecondInputAccessType,
               typename KernelType,
               typename FunctorType,
               template <typename, int> typename InIteratorType,
@@ -156,7 +156,7 @@ namespace celerity::hla::experimental::detail
                                  SecondInputIteratorType in_end)
             : functor_(functor), in_beg_(in_beg), in_end_(in_end)
         {
-            assert(algorithm::detail::are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
+            assert(hla::detail::are_equal(in_beg_.get_buffer(), in_end_.get_buffer()));
         }
 
         template <typename Iterator>
@@ -173,7 +173,7 @@ namespace celerity::hla::experimental::detail
         SecondInputIteratorType get_in_beg() const { return in_beg_; }
         SecondInputIteratorType get_in_end() const { return in_end_; }
 
-        cl::sycl::range<Rank> get_range() const { return algorithm::detail::distance(in_beg_, in_end_); }
+        cl::sycl::range<Rank> get_range() const { return hla::detail::distance(in_beg_, in_end_); }
 
     private:
         FunctorType functor_;
@@ -226,7 +226,7 @@ namespace celerity::hla::experimental::detail
     }
 } // namespace celerity::hla::experimental::detail
 
-namespace celerity::algorithm::traits
+namespace celerity::hla::traits
 {
 
     template <typename FunctorType,
@@ -449,6 +449,6 @@ namespace celerity::algorithm::traits
         static constexpr auto requirement = detail::stage_requirement::input;
     };
 
-} // namespace celerity::algorithm::traits
+} // namespace celerity::hla::traits
 
 #endif // CELERITY_HLA_ZIP_DECORATOR_H

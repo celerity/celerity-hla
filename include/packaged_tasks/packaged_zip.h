@@ -10,7 +10,7 @@
 
 #include "../experimental/traits.h"
 
-namespace celerity::algorithm
+namespace celerity::hla
 {
 
     namespace detail
@@ -483,6 +483,6 @@ namespace celerity::algorithm
 
     } // namespace traits
 
-} // namespace celerity::algorithm
+} // namespace celerity::hla
 
 #endif // ZIP_DECORATOR_H

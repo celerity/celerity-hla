@@ -16,16 +16,16 @@
 #include <numeric>
 
 using namespace celerity;
-using namespace celerity::algorithm::traits;
-using namespace celerity::algorithm::util;
+using namespace celerity::hla::traits;
+using namespace celerity::hla::util;
 
 using namespace celerity::hla::experimental;
 
-using algorithm::skip;
-using algorithm::submit_to;
-using algorithm::take;
-using algorithm::operator|;
-using algorithm::operator<<;
+using hla::skip;
+using hla::submit_to;
+using hla::take;
+using hla::operator|;
+using hla::operator<<;
 
 SCENARIO("Subranges", "[subranges::simple]")
 {

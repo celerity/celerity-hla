@@ -8,7 +8,7 @@
 #include "../sequencing.h"
 #include "../require.h"
 
-namespace celerity::algorithm
+namespace celerity::hla
 {
 
     namespace detail
@@ -24,7 +24,7 @@ namespace celerity::algorithm
 
             if constexpr (!policy_traits<std::decay_t<ExecutionPolicy>>::is_distributed)
             {
-                using accessor_type = algorithm::all<T, Rank>;
+                using accessor_type = hla::all<T, Rank>;
 
                 return [=](celerity::handler &cgh) {
                     auto in_acc = get_access<policy_type, cl::sycl::access::mode::read, accessor_type>(cgh, beg, end);
@@ -74,6 +74,6 @@ namespace celerity::algorithm
         return for_each(p, begin(in), end(in), f);
     }
 
-} // namespace celerity::algorithm
+} // namespace celerity::hla
 
 #endif // FOR_EACH_H

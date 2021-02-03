@@ -8,8 +8,8 @@
 #include "../include/actions.h"
 
 using namespace celerity;
-using namespace celerity::algorithm;
-using namespace celerity::algorithm::aliases;
+using namespace celerity::hla;
+using namespace celerity::hla::aliases;
 
 SCENARIO("accessing a slice", "[accessors::slice]")
 {
@@ -505,7 +505,7 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
         {
             buffer<int, 1> buf_out(buf.get_range());
 
-            const auto double_it = [](cl::sycl::item<1> it, const celerity::algorithm::detail::any_accessor<int> &in) {
+            const auto double_it = [](cl::sycl::item<1> it, const celerity::hla::detail::any_accessor<int> &in) {
                 return in.get(it.get_id()) * 2;
             };
 
@@ -514,7 +514,7 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
                 auto out = buf_out.get_access<cl::sycl::access::mode::write>(cgh, celerity::access::one_to_one<1>());
 
                 cgh.parallel_for<class doubling_any>(buf_out.get_range(), [=](cl::sycl::item<1> it) {
-                    auto any_in = celerity::algorithm::detail::any_accessor<int>(in);
+                    auto any_in = celerity::hla::detail::any_accessor<int>(in);
                     out[it] = double_it(it, any_in);
                 });
             });
@@ -579,8 +579,8 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
 
                 cgh.parallel_for<class adding_ab_any>(buf_out.get_range(), [=](cl::sycl::item<1> it) {
                     out[it] = add(it,
-                                  algorithm::detail::any_accessor<int>(in_a),
-                                  algorithm::detail::any_accessor<int>(in_b));
+                                  hla::detail::any_accessor<int>(in_a),
+                                  hla::detail::any_accessor<int>(in_b));
                 });
             });
 
@@ -628,7 +628,7 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
                 return *a + *b;
             };
 
-            using namespace celerity::algorithm::detail;
+            using namespace celerity::hla::detail;
 
             const auto initialize = [=](handler &c) {
                 auto in_a = get_access<distributed_execution_policy,
@@ -664,7 +664,7 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
                 return *a + b;
             };
 
-            using namespace celerity::algorithm::detail;
+            using namespace celerity::hla::detail;
 
             const auto initialize = [=](handler &c) {
                 auto in_a = get_access<distributed_execution_policy,
@@ -700,7 +700,7 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
                 return a + *b;
             };
 
-            using namespace celerity::algorithm::detail;
+            using namespace celerity::hla::detail;
 
             const auto initialize = [=](handler &c) {
                 auto in_a = get_access<distributed_execution_policy,
@@ -736,7 +736,7 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
                 return a + b;
             };
 
-            using namespace celerity::algorithm::detail;
+            using namespace celerity::hla::detail;
 
             const auto initialize = [=](handler &c) {
                 auto in_a = get_access<distributed_execution_policy,
@@ -772,7 +772,7 @@ SCENARIO("using any_accessor<T>", "[accessors::any_accessor]")
                 return *a + *b;
             };
 
-            using namespace celerity::algorithm::detail;
+            using namespace celerity::hla::detail;
 
             const auto initialize = [=](handler &c) {
                 auto in_a = get_access<distributed_execution_policy,

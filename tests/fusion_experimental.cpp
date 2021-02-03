@@ -17,21 +17,21 @@
 
 using namespace celerity;
 using namespace celerity::hla::experimental;
-using namespace celerity::algorithm::traits;
-using namespace celerity::algorithm::util;
+using namespace celerity::hla::traits;
+using namespace celerity::hla::util;
 
-using algorithm::chunk;
-using algorithm::submit_to;
-using algorithm::operator|;
-using algorithm::operator<<;
+using hla::chunk;
+using hla::submit_to;
+using hla::operator|;
+using hla::operator<<;
 
-using algorithm::fused_t;
-using algorithm::linked_t;
-using algorithm::traits::computation_type_of_v;
-using algorithm::traits::has_transient_input_v;
-using algorithm::traits::has_transient_second_input_v;
-using algorithm::traits::is_t_joint_v;
-using algorithm::traits::size_v;
+using hla::fused_t;
+using hla::linked_t;
+using hla::traits::computation_type_of_v;
+using hla::traits::has_transient_input_v;
+using hla::traits::has_transient_second_input_v;
+using hla::traits::is_t_joint_v;
+using hla::traits::size_v;
 
 using hla::experimental::fill;
 
@@ -277,8 +277,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             auto t3 = zip<class _268>(zip_add);
 
             auto seq = t1 | (t3 << t2);
-            static_assert(!celerity::algorithm::traits::is_sequence_v<celerity::algorithm::traits::first_element_t<decltype(seq)>>);
-            static_assert(!celerity::algorithm::traits::is_sequence_v<celerity::algorithm::traits::last_element_t<decltype(seq)>>);
+            static_assert(!celerity::hla::traits::is_sequence_v<celerity::hla::traits::first_element_t<decltype(seq)>>);
+            static_assert(!celerity::hla::traits::is_sequence_v<celerity::hla::traits::last_element_t<decltype(seq)>>);
 
             auto buf_out = seq | submit_to(q);
 
@@ -392,10 +392,10 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
             {
                 using seq_type = decltype(seq);
 
-                static_assert(algorithm::traits::size_v<linked_t<seq_type>> == 2);
-                static_assert(algorithm::traits::size_v<fused_t<seq_type>> == 1);
-                static_assert(algorithm::traits::computation_type_of_v<last_element_t<fused_t<seq_type>>,
-                                                                       celerity::algorithm::detail::computation_type::generate>);
+                static_assert(hla::traits::size_v<linked_t<seq_type>> == 2);
+                static_assert(hla::traits::size_v<fused_t<seq_type>> == 1);
+                static_assert(hla::traits::computation_type_of_v<last_element_t<fused_t<seq_type>>,
+                                                                 celerity::hla::detail::computation_type::generate>);
 
                 const auto r = copy_to_host(q, buf_out);
 
@@ -462,7 +462,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is (i + 3)")
             {
-                using algorithm::detail::computation_type;
+                using hla::detail::computation_type;
 
                 using seq_type = decltype(seq);
 
@@ -528,7 +528,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         buffer<int, 1> buf_a{{size}};
         buffer<int, 1> buf_b{{size}};
         hla::experimental::fill<class _7>(q, begin(buf_a), end(buf_a), 1);
-        hla::experimental::fill<class _8>(q, begin(buf_b), end(buf_b), 3); 
+        hla::experimental::fill<class _8>(q, begin(buf_b), end(buf_b), 3);
 
         WHEN("chaining calls")
         {
@@ -594,8 +594,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add = [](AnyBlock auto x, int y) { x.configure(1); return *x + y; };
@@ -635,8 +635,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add = [](int x, AnyBlock auto y) { y.configure(1); return x + *y; };
@@ -676,8 +676,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add = [](AnyBlock auto x, int y) { x.configure(1); return *x + y; };
@@ -717,8 +717,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add = [](AnyBlock auto x, int y) { x.configure(1); return *x + y; };
@@ -759,8 +759,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add_sec = [](int x, AnyBlock auto y) { y.configure(1); return x + *y; };
@@ -804,8 +804,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add_sec = [](AnyBlock auto x, AnyBlock auto y) { x.configure(1); y.configure(1); return *x + *y; };
@@ -849,8 +849,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add_sec = [](int x, AnyBlock auto y) { y.configure(1); return x + *y; };
@@ -891,8 +891,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add_sec = [](int x, AnyBlock auto y) { y.configure(1); return x + *y; };
@@ -933,8 +933,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add_sec = [](int x, AnyBlock auto y) { y.configure(1); return x + *y; };
@@ -977,8 +977,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add_sec = [](int x, AnyBlock auto y) { y.configure(1); return x + *y; };
@@ -1021,8 +1021,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add_sec = [](int x, AnyBlock auto y) { y.configure(1); return x + *y; };

@@ -11,10 +11,10 @@
 #include <numeric>
 
 using namespace celerity;
-using namespace celerity::algorithm;
-using namespace celerity::algorithm::traits;
-using namespace celerity::algorithm::util;
-using celerity::algorithm::chunk;
+using namespace celerity::hla;
+using namespace celerity::hla::traits;
+using namespace celerity::hla::util;
+using celerity::hla::chunk;
 
 SCENARIO("Subranges", "[subranges::simple]")
 {

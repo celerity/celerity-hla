@@ -10,60 +10,60 @@
 namespace celerity
 {
 	template <typename T, int Rank, typename U,
-			  algorithm::require_one<algorithm::traits::is_linkable_sink_v<U>,
-									 algorithm::traits::is_iterator_transform_v<U>> = algorithm::yes>
+			  hla::require_one<hla::traits::is_linkable_sink_v<U>,
+							   hla::traits::is_iterator_transform_v<U>> = hla::yes>
 	auto operator|(celerity::buffer<T, Rank> lhs, U rhs)
 	{
-		return algorithm::detail::sequence(lhs, rhs);
+		return hla::detail::sequence(lhs, rhs);
 	}
 
-	template <typename T, int Rank, typename U, algorithm::require<algorithm::traits::is_linkable_sink_v<T>> = algorithm::yes>
+	template <typename T, int Rank, typename U, hla::require<hla::traits::is_linkable_sink_v<T>> = hla::yes>
 	auto operator<<(T lhs, celerity::buffer<U, Rank> rhs)
 	{
-		using namespace algorithm::detail;
+		using namespace hla::detail;
 		return partial_t_joint{lhs, sequence(rhs)};
 	}
 
 	template <typename T, int Rank, typename U,
-			  algorithm::require<!algorithm::traits::is_sequence_v<T>> = algorithm::yes>
+			  hla::require<!hla::traits::is_sequence_v<T>> = hla::yes>
 	auto operator|(T lhs, celerity::buffer<U, Rank> rhs)
 	{
-		return algorithm::detail::sequence(lhs, rhs);
+		return hla::detail::sequence(lhs, rhs);
 	}
 
 	template <typename T, int Rank, typename U,
-			  algorithm::require<algorithm::traits::is_sequence_v<T>> = algorithm::yes>
+			  hla::require<hla::traits::is_sequence_v<T>> = hla::yes>
 	auto operator|(T lhs, celerity::buffer<U, Rank> rhs)
 	{
-		return algorithm::detail::apply_append(lhs, rhs, [](auto &&a, auto &&b) { return operator|(std::forward<decltype(a)>(a), std::forward<decltype(b)>(b)); });
+		return hla::detail::apply_append(lhs, rhs, [](auto &&a, auto &&b) { return operator|(std::forward<decltype(a)>(a), std::forward<decltype(b)>(b)); });
 	}
 
 } // namespace celerity
 
-namespace celerity::algorithm
+namespace celerity::hla
 {
 	template <typename T, typename U, require<traits::is_partially_packaged_task_v<T>, traits::is_partially_packaged_task_v<U>> = yes>
 	auto operator|(T lhs, U rhs)
 	{
-		return algorithm::detail::sequence(lhs, rhs);
+		return hla::detail::sequence(lhs, rhs);
 	}
 
 	template <typename T, typename U, require<traits::is_sequence_v<T>, traits::is_partially_packaged_task_v<U>> = yes>
 	auto operator|(T lhs, U rhs)
 	{
-		return lhs | algorithm::detail::sequence(rhs);
+		return lhs | hla::detail::sequence(rhs);
 	}
 
 	template <int Rank>
-	auto operator|(algorithm::detail::iterator_transform<Rank> lhs, algorithm::detail::iterator_transform<Rank> rhs)
+	auto operator|(hla::detail::iterator_transform<Rank> lhs, hla::detail::iterator_transform<Rank> rhs)
 	{
-		return algorithm::detail::sequence(lhs, rhs);
+		return hla::detail::sequence(lhs, rhs);
 	}
 
 	template <typename T, typename U, require<traits::is_sequence_v<T>, traits::is_iterator_transform_v<traits::last_element_t<T>>, traits::is_iterator_transform_v<U>> = yes>
 	auto operator|(T lhs, U rhs)
 	{
-		return lhs | algorithm::detail::sequence(rhs);
+		return lhs | hla::detail::sequence(rhs);
 	}
 
 	template <typename T, typename U, require<traits::is_sequence_v<T>, traits::is_sequence_v<U>> = yes>
@@ -75,26 +75,26 @@ namespace celerity::algorithm
 	template <typename T, typename U, require<traits::is_sequence_v<T>, traits::is_sequence_v<U>> = yes>
 	auto operator<<(T lhs, U rhs)
 	{
-		apply_append(lhs, rhs, [](auto &&a, auto &&b) { return algorithm::detail::partial_t_joint{std::forward<decltype(a)>(a), std::forward<decltype(b)>(b)}; });
+		apply_append(lhs, rhs, [](auto &&a, auto &&b) { return hla::detail::partial_t_joint{std::forward<decltype(a)>(a), std::forward<decltype(b)>(b)}; });
 	}
 
 	template <typename T, typename U, require<traits::is_sequence_v<T>, traits::is_linkable_source_v<U>> = yes>
 	auto operator<<(T lhs, U rhs)
 	{
-		apply_append(lhs, rhs, [](auto &&a, auto &&b) { return algorithm::detail::partial_t_joint{std::forward<decltype(a)>(a), std::forward<decltype(b)>(b)}; });
+		apply_append(lhs, rhs, [](auto &&a, auto &&b) { return hla::detail::partial_t_joint{std::forward<decltype(a)>(a), std::forward<decltype(b)>(b)}; });
 	}
 
 	template <typename T, typename U, require<traits::is_linkable_sink_v<T>, traits::is_sequence_v<U>> = yes>
 	auto operator<<(T lhs, U rhs)
 	{
-		using namespace algorithm::detail;
+		using namespace hla::detail;
 		return partial_t_joint(lhs, rhs);
 	}
 
 	template <typename T, typename U, require<traits::is_linkable_sink_v<T>, traits::is_linkable_source_v<U>> = yes>
 	auto operator<<(T lhs, U rhs)
 	{
-		using namespace algorithm::detail;
+		using namespace hla::detail;
 		return partial_t_joint(lhs, sequence(rhs));
 	}
 
@@ -131,7 +131,7 @@ namespace celerity::algorithm
 	}
 
 	template <typename T>
-	using sequence_t = std::conditional_t<traits::is_sequence_v<T>, T, decltype(algorithm::detail::sequence(std::declval<T>()))>;
+	using sequence_t = std::conditional_t<traits::is_sequence_v<T>, T, decltype(hla::detail::sequence(std::declval<T>()))>;
 
 	template <typename T>
 	using resolved_t = decltype(resolve_subranges(std::declval<sequence_t<T>>()));
@@ -145,6 +145,6 @@ namespace celerity::algorithm
 	template <typename T>
 	using fused_t = decltype(fuse(std::declval<terminated_t<T>>()));
 
-} // namespace celerity::algorithm
+} // namespace celerity::hla
 
 #endif // SEQUENCING_H

@@ -15,7 +15,7 @@
 
 auto setup_wave(cl::sycl::range<2> range, cl::sycl::float2 center, float amplitude, cl::sycl::float2 sigma)
 {
-	using namespace celerity::algorithm;
+	using namespace celerity::hla;
 
 	return generate_n<class setup>(range,
 								   [c = center, a = amplitude, s = sigma](cl::sycl::item<2> item) {
@@ -27,7 +27,7 @@ auto setup_wave(cl::sycl::range<2> range, cl::sycl::float2 center, float amplitu
 
 auto zero(cl::sycl::range<2> &range)
 {
-	using namespace celerity::algorithm;
+	using namespace celerity::hla;
 	return fill_n<class zero>(range, 0.f);
 }
 
@@ -48,7 +48,7 @@ struct update_config
 template <typename Config, typename KernelName>
 auto step(float dt, cl::sycl::float2 delta)
 {
-	using namespace celerity::algorithm;
+	using namespace celerity::hla;
 
 	const auto step = [=](float v_up, const chunk<float, 1, 1> &v_u) {
 		const float lap = (dt / delta.y()) * (dt / delta.y()) * ((v_u[{1, 0}] - *v_u) - (*v_u - v_u[{-1, 0}])) + (dt / delta.x()) * (dt / delta.x()) * ((v_u[{0, 1}] - *v_u) - (*v_u - v_u[{0, -1}]));
@@ -72,7 +72,7 @@ auto update(float dt, cl::sycl::float2 delta)
 template <typename T>
 void store(celerity::distr_queue &queue, celerity::buffer<T, 2> &up, std::vector<std::vector<float>> &result_frames)
 {
-	using namespace celerity::algorithm;
+	using namespace celerity::hla;
 
 	const auto range = up.get_range();
 	std::vector<float> v(range.size());
@@ -145,7 +145,7 @@ bool get_cli_arg(const arg_vector &args, const arg_vector::const_iterator &it, c
 
 int main(int argc, char *argv[])
 {
-	using namespace celerity::algorithm;
+	using namespace celerity::hla;
 
 	// Explicitly initialize here so we can use MPI functions right away
 	celerity::runtime::init(&argc, &argv);
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 		celerity::distr_queue queue;
 		cl::sycl::range buf_range = cl::sycl::range<2>(cfg.N, cfg.N);
 
-		//celerity::algorithm::actions::sync();
+		//celerity::hla::actions::sync();
 		MPI_Barrier(MPI_COMM_WORLD);
 
 		celerity::experimental::bench::begin("main program");

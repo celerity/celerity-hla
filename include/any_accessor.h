@@ -5,7 +5,7 @@
 #include "sycl.h"
 #include "celerity_accessor_traits.h"
 
-namespace celerity::algorithm::detail
+namespace celerity::hla::detail
 {
     template <class T>
     inline void destruct(T &o) noexcept
@@ -204,6 +204,6 @@ namespace celerity::algorithm::detail
         storage_type storage_;
     };
 
-} // namespace celerity::algorithm::detail
+} // namespace celerity::hla::detail
 
 #endif

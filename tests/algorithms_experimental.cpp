@@ -17,7 +17,7 @@ using namespace celerity::hla::experimental;
 template <auto N>
 constexpr inline auto sum_one_to_n = N *(N + 1) / 2;
 
-SCENARIO("filling a buffer", "[celerity::algorithm]")
+SCENARIO("filling a buffer", "[celerity::hla]")
 {
     distr_queue q;
 
@@ -109,7 +109,7 @@ SCENARIO("filling a buffer", "[celerity::algorithm]")
     }
 }
 
-SCENARIO("transforming a buffer (experimental)", "[celerity::algorithm::experimental]")
+SCENARIO("transforming a buffer (experimental)", "[celerity::hla::experimental]")
 {
     distr_queue q;
 

@@ -7,7 +7,7 @@
 #include <numeric>
 
 using namespace celerity;
-using namespace celerity::algorithm;
+using namespace celerity::hla;
 
 #include "../include/experimental/algorithms/transform.h"
 #include "../include/experimental/algorithms/zip.h"
@@ -43,7 +43,7 @@ TEST_CASE("traits")
     }
 }
 
-TEST_CASE("transforming a buffer (experimental)", "[celerity::algorithm::experimental]")
+TEST_CASE("transforming a buffer (experimental)", "[celerity::hla::experimental]")
 {
     distr_queue q;
 
@@ -71,7 +71,7 @@ TEST_CASE("transforming a buffer (experimental)", "[celerity::algorithm::experim
     }
 }
 
-TEST_CASE("sequencing (experimental)", "[celerity::algorithm::experimental]")
+TEST_CASE("sequencing (experimental)", "[celerity::hla::experimental]")
 {
     distr_queue q;
 
@@ -85,7 +85,7 @@ TEST_CASE("sequencing (experimental)", "[celerity::algorithm::experimental]")
 
         const auto t = h::transform<class _87>([](h::AnyBlock auto x) { x.configure({1}); return 3 * (*x); });
 
-        auto buf_out = buf | t | celerity::algorithm::submit_to(q);
+        auto buf_out = buf | t | celerity::hla::submit_to(q);
 
         THEN("every element is 3 in the target buffer")
         {
@@ -100,7 +100,7 @@ TEST_CASE("sequencing (experimental)", "[celerity::algorithm::experimental]")
 
         const auto t = h::transform<class _100>([](h::All auto x) { return 3 * x[{0}]; });
 
-        auto buf_out = buf | t | celerity::algorithm::submit_to(q);
+        auto buf_out = buf | t | celerity::hla::submit_to(q);
 
         THEN("every element is 3 in the target buffer")
         {
@@ -115,7 +115,7 @@ TEST_CASE("sequencing (experimental)", "[celerity::algorithm::experimental]")
 
         const auto t = h::transform<class _115>([](h::AnySlice auto x) { x.configure(0); return 3 * *x; });
 
-        auto buf_out = buf | t | celerity::algorithm::submit_to(q);
+        auto buf_out = buf | t | celerity::hla::submit_to(q);
 
         THEN("every element is 3 in the target buffer")
         {
@@ -130,7 +130,7 @@ TEST_CASE("sequencing (experimental)", "[celerity::algorithm::experimental]")
 
         const auto t = h::zip<class _130>(std::plus<int>{});
 
-        auto buf_out = buf | (t << buf) | celerity::algorithm::submit_to(q);
+        auto buf_out = buf | (t << buf) | celerity::hla::submit_to(q);
 
         THEN("every element is 3 in the target buffer")
         {
@@ -145,7 +145,7 @@ TEST_CASE("sequencing (experimental)", "[celerity::algorithm::experimental]")
 
         const auto t = h::transform<class _146>([](h::AnyBlock auto x) { x.configure({1}); return 3 * (*x); });
 
-        auto buf_out = buf | t | t | celerity::algorithm::submit_to(q);
+        auto buf_out = buf | t | t | celerity::hla::submit_to(q);
 
         THEN("every element is 3 in the target buffer")
         {
@@ -160,7 +160,7 @@ TEST_CASE("sequencing (experimental)", "[celerity::algorithm::experimental]")
 
         const auto t = h::zip<class _130>(std::plus<int>{});
 
-        auto buf_out = buf | (t << buf) | (t << buf) | celerity::algorithm::submit_to(q);
+        auto buf_out = buf | (t << buf) | (t << buf) | celerity::hla::submit_to(q);
 
         THEN("every element is 3 in the target buffer")
         {

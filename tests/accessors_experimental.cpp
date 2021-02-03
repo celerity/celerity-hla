@@ -48,7 +48,7 @@ SCENARIO("accessing a slice", "[accessors::slice]")
         {
             buffer<int, 2> buf_c(buf_a.get_range());
 
-            hla::experimental::zip(algorithm::distr<class _49>(q), begin(buf_a), end(buf_a), begin(buf_b), begin(buf_c),
+            hla::experimental::zip(hla::distr<class _49>(q), begin(buf_a), end(buf_a), begin(buf_b), begin(buf_c),
                                    [](AnySlice auto a, AnySlice auto b) {
                                        a.configure(0);
                                        b.configure(1);
@@ -86,7 +86,7 @@ SCENARIO("accessing a slice", "[accessors::slice]")
         {
             buffer<int, 2> buf_c(buf_a.get_range());
 
-            hla::experimental::zip(algorithm::distr<class _87>(q), begin(buf_a), end(buf_a), begin(buf_b), begin(buf_c),
+            hla::experimental::zip(hla::distr<class _87>(q), begin(buf_a), end(buf_a), begin(buf_b), begin(buf_c),
                                    [](AnySlice auto a, AnySlice auto b) {
                                        a.configure(0);
                                        b.configure(1);
@@ -514,7 +514,7 @@ SCENARIO("accessing a slice", "[accessors::slice]")
 //         {
 //             buffer<int, 1> buf_out(buf.get_range());
 
-//             const auto double_it = [](cl::sycl::item<1> it, const celerity::algorithm::detail::any_accessor<int> &in) {
+//             const auto double_it = [](cl::sycl::item<1> it, const celerity::hla::detail::any_accessor<int> &in) {
 //                 return in.get(it.get_id()) * 2;
 //             };
 
@@ -523,7 +523,7 @@ SCENARIO("accessing a slice", "[accessors::slice]")
 //                 auto out = buf_out.get_access<cl::sycl::access::mode::write>(cgh, celerity::access::one_to_one<1>());
 
 //                 cgh.parallel_for<class doubling_any>(buf_out.get_range(), [=](cl::sycl::item<1> it) {
-//                     auto any_in = celerity::algorithm::detail::any_accessor<int>(in);
+//                     auto any_in = celerity::hla::detail::any_accessor<int>(in);
 //                     out[it] = double_it(it, any_in);
 //                 });
 //             });
@@ -588,8 +588,8 @@ SCENARIO("accessing a slice", "[accessors::slice]")
 
 //                 cgh.parallel_for<class adding_ab_any>(buf_out.get_range(), [=](cl::sycl::item<1> it) {
 //                     out[it] = add(it,
-//                                   algorithm::detail::any_accessor<int>(in_a),
-//                                   algorithm::detail::any_accessor<int>(in_b));
+//                                   hla::detail::any_accessor<int>(in_a),
+//                                   hla::detail::any_accessor<int>(in_b));
 //                 });
 //             });
 
@@ -637,7 +637,7 @@ SCENARIO("accessing a slice", "[accessors::slice]")
 //                 return *a + *b;
 //             };
 
-//             using namespace celerity::algorithm::detail;
+//             using namespace celerity::hla::detail;
 
 //             const auto initialize = [=](handler &c) {
 //                 auto in_a = get_access<distributed_execution_policy,
@@ -673,7 +673,7 @@ SCENARIO("accessing a slice", "[accessors::slice]")
 //                 return *a + b;
 //             };
 
-//             using namespace celerity::algorithm::detail;
+//             using namespace celerity::hla::detail;
 
 //             const auto initialize = [=](handler &c) {
 //                 auto in_a = get_access<distributed_execution_policy,
@@ -709,7 +709,7 @@ SCENARIO("accessing a slice", "[accessors::slice]")
 //                 return a + *b;
 //             };
 
-//             using namespace celerity::algorithm::detail;
+//             using namespace celerity::hla::detail;
 
 //             const auto initialize = [=](handler &c) {
 //                 auto in_a = get_access<distributed_execution_policy,
@@ -745,7 +745,7 @@ SCENARIO("accessing a slice", "[accessors::slice]")
 //                 return a + b;
 //             };
 
-//             using namespace celerity::algorithm::detail;
+//             using namespace celerity::hla::detail;
 
 //             const auto initialize = [=](handler &c) {
 //                 auto in_a = get_access<distributed_execution_policy,
@@ -781,7 +781,7 @@ SCENARIO("accessing a slice", "[accessors::slice]")
 //                 return *a + *b;
 //             };
 
-//             using namespace celerity::algorithm::detail;
+//             using namespace celerity::hla::detail;
 
 //             const auto initialize = [=](handler &c) {
 //                 auto in_a = get_access<distributed_execution_policy,

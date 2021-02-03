@@ -11,7 +11,7 @@
 
 #include <future>
 
-namespace celerity::algorithm
+namespace celerity::hla
 {
 
 	namespace detail
@@ -215,6 +215,6 @@ namespace celerity::algorithm
 
 	} // namespace detail
 
-} // namespace celerity::algorithm
+} // namespace celerity::hla
 
 #endif

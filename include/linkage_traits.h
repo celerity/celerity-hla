@@ -5,7 +5,7 @@
 #include "packaged_task_traits.h"
 #include "t_joint.h"
 
-namespace celerity::algorithm::traits
+namespace celerity::hla::traits
 {
     template <typename T>
     struct as_kernel_input
@@ -47,6 +47,6 @@ namespace celerity::algorithm::traits
     template <typename T>
     constexpr inline bool is_internally_linked_v = !is_t_joint_v<T> || first_input_stage_completed_v<T>;
 
-} // namespace celerity::algorithm::traits
+} // namespace celerity::hla::traits
 
 #endif // LINKAGE_TRAITS_H

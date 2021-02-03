@@ -5,7 +5,7 @@
 
 #include <type_traits>
 
-namespace celerity::algorithm
+namespace celerity::hla
 {
 
     namespace detail
@@ -118,5 +118,5 @@ namespace celerity::algorithm
         using accessor_value_type_t = typename accessor_value_type<T>::type;
 
     } // namespace traits
-} // namespace celerity::algorithm
+} // namespace celerity::hla
 #endif // CELERITY_ACCESSOR_TRAITS_H

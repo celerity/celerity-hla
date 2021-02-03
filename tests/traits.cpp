@@ -13,9 +13,9 @@
 
 void static_assert_accessor_types()
 {
-    using namespace celerity::algorithm;
-    using namespace celerity::algorithm::traits;
-    using namespace celerity::algorithm::detail;
+    using namespace celerity::hla;
+    using namespace celerity::hla::traits;
+    using namespace celerity::hla::detail;
 
     auto access_one = [](int, int) {};
     using access_one_t = decltype(access_one);
@@ -38,7 +38,7 @@ void static_assert_accessor_types()
     static_assert(get_accessor_type<access_chunk_t, 1>() == access_type::chunk);
     static_assert(get_accessor_type<access_chunk_t, 2>() == access_type::chunk);
 
-    using all_t = celerity::algorithm::all<int, 1>;
+    using all_t = celerity::hla::all<int, 1>;
     auto access_all = [](all_t, all_t, all_t) {};
     using access_all_t = decltype(access_all);
 
@@ -51,7 +51,7 @@ void static_assert_iterator_traits()
 {
     using namespace std;
     using namespace celerity;
-    using namespace algorithm;
+    using namespace hla;
 
     const vector<float> v;
 
@@ -63,7 +63,7 @@ void static_assert_call_operator_detection()
 {
     using namespace std;
     using namespace celerity;
-    using namespace algorithm;
+    using namespace hla;
 
     auto foo = []() {};
     auto goo = [](handler &) {};
@@ -73,17 +73,17 @@ void static_assert_call_operator_detection()
     using goo_t = decltype(goo);
     using hoo_t = decltype(hoo);
 
-    static_assert(!algorithm::traits::has_call_operator_v<int>, "no call operator");
-    static_assert(algorithm::traits::has_call_operator_v<goo_t>, "call operator");
-    static_assert(algorithm::traits::has_call_operator_v<foo_t>, "call operator");
-    static_assert(!algorithm::traits::has_call_operator_v<hoo_t>, "can not detect call operator templates");
+    static_assert(!hla::traits::has_call_operator_v<int>, "no call operator");
+    static_assert(hla::traits::has_call_operator_v<goo_t>, "call operator");
+    static_assert(hla::traits::has_call_operator_v<foo_t>, "call operator");
+    static_assert(!hla::traits::has_call_operator_v<hoo_t>, "can not detect call operator templates");
 }
 
 void static_assert_kernel_traits()
 {
-    using namespace celerity::algorithm;
-    using namespace celerity::algorithm::traits;
-    using namespace celerity::algorithm::detail;
+    using namespace celerity::hla;
+    using namespace celerity::hla::traits;
+    using namespace celerity::hla::detail;
 
     auto one_d = [](item_context<1, int> &) {};
     auto two_d = [](item_context<2, int> &) {};
@@ -123,13 +123,13 @@ void static_assert_kernel_traits()
 void static_assert_kernel_probing()
 {
     using namespace celerity;
-    using namespace celerity::algorithm;
+    using namespace celerity::hla;
     using namespace celerity::hla::experimental;
 
     using value_t = int;
-    using accessor_t = celerity::algorithm::detail::device_accessor<value_t, 1,
-                                                                    cl::sycl::access::mode::read_write,
-                                                                    cl::sycl::access::target::global_buffer>;
+    using accessor_t = celerity::hla::detail::device_accessor<value_t, 1,
+                                                              cl::sycl::access::mode::read_write,
+                                                              cl::sycl::access::target::global_buffer>;
 
     {
         const auto f = [](auto x) { return x; };
@@ -168,7 +168,7 @@ void static_assert_kernel_probing()
         using f_t = decltype(f);
 
         static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, 0, slice_probe<int>, kernel_input<int, 1>>);
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::slice);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, kernel_input<int, 1>>() == celerity::hla::detail::access_type::slice);
 
         celerity::buffer<int, 1> b{{10}};
 
@@ -188,7 +188,7 @@ void static_assert_kernel_probing()
         using f_t = decltype(f);
 
         static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, 0, block_probe<int, 1>, kernel_input<int, 1>>);
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::chunk);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, kernel_input<int, 1>>() == celerity::hla::detail::access_type::chunk);
 
         celerity::buffer<int, 1> b{{10}};
 
@@ -216,8 +216,8 @@ void static_assert_kernel_probing()
         static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 1, slice_probe<int>, kernel_input<int, 1>, kernel_input<int, 1>>);
         static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 1, block_probe<int, 1>, kernel_input<int, 1>, kernel_input<int, 1>>);
 
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 2, 0, kernel_input<int, 1>, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::chunk);
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 2, 1, kernel_input<int, 1>, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::slice);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 2, 0, kernel_input<int, 1>, kernel_input<int, 1>>() == celerity::hla::detail::access_type::chunk);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 2, 1, kernel_input<int, 1>, kernel_input<int, 1>>() == celerity::hla::detail::access_type::slice);
 
         celerity::buffer<int, 1> b{{10}};
 
@@ -253,7 +253,7 @@ void static_assert_kernel_probing()
         using f_t = decltype(f);
 
         static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, 0, slice_probe<int>, kernel_input<int, 1>>);
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::slice);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, kernel_input<int, 1>>() == celerity::hla::detail::access_type::slice);
 
         celerity::buffer<int, 1> b{{10}};
 
@@ -279,7 +279,7 @@ void static_assert_kernel_probing()
         using f_t = decltype(f);
 
         static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, 0, block_probe<int, 1>, kernel_input<int, 1>>);
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::chunk);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, kernel_input<int, 1>>() == celerity::hla::detail::access_type::chunk);
 
         celerity::buffer<int, 1> b{{10}};
 
@@ -310,15 +310,15 @@ void static_assert_kernel_probing()
         static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 1, slice_probe<int>, kernel_input<int, 1>, kernel_input<int, 1>>);
         static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 1, block_probe<int, 1>, kernel_input<int, 1>, kernel_input<int, 1>>);
 
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 2, 0, kernel_input<int, 1>, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::chunk);
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 2, 1, kernel_input<int, 1>, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::slice);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 2, 0, kernel_input<int, 1>, kernel_input<int, 1>>() == celerity::hla::detail::access_type::chunk);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 2, 1, kernel_input<int, 1>, kernel_input<int, 1>>() == celerity::hla::detail::access_type::slice);
 
         celerity::buffer<int, 1> b{{10}};
 
         {
             auto [factory, _] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>, kernel_input<int, 1>>(f, begin(b), end(b));
 
-             using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>>;
+            using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>>;
 
             static_assert(std::is_same_v<proxy_type, hla::experimental::block<accessor_t>>);
         }
@@ -331,7 +331,7 @@ void static_assert_kernel_probing()
             static_assert(std::is_same_v<proxy_type, hla::experimental::slice<accessor_t>>);
         }
 
-        using execution_policy_type = celerity::algorithm::detail::distributed_execution_policy;
+        using execution_policy_type = celerity::hla::detail::distributed_execution_policy;
 
         static_assert(!std::is_void_v<decltype(get_access<execution_policy_type, cl::sycl::access::mode::read, 0, decltype(begin(b)), decltype(begin(b))>(std::declval<celerity::handler &>(), begin(b), end(b), f))>);
         static_assert(!std::is_void_v<decltype(get_access<execution_policy_type, cl::sycl::access::mode::read, 1, decltype(begin(b)), decltype(begin(b))>(std::declval<celerity::handler &>(), begin(b), end(b), f))>);

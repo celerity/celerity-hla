@@ -11,13 +11,13 @@
 #endif
 #endif
 
-namespace celerity::algorithm::detail
+namespace celerity::hla::detail
 {
     inline void on_error(const char *section, const char *msg)
     {
         printf("[celerity-standard][%s] ERR: %s\n", section, msg);
     }
 
-} // namespace celerity::algorithm::detail
+} // namespace celerity::hla::detail
 
 #endif

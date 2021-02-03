@@ -28,7 +28,7 @@ template <int Rank, typename T>
 std::vector<T> copy_to_host(celerity::distr_queue &q, celerity::buffer<T, Rank> &src)
 {
     std::vector<int> dst(src.get_range().size(), 0);
-    celerity::algorithm::copy(celerity::algorithm::master_blocking(q), src, dst.data());
+    celerity::hla::copy(celerity::hla::master_blocking(q), src, dst.data());
     return dst;
 }
 

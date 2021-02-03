@@ -7,12 +7,12 @@
 #include <numeric>
 
 using namespace celerity;
-using namespace celerity::algorithm;
+using namespace celerity::hla;
 
 template <auto N>
 constexpr inline auto sum_one_to_n = N *(N + 1) / 2;
 
-SCENARIO("copying a buffer", "[celerity::algorithm]")
+SCENARIO("copying a buffer", "[celerity::hla]")
 {
     distr_queue q;
 
@@ -71,7 +71,7 @@ SCENARIO("copying a buffer", "[celerity::algorithm]")
     }
 }
 
-SCENARIO("filling a buffer", "[celerity::algorithm]")
+SCENARIO("filling a buffer", "[celerity::hla]")
 {
     distr_queue q;
 
@@ -163,7 +163,7 @@ SCENARIO("filling a buffer", "[celerity::algorithm]")
     }
 }
 
-SCENARIO("transforming a buffer", "[celerity::algorithm]")
+SCENARIO("transforming a buffer", "[celerity::hla]")
 {
     distr_queue q;
 
@@ -327,7 +327,7 @@ SCENARIO("transforming a buffer", "[celerity::algorithm]")
     }
 }
 
-// SCENARIO("iterating a buffer on the master", "[celerity::algorithm]")
+// SCENARIO("iterating a buffer on the master", "[celerity::hla]")
 // {
 //     distr_queue q;
 
@@ -397,7 +397,7 @@ SCENARIO("transforming a buffer", "[celerity::algorithm]")
 //         auto checked = 0;
 
 //         master_task(
-//             master(q), buf, [&](algorithm::all<int, 1> b) {
+//             master(q), buf, [&](hla::all<int, 1> b) {
 //                 checked = 1000;
 //                 all_one = std::all_of(begin(b), end(b), [](int x) { return x == 1; });
 //             });
@@ -427,7 +427,7 @@ SCENARIO("transforming a buffer", "[celerity::algorithm]")
 //         auto all_one = false;
 //         auto checked = 0;
 
-//         master_task(master(q), pack(buf_a, buf_b), [&](algorithm::all<int, 1> a, algorithm::all<int, 1> b) {
+//         master_task(master(q), pack(buf_a, buf_b), [&](hla::all<int, 1> a, hla::all<int, 1> b) {
 //             checked = 1000;
 //             all_one = std::all_of(begin(a), end(a), [](int x) { return x == 1; });
 //             all_one = all_one && std::all_of(begin(b), end(b), [](int x) { return x == 2; });

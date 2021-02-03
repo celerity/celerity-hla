@@ -6,7 +6,7 @@
 #include "any_accessor.h"
 #include "variant_item.h"
 
-namespace celerity::algorithm
+namespace celerity::hla
 {
 
 	namespace detail
@@ -30,7 +30,7 @@ namespace celerity::algorithm
 		using value_type = T;
 
 		template <int Rank, cl::sycl::access::mode Mode, cl::sycl::access::target Target>
-		slice(const cl::sycl::item<Rank> item, const cl::sycl::range<Rank> range, celerity::algorithm::detail::device_accessor<T, Rank, Mode, Target> acc)
+		slice(const cl::sycl::item<Rank> item, const cl::sycl::range<Rank> range, celerity::hla::detail::device_accessor<T, Rank, Mode, Target> acc)
 			: idx_(static_cast<int>(item.get_id()[Dim])), range_(range[Dim]), item_(item), accessor_(acc)
 		{
 		}
@@ -113,7 +113,7 @@ namespace celerity::algorithm
 		T operator[](cl::sycl::rel_id<rank> rel_id) const
 		{
 			auto id = item_.get_id();
-			
+
 			for (auto i = 0u; i < rank; ++i)
 			{
 				id[i] = static_cast<size_t>(static_cast<long>(id[i]) + rel_id[i]);
@@ -334,6 +334,6 @@ namespace celerity::algorithm
 
 	} // namespace aliases
 
-} // namespace celerity::algorithm
+} // namespace celerity::hla
 
 #endif // ACCESSORS_H

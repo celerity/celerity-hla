@@ -80,7 +80,7 @@ namespace celerity::hla::experimental::detail
 
 } // namespace celerity::hla::experimental::detail
 
-namespace celerity::algorithm::traits
+namespace celerity::hla::traits
 {
 
     template <typename FunctorType, typename InputValueType, typename OutputIteratorType, int Rank>
@@ -142,6 +142,6 @@ namespace celerity::algorithm::traits
         static constexpr auto requirement = detail::stage_requirement::output;
     };
 
-} // namespace celerity::algorithm::traits
+} // namespace celerity::hla::traits
 
 #endif // CELERITY_HLA_PACKAGED_GENERATE_H

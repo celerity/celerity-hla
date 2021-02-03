@@ -12,7 +12,7 @@ namespace celerity
 	class buffer;
 }
 
-namespace celerity::algorithm
+namespace celerity::hla
 {
 	template <int Rank>
 	class iterator
@@ -150,7 +150,7 @@ namespace celerity::algorithm
 		template <int Rank, typename Iterator, typename F>
 		void for_each_index(Iterator beg, Iterator end, cl::sycl::range<Rank> r, cl::sycl::id<Rank> offset, const F &f)
 		{
-			std::for_each(algorithm::iterator<Rank>{*beg, r}, algorithm::iterator<Rank>{*end, r},
+			std::for_each(hla::iterator<Rank>{*beg, r}, hla::iterator<Rank>{*end, r},
 						  [&](auto i) {
 							  f(cl::sycl::detail::make_item(i + offset, r, offset));
 						  });
@@ -191,20 +191,20 @@ namespace celerity::algorithm
 		return ++it;
 	}
 
-} // namespace celerity::algorithm
+} // namespace celerity::hla
 
 namespace celerity
 {
 	template <typename T, int Rank>
-	algorithm::buffer_iterator<T, Rank> begin(celerity::buffer<T, Rank> buffer)
+	hla::buffer_iterator<T, Rank> begin(celerity::buffer<T, Rank> buffer)
 	{
-		return algorithm::buffer_iterator<T, Rank>(cl::sycl::id<Rank>{}, buffer);
+		return hla::buffer_iterator<T, Rank>(cl::sycl::id<Rank>{}, buffer);
 	}
 
 	template <typename T, int Rank>
-	algorithm::buffer_iterator<T, Rank> end(celerity::buffer<T, Rank> buffer)
+	hla::buffer_iterator<T, Rank> end(celerity::buffer<T, Rank> buffer)
 	{
-		return algorithm::buffer_iterator<T, Rank>(buffer.get_range(), buffer);
+		return hla::buffer_iterator<T, Rank>(buffer.get_range(), buffer);
 	}
 
 } // namespace celerity
@@ -212,7 +212,7 @@ namespace celerity
 namespace celerity::hla::experimental
 {
 	template <typename ValueType, size_t Rank>
-	struct is_kernel_input<algorithm::buffer_iterator<ValueType, Rank>> : std::bool_constant<true>
+	struct is_kernel_input<hla::buffer_iterator<ValueType, Rank>> : std::bool_constant<true>
 	{
 	};
 } // namespace celerity::hla::experimental

@@ -9,7 +9,7 @@
 #include "../accessor_proxies.h"
 #include "../packaged_tasks/packaged_generate.h"
 
-using celerity::algorithm::buffer_iterator;
+using celerity::hla::buffer_iterator;
 
 namespace celerity::hla::experimental
 {
@@ -21,12 +21,12 @@ namespace celerity::hla::experimental
         {
             using namespace cl::sycl::access;
 
-            using policy_type = algorithm::traits::strip_queue_t<ExecutionPolicy>;
+            using policy_type = hla::traits::strip_queue_t<ExecutionPolicy>;
 
             return [=](celerity::handler &cgh) {
                 auto out_acc = get_out_access<policy_type, mode::discard_write>(cgh, beg, end);
 
-                return [=](algorithm::detail::item_context<Rank, T(void)> &ctx) {
+                return [=](hla::detail::item_context<Rank, T(void)> &ctx) {
                     out_acc[ctx.get_out()] = value;
                 };
             };
@@ -35,7 +35,7 @@ namespace celerity::hla::experimental
         template <typename ExecutionPolicy, typename T, int Rank>
         auto fill(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
         {
-            const auto t = algorithm::detail::task<ExecutionPolicy>(experimental::detail::fill_impl<ExecutionPolicy>(beg, end, value));
+            const auto t = hla::detail::task<ExecutionPolicy>(experimental::detail::fill_impl<ExecutionPolicy>(beg, end, value));
             return [=](distr_queue q) { t(q, beg, end); };
         }
 
@@ -43,7 +43,7 @@ namespace celerity::hla::experimental
         auto fill(cl::sycl::range<Rank> range, const T &value)
         {
             return package_generate<T>(
-                [value](auto beg, auto end) { return algorithm::detail::task<ExecutionPolicy>(experimental::detail::fill_impl<ExecutionPolicy>(beg, end, value)); },
+                [value](auto beg, auto end) { return hla::detail::task<ExecutionPolicy>(experimental::detail::fill_impl<ExecutionPolicy>(beg, end, value)); },
                 range);
         }
 
@@ -58,14 +58,14 @@ namespace celerity::hla::experimental
     template <typename KernelName, typename T, int Rank>
     auto fill_n(cl::sycl::range<Rank> range, const T &value)
     {
-        using execution_policy = algorithm::detail::named_distributed_execution_policy<KernelName>;
+        using execution_policy = hla::detail::named_distributed_execution_policy<KernelName>;
         return detail::fill<execution_policy>(range, value);
     }
 
     template <typename KernelName, typename T, int Rank>
     auto fill(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, const T &value)
     {
-        return hla::experimental::fill(algorithm::distr<KernelName>(q), beg, end, value);
+        return hla::experimental::fill(hla::distr<KernelName>(q), beg, end, value);
     }
 
     template <typename ExecutionPolicy, typename T, int Rank>
@@ -77,7 +77,7 @@ namespace celerity::hla::experimental
     template <typename KernelName, typename T, int Rank>
     auto fill(celerity::distr_queue q, buffer<T, Rank> in, const T &value)
     {
-        return hla::experimental::fill(algorithm::distr<KernelName>(q), begin(in), end(in), value);
+        return hla::experimental::fill(hla::distr<KernelName>(q), begin(in), end(in), value);
     }
 
 } // namespace celerity::hla::experimental

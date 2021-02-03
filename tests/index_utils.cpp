@@ -6,8 +6,8 @@
 #include "../include/sycl.h"
 
 using namespace celerity;
-using namespace celerity::algorithm;
-using namespace celerity::algorithm::detail;
+using namespace celerity::hla;
+using namespace celerity::hla::detail;
 using namespace cl::sycl;
 
 SCENARIO("ids can be compared", "[cl::sycl::id]")

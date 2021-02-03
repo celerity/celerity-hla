@@ -28,7 +28,7 @@ namespace celerity::hla::experimental
         factory_type factory_;
     };
 
-    template <typename ProxyFactoryType, celerity::algorithm::detail::access_type ProxyConcept>
+    template <typename ProxyFactoryType, celerity::hla::detail::access_type ProxyConcept>
     class accessor : public accessor_base<ProxyFactoryType>
     {
     public:
@@ -43,10 +43,10 @@ namespace celerity::hla::experimental
         }
     };
 
-    template <celerity::algorithm::detail::access_type ProxyConcept>
+    template <celerity::hla::detail::access_type ProxyConcept>
     inline auto create_accessor(auto factory, auto acc, auto beg, auto end)
     {
-        if constexpr (ProxyConcept == celerity::algorithm::detail::access_type::one_to_one)
+        if constexpr (ProxyConcept == celerity::hla::detail::access_type::one_to_one)
         {
             return acc;
         }

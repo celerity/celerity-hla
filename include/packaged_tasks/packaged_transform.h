@@ -9,7 +9,7 @@
 #include "../partially_packaged_task.h"
 #include "../accessor_type.h"
 
-namespace celerity::algorithm
+namespace celerity::hla
 {
 
     namespace detail
@@ -207,6 +207,6 @@ namespace celerity::algorithm
 
     } // namespace traits
 
-} // namespace celerity::algorithm
+} // namespace celerity::hla
 
 #endif // TRANSFORM_DECORATOR_H

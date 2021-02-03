@@ -41,7 +41,7 @@ public:
                 return f(*std::get_if<cl::sycl::item<3>>(&var_));
             break;
         default:
-            celerity::algorithm::detail::on_error("variant_item", "invalid rank");
+            celerity::hla::detail::on_error("variant_item", "invalid rank");
         }
 
         return return_type_t<F>{};

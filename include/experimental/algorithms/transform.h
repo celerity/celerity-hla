@@ -9,7 +9,7 @@
 #include "../../experimental/packaged_tasks/packaged_transform.h"
 #include "../../experimental/accessor_proxies.h"
 
-using celerity::algorithm::buffer_iterator;
+using celerity::hla::buffer_iterator;
 
 namespace celerity::hla::experimental
 {
@@ -20,13 +20,13 @@ namespace celerity::hla::experimental
         {
             using namespace cl::sycl::access;
 
-            using policy_type = algorithm::traits::strip_queue_t<ExecutionPolicy>;
+            using policy_type = hla::traits::strip_queue_t<ExecutionPolicy>;
 
             return [=](celerity::handler &cgh) {
                 auto in_acc = get_access<policy_type, mode::read, 0>(cgh, beg, end, f);
                 auto out_acc = get_out_access<policy_type, mode::discard_write>(cgh, out, out);
 
-                return [=](algorithm::detail::item_context<Rank, U(T)> &ctx) {
+                return [=](hla::detail::item_context<Rank, U(T)> &ctx) {
                     out_acc[ctx.get_out()] = f(in_acc[ctx.get_in()]);
                 };
             };
@@ -55,7 +55,7 @@ namespace celerity::hla::experimental
         template <typename ExecutionPolicy, typename T, typename U, int Rank, Kernel<T> F>
         auto transform(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
         {
-            const auto t = algorithm::detail::task<ExecutionPolicy>(transform_impl<ExecutionPolicy>(beg, end, out, f));
+            const auto t = hla::detail::task<ExecutionPolicy>(transform_impl<ExecutionPolicy>(beg, end, out, f));
             return [=](distr_queue q) { t(q, beg, end); };
         }
 
@@ -63,7 +63,7 @@ namespace celerity::hla::experimental
         auto transform(const F &f)
         {
             return package_transform<F>(
-                [f](auto beg, auto end, auto out) { return algorithm::detail::task<ExecutionPolicy>(transform_impl<ExecutionPolicy>(beg, end, out, f)); });
+                [f](auto beg, auto end, auto out) { return hla::detail::task<ExecutionPolicy>(transform_impl<ExecutionPolicy>(beg, end, out, f)); });
         }
 
         // template <typename ExecutionPolicy, typename T, typename U, int Rank, typename F,
@@ -97,14 +97,14 @@ namespace celerity::hla::experimental
     template <typename KernelName, typename F>
     auto transform(const F &f)
     {
-        using execution_policy = algorithm::detail::named_distributed_execution_policy<KernelName>;
+        using execution_policy = hla::detail::named_distributed_execution_policy<KernelName>;
         return detail::transform<execution_policy>(f);
     }
 
     template <typename KernelName, typename T, typename U, int Rank, Kernel<T> F>
     auto transform(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> out, const F &f)
     {
-        return hla::experimental::transform(algorithm::distr<KernelName>(q), beg, end, out, f);
+        return hla::experimental::transform(hla::distr<KernelName>(q), beg, end, out, f);
     }
 
     template <typename ExecutionPolicy, typename T, typename U, int Rank, Kernel<T> F>
@@ -116,7 +116,7 @@ namespace celerity::hla::experimental
     template <typename KernelName, typename T, typename U, int Rank, Kernel<T> F>
     auto transform(celerity::distr_queue q, buffer<T, Rank> in, buffer_iterator<U, Rank> out, const F &f)
     {
-        return transform(algorithm::distr<KernelName>(q), in, out, f);
+        return transform(hla::distr<KernelName>(q), in, out, f);
     }
 
     template <typename ExecutionPolicy, typename T, typename U, int Rank, Kernel<T> F>
@@ -128,7 +128,7 @@ namespace celerity::hla::experimental
     template <typename KernelName, typename T, typename U, int Rank, Kernel<T> F>
     auto transform(celerity::distr_queue q, buffer<T, Rank> in, buffer<U, Rank> out, const F &f)
     {
-        return transform(algorithm::distr<KernelName>(q), in, out, f);
+        return transform(hla::distr<KernelName>(q), in, out, f);
     }
 
 } // namespace celerity::hla::experimental

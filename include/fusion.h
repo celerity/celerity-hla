@@ -17,7 +17,7 @@
 
 #include "require.h"
 
-namespace celerity::algorithm
+namespace celerity::hla
 {
 
     namespace detail
@@ -174,10 +174,10 @@ namespace celerity::algorithm
                 }
                 else
                 {
-                    return algorithm::detail::package_transform<access_type::one_to_one>(fuse(lhs.get_task(), rhs.get_task()),
-                                                                                         lhs.get_in_beg(),
-                                                                                         lhs.get_in_end(),
-                                                                                         rhs.get_out_beg());
+                    return hla::detail::package_transform<access_type::one_to_one>(fuse(lhs.get_task(), rhs.get_task()),
+                                                                                   lhs.get_in_beg(),
+                                                                                   lhs.get_in_end(),
+                                                                                   rhs.get_out_beg());
                 }
 
                 // Results in a linker error. Not sure why -> need further clarification from philip/peter
@@ -206,7 +206,7 @@ namespace celerity::algorithm
                 }
                 else
                 {
-                    return algorithm::detail::package_generate<output_value_type>(fuse(lhs.get_task(), rhs.get_task()), out_beg, out_end);
+                    return hla::detail::package_generate<output_value_type>(fuse(lhs.get_task(), rhs.get_task()), out_beg, out_end);
                 }
             }
 
@@ -230,12 +230,12 @@ namespace celerity::algorithm
                 }
                 else
                 {
-                    return algorithm::detail::package_zip<access_type_v<T, hla::experimental::unused>,
-                                                          second_input_access_type_v<T, hla::experimental::unused, hla::experimental::unused>>(fuse(lhs.get_task(), rhs.get_task()),
-                                                                                                                                               lhs.get_in_beg(),
-                                                                                                                                               lhs.get_in_end(),
-                                                                                                                                               lhs.get_second_in_beg(),
-                                                                                                                                               rhs.get_out_beg());
+                    return hla::detail::package_zip<access_type_v<T, hla::experimental::unused>,
+                                                    second_input_access_type_v<T, hla::experimental::unused, hla::experimental::unused>>(fuse(lhs.get_task(), rhs.get_task()),
+                                                                                                                                         lhs.get_in_beg(),
+                                                                                                                                         lhs.get_in_end(),
+                                                                                                                                         lhs.get_second_in_beg(),
+                                                                                                                                         rhs.get_out_beg());
                 }
             }
 
@@ -281,16 +281,16 @@ namespace celerity::algorithm
                             }
                             else
                             {
-                                auto zip = algorithm::detail::package_zip<first_input_access_type, second_input_access_type>(fused,
-                                                                                                                             in_beg,
-                                                                                                                             in_end,
-                                                                                                                             secondary_out_beg,
-                                                                                                                             out_beg);
+                                auto zip = hla::detail::package_zip<first_input_access_type, second_input_access_type>(fused,
+                                                                                                                       in_beg,
+                                                                                                                       in_end,
+                                                                                                                       secondary_out_beg,
+                                                                                                                       out_beg);
 
-                                return algorithm::detail::package_transform<first_input_access_type>(zip.get_task(),
-                                                                                                     in_beg,
-                                                                                                     in_end,
-                                                                                                     out_beg);
+                                return hla::detail::package_transform<first_input_access_type>(zip.get_task(),
+                                                                                               in_beg,
+                                                                                               in_end,
+                                                                                               out_beg);
                             }
                         }();
 
@@ -324,16 +324,16 @@ namespace celerity::algorithm
                             }
                             else
                             {
-                                auto zip = algorithm::detail::package_zip<first_input_access_type, second_input_access_type>(fused,
-                                                                                                                             in_beg,
-                                                                                                                             in_end,
-                                                                                                                             secondary_out_beg,
-                                                                                                                             out_beg);
+                                auto zip = hla::detail::package_zip<first_input_access_type, second_input_access_type>(fused,
+                                                                                                                       in_beg,
+                                                                                                                       in_end,
+                                                                                                                       secondary_out_beg,
+                                                                                                                       out_beg);
 
-                                return algorithm::detail::package_transform<first_input_access_type>(zip.get_task(),
-                                                                                                     in_beg,
-                                                                                                     in_end,
-                                                                                                     out_beg);
+                                return hla::detail::package_transform<first_input_access_type>(zip.get_task(),
+                                                                                               in_beg,
+                                                                                               in_end,
+                                                                                               out_beg);
                             }
                         }();
 
@@ -529,6 +529,6 @@ namespace celerity::algorithm
 
     } // namespace detail
 
-} // namespace celerity::algorithm
+} // namespace celerity::hla
 
 #endif // FUSION_H`

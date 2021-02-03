@@ -141,23 +141,23 @@ namespace celerity::hla::experimental
 
         if constexpr (is_invocable_using_probes_v<F, Arity, Idx, slice_probe<nth_value_type>, Args...>)
         {
-            return algorithm::detail::access_type::slice;
+            return hla::detail::access_type::slice;
         }
         else if constexpr (is_invocable_using_probes_v<F, Arity, Idx, block_probe<nth_value_type, nth_rank>, Args...>)
         {
-            return algorithm::detail::access_type::chunk;
+            return hla::detail::access_type::chunk;
         }
         else if constexpr (is_invocable_using_probes_v<F, Arity, Idx, all_probe<nth_value_type, nth_rank>, Args...>)
         {
-            return algorithm::detail::access_type::all;
+            return hla::detail::access_type::all;
         }
         else //if constexpr (is_invocable_using_probes_v<F, Arity, Idx, ValueType>)
         {
-            return algorithm::detail::access_type::one_to_one;
+            return hla::detail::access_type::one_to_one;
         }
         // else
         // {
-        //     return algorithm::detail::access_type::invalid;
+        //     return hla::detail::access_type::invalid;
         // }
     }
 
@@ -167,7 +167,7 @@ namespace celerity::hla::experimental
     template <typename F, size_t Arity, size_t Idx, KernelInput... Args>
     constexpr auto get_probe_type()
     {
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::detail::access_type;
         using namespace celerity::access;
 
         using nth_type = nth_t<Idx, Args...>;
@@ -216,7 +216,7 @@ namespace celerity::hla::experimental
         template <size_t Idx>
         struct argument
         {
-            static constexpr algorithm::detail::access_type access_concept = access_concept_v<F, arity, Idx, Args...>;
+            static constexpr hla::detail::access_type access_concept = access_concept_v<F, arity, Idx, Args...>;
 
             using probe_type = probe_type_t<F, arity, Idx, Args...>;
 

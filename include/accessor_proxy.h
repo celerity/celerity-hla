@@ -15,7 +15,7 @@
 #include <type_traits>
 #include <cmath>
 
-namespace celerity::algorithm::detail
+namespace celerity::hla::detail
 {
 
 	template <typename AccessorType>
@@ -135,7 +135,7 @@ namespace celerity::algorithm::detail
 		// TODO: move accessor creation into proxy
 		if constexpr (traits::policy_traits<ExecutionPolicy>::is_distributed)
 		{
-			if constexpr (traits::get_accessor_type_<AccessorType>() != algorithm::detail::access_type::all)
+			if constexpr (traits::get_accessor_type_<AccessorType>() != hla::detail::access_type::all)
 			{
 				return beg.get_buffer().template get_access<Mode>(cgh, traits::accessor_traits<Rank, AccessorType>::range_mapper());
 			}
@@ -165,6 +165,6 @@ namespace celerity::algorithm::detail
 		return accessor_proxy<T, Rank, decltype(acc), AccessorType>{acc, *beg, beg.get_buffer().get_range()};
 	}
 
-} // namespace celerity::algorithm::detail
+} // namespace celerity::hla::detail
 
 #endif // ACCESSOR_PROXY_H

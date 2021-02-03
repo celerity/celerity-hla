@@ -6,7 +6,7 @@
 #include "concepts.h"
 #include "inactive_probe.h"
 
-namespace algo = celerity::algorithm;
+namespace algo = celerity::hla;
 
 namespace celerity::hla::experimental
 {

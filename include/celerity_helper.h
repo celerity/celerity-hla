@@ -14,7 +14,7 @@
 
 #include "require.h"
 
-namespace celerity::algorithm::traits
+namespace celerity::hla::traits
 {
     template <typename T>
     struct is_celerity_buffer : std::false_type
@@ -28,13 +28,13 @@ namespace celerity::algorithm::traits
 
     template <typename T>
     constexpr inline bool is_celerity_buffer_v = is_celerity_buffer<T>::value;
-} // namespace celerity::algorithm::traits
+} // namespace celerity::hla::traits
 
-namespace celerity::algorithm::detail
+namespace celerity::hla::detail
 {
     template <typename ElementTypeA, int RankA,
               typename ElementTypeB, int RankB,
-              algorithm::require_one<!std::is_same_v<ElementTypeA, ElementTypeB>, RankA != RankB> = algorithm::yes>
+              hla::require_one<!std::is_same_v<ElementTypeA, ElementTypeB>, RankA != RankB> = hla::yes>
     bool are_equal(buffer<ElementTypeA, RankA> a, buffer<ElementTypeB, RankB> b)
     {
         return false;
@@ -45,6 +45,6 @@ namespace celerity::algorithm::detail
     {
         return a.get_id() == b.get_id();
     }
-} // namespace celerity::algorithm::detail
+} // namespace celerity::hla::detail
 
 #endif

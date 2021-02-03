@@ -10,22 +10,22 @@
 namespace celerity::hla::experimental::traits
 {
     template <StrictSlice T>
-    constexpr auto get_access_type() { return celerity::algorithm::detail::access_type::slice; }
+    constexpr auto get_access_type() { return celerity::hla::detail::access_type::slice; }
 
     template <StrictBlock T>
-    constexpr auto get_access_type() { return celerity::algorithm::detail::access_type::chunk; }
+    constexpr auto get_access_type() { return celerity::hla::detail::access_type::chunk; }
 
     template <StrictAll T>
-    constexpr auto get_access_type() { return celerity::algorithm::detail::access_type::all; }
+    constexpr auto get_access_type() { return celerity::hla::detail::access_type::all; }
 
     // clang-format off
     template <typename T>
         requires(!AnySlice<T> && !AnyBlock<T> && !All<T>)                    
-    constexpr auto get_access_type() { return celerity::algorithm::detail::access_type::one_to_one; }
+    constexpr auto get_access_type() { return celerity::hla::detail::access_type::one_to_one; }
     // clang-format on
 
     template <typename T>
-    struct is_slice : std::bool_constant<get_access_type<T>() == celerity::algorithm::detail::access_type::slice>
+    struct is_slice : std::bool_constant<get_access_type<T>() == celerity::hla::detail::access_type::slice>
     {
     };
 
@@ -33,7 +33,7 @@ namespace celerity::hla::experimental::traits
     inline constexpr auto is_slice_v = is_slice<T>::value;
 
     template <typename T>
-    struct is_block : std::bool_constant<get_access_type<T>() == celerity::algorithm::detail::access_type::chunk>
+    struct is_block : std::bool_constant<get_access_type<T>() == celerity::hla::detail::access_type::chunk>
     {
     };
 
@@ -41,7 +41,7 @@ namespace celerity::hla::experimental::traits
     inline constexpr auto is_block_v = is_block<T>::value;
 
     template <typename T>
-    struct is_all : std::bool_constant<get_access_type<T>() == celerity::algorithm::detail::access_type::all>
+    struct is_all : std::bool_constant<get_access_type<T>() == celerity::hla::detail::access_type::all>
     {
     };
 

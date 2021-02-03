@@ -42,45 +42,45 @@ std::vector<cl::sycl::float3> load_image(std::string filename, int &width, int &
 namespace kernels
 {
 
-using f = celerity::algorithm::traits::buffer_traits<float, 2>;
-using f3 = celerity::algorithm::traits::buffer_traits<cl::sycl::float3, 2>;
+	using f = celerity::hla::traits::buffer_traits<float, 2>;
+	using f3 = celerity::hla::traits::buffer_traits<cl::sycl::float3, 2>;
 
-constexpr auto gen_gauss = [](cl::sycl::item<2> item) {
-	const auto x = item.get_id(1) - (FILTER_SIZE / 2);
-	const auto y = item.get_id(0) - (FILTER_SIZE / 2);
+	constexpr auto gen_gauss = [](cl::sycl::item<2> item) {
+		const auto x = item.get_id(1) - (FILTER_SIZE / 2);
+		const auto y = item.get_id(0) - (FILTER_SIZE / 2);
 
-	return cl::sycl::exp(-1.f * (x * x + y * y) / (2 * sigma * sigma)) / (2 * PI * sigma * sigma);
-};
+		return cl::sycl::exp(-1.f * (x * x + y * y) / (2 * sigma * sigma)) / (2 * PI * sigma * sigma);
+	};
 
-constexpr auto blur = [](const f3::chunk<FILTER_SIZE, FILTER_SIZE> &in, const f::all &gauss) {
-	return in.discern(cl::sycl::float3{},
-					  [&]() { return std::inner_product(begin(in), end(in), begin(gauss), cl::sycl::float3{}); });
-};
+	constexpr auto blur = [](const f3::chunk<FILTER_SIZE, FILTER_SIZE> &in, const f::all &gauss) {
+		return in.discern(cl::sycl::float3{},
+						  [&]() { return std::inner_product(begin(in), end(in), begin(gauss), cl::sycl::float3{}); });
+	};
 
-constexpr auto sharpen = [](f3::chunk<3, 3> in) {
-	constexpr std::array<int, 9> weights = {
-		0, -1, 0,
-		-1, 0, -1,
-		0, -1, 0};
+	constexpr auto sharpen = [](f3::chunk<3, 3> in) {
+		constexpr std::array<int, 9> weights = {
+			0, -1, 0,
+			-1, 0, -1,
+			0, -1, 0};
 
-	return in.discern(cl::sycl::float3{},
-					  [&]() { return std::inner_product(begin(in), end(in), begin(weights), 5.f * (*in)); });
-};
+		return in.discern(cl::sycl::float3{},
+						  [&]() { return std::inner_product(begin(in), end(in), begin(weights), 5.f * (*in)); });
+	};
 
-// TODO: rename to saturate
-constexpr auto delimit = [](cl::sycl::float3 v) -> cl::sycl::float3 {
-	return {
-		std::max(0.f, std::min(1.f, v.x())),
-		std::max(0.f, std::min(1.f, v.y())),
-		std::max(0.f, std::min(1.f, v.z()))};
-};
+	// TODO: rename to saturate
+	constexpr auto delimit = [](cl::sycl::float3 v) -> cl::sycl::float3 {
+		return {
+			std::max(0.f, std::min(1.f, v.x())),
+			std::max(0.f, std::min(1.f, v.y())),
+			std::max(0.f, std::min(1.f, v.z()))};
+	};
 
-constexpr auto to_uint8 = [](cl::sycl::float3 c) -> uchar3 {
-	return {
-		static_cast<u_char>(c.x() * 255.f),
-		static_cast<u_char>(c.y() * 255.f),
-		static_cast<u_char>(c.z() * 255.f)};
-};
+	constexpr auto to_uint8 = [](cl::sycl::float3 c) -> uchar3 {
+		return {
+			static_cast<u_char>(c.x() * 255.f),
+			static_cast<u_char>(c.y() * 255.f),
+			static_cast<u_char>(c.z() * 255.f)};
+	};
 
 } // namespace kernels
 
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 	auto image_input = load_image(argv[1], image_width, image_height, image_channels);
 
 	using namespace celerity;
-	using namespace algorithm;
+	using namespace hla;
 
 	distr_queue queue;
 

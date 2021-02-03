@@ -10,7 +10,7 @@
 #include "../../experimental/packaged_tasks/packaged_zip.h"
 #include "../../experimental/accessor_proxies.h"
 
-using celerity::algorithm::buffer_iterator;
+using celerity::hla::buffer_iterator;
 
 namespace celerity::hla::experimental
 {
@@ -33,14 +33,14 @@ namespace celerity::hla::experimental
         {
             using namespace cl::sycl::access;
 
-            using policy_type = algorithm::traits::strip_queue_t<ExecutionPolicy>;
+            using policy_type = hla::traits::strip_queue_t<ExecutionPolicy>;
 
             return [=](celerity::handler &cgh) {
                 auto first_in_acc = get_access<policy_type, mode::read, 0, FirstInputIteratorType<T, Rank>, SecondInputIteratorType<U, Rank>>(cgh, beg, end, f);
                 auto second_in_acc = get_access<policy_type, mode::read, 1, FirstInputIteratorType<T, Rank>, SecondInputIteratorType<U, Rank>>(cgh, beg2, beg2, f);
                 auto out_acc = get_out_access<policy_type, mode::discard_write>(cgh, out, out);
 
-                return [=](algorithm::detail::item_context<Rank, V(T, U)> &ctx) {
+                return [=](hla::detail::item_context<Rank, V(T, U)> &ctx) {
                     out_acc[ctx.get_out()] = f(first_in_acc[ctx.template get_in<0>()], second_in_acc[ctx.template get_in<1>()]);
                 };
             };
@@ -82,7 +82,7 @@ namespace celerity::hla::experimental
         template <typename ExecutionPolicy, typename T, typename U, int Rank, Kernel<T, U> F>
         auto zip(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<U, Rank> beg2, buffer_iterator<T, Rank> out, const F &f)
         {
-            const auto t = algorithm::detail::task<ExecutionPolicy>(zip_impl<ExecutionPolicy>(beg, end, beg2, out, f));
+            const auto t = hla::detail::task<ExecutionPolicy>(zip_impl<ExecutionPolicy>(beg, end, beg2, out, f));
             return [=](distr_queue q) { t(q, beg, end); };
         }
 
@@ -90,7 +90,7 @@ namespace celerity::hla::experimental
         auto zip(const F &f)
         {
             return package_zip<F>([f](auto beg, auto end, auto beg2, auto out) {
-                return algorithm::detail::task<ExecutionPolicy>(zip_impl<ExecutionPolicy>(beg, end, beg2, out, f));
+                return hla::detail::task<ExecutionPolicy>(zip_impl<ExecutionPolicy>(beg, end, beg2, out, f));
             });
         }
 
@@ -124,14 +124,14 @@ namespace celerity::hla::experimental
     template <typename KernelName, typename F>
     auto zip(const F &f)
     {
-        using execution_policy = algorithm::detail::named_distributed_execution_policy<KernelName>;
+        using execution_policy = hla::detail::named_distributed_execution_policy<KernelName>;
         return detail::zip<execution_policy>(f);
     }
 
     template <typename KernelName, typename T, typename U, typename V, int Rank, Kernel<T, V> F>
     auto zip(celerity::distr_queue q, buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end, buffer_iterator<V, Rank> beg2, buffer_iterator<U, Rank> out, const F &f)
     {
-        return zip(algorithm::distr<KernelName>(q), beg, end, beg2, out, f);
+        return zip(hla::distr<KernelName>(q), beg, end, beg2, out, f);
     }
 
     template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, Kernel<T, V> F>
@@ -143,7 +143,7 @@ namespace celerity::hla::experimental
     template <typename KernelName, typename T, typename U, typename V, int Rank, Kernel<T, V> F>
     auto zip(celerity::distr_queue q, buffer<T, Rank> in, buffer_iterator<V, Rank> beg2, buffer_iterator<U, Rank> out, const F &f)
     {
-        return zip(algorithm::distr<KernelName>(q), begin(in), end(in), beg2, out, f);
+        return zip(hla::distr<KernelName>(q), begin(in), end(in), beg2, out, f);
     }
 
     template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, Kernel<T, V> F>
@@ -155,7 +155,7 @@ namespace celerity::hla::experimental
     template <typename KernelName, typename T, typename U, typename V, int Rank, Kernel<T, V> F>
     auto zip(celerity::distr_queue q, buffer<T, Rank> first, buffer<V, Rank> second, buffer_iterator<U, Rank> out, const F &f)
     {
-        return zip(algorithm::distr<KernelName>(q), begin(first), end(first), begin(second), out, f);
+        return zip(hla::distr<KernelName>(q), begin(first), end(first), begin(second), out, f);
     }
 
     template <typename ExecutionPolicy, typename T, typename U, typename V, int Rank, Kernel<T, V> F>
@@ -167,7 +167,7 @@ namespace celerity::hla::experimental
     template <typename KernelName, typename T, typename U, typename V, int Rank, Kernel<T, V> F>
     auto zip(celerity::distr_queue q, buffer<T, Rank> first, buffer<V, Rank> second, buffer<U, Rank> out, const F &f)
     {
-        return zip(algorithm::distr<KernelName>(q), begin(first), end(first), begin(second), begin(out), f);
+        return zip(hla::distr<KernelName>(q), begin(first), end(first), begin(second), begin(out), f);
     }
 
 } // namespace celerity::hla::experimental

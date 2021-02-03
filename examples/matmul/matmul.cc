@@ -12,22 +12,22 @@
 constexpr auto MAT_SIZE = 1024;
 
 using namespace celerity;
-using namespace algorithm;
+using namespace hla;
 using namespace aliases;
 
 namespace kernels
 {
-constexpr auto gen_a = [](cl::sycl::item<2> item) {
-	return static_cast<float>(item.get_id(0) == item.get_id(1));
-};
+	constexpr auto gen_a = [](cl::sycl::item<2> item) {
+		return static_cast<float>(item.get_id(0) == item.get_id(1));
+	};
 
-constexpr auto gen_b = [](cl::sycl::item<2> item) {
-	return gen_a(item) * 2;
-};
+	constexpr auto gen_b = [](cl::sycl::item<2> item) {
+		return gen_a(item) * 2;
+	};
 
-constexpr auto multiply = [](const slice_f<1> &a, const slice_f<0> &b) {
-	return std::inner_product(begin(a), end(a), begin(b), 0.f);
-};
+	constexpr auto multiply = [](const slice_f<1> &a, const slice_f<0> &b) {
+		return std::inner_product(begin(a), end(a), begin(b), 0.f);
+	};
 } // namespace kernels
 
 int main(int argc, char *argv[])
@@ -39,12 +39,12 @@ int main(int argc, char *argv[])
 	celerity::experimental::bench::log_user_config({{"matSize", std::to_string(MAT_SIZE)}});
 
 	using namespace celerity;
-	using namespace algorithm;
+	using namespace hla;
 
 	try
 	{
 		using buffer_type = celerity::buffer<float, 2>;
-		using t = celerity::algorithm::traits::buffer_traits<float, 2>;
+		using t = celerity::hla::traits::buffer_traits<float, 2>;
 
 		distr_queue queue;
 		const auto mat_range = cl::sycl::range<2>{MAT_SIZE, MAT_SIZE};
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 			transform<class _4>(kernels::multiply) << mat_b |
 			submit_to(queue);
 
-		master_task(algorithm::master(queue), [=, &verification_passed](auto &cgh) {
+		master_task(hla::master(queue), [=, &verification_passed](auto &cgh) {
 			auto r_d = out_buf.get_access<cl::sycl::access::mode::read>(cgh, out_buf.get_range());
 
 			return [=, &verification_passed]() {

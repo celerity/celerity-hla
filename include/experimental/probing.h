@@ -15,7 +15,7 @@
 namespace celerity::hla::experimental
 {
     template <typename T>
-    concept CallableObject = celerity::algorithm::traits::has_call_operator_v<std::remove_cv_t<T>>;
+    concept CallableObject = celerity::hla::traits::has_call_operator_v<std::remove_cv_t<T>>;
 
     template <size_t Idx, KernelInput... Args, typename ProbeType, typename F>
     constexpr auto probing_invoke(F f, ProbeType probe)
@@ -119,9 +119,9 @@ namespace celerity::hla::experimental
         constexpr auto rank = nth_t<Idx, Args...>::rank;
 
         const auto acc_meta_factory = [beg, end](auto f) {
-            if (algorithm::detail::is_subrange(beg, end))
+            if (hla::detail::is_subrange(beg, end))
             {
-                // return std::invoke(f, beg.get_buffer(), celerity::access::fixed<rank>{{*beg, algorithm::detail::distance(beg, end)}});
+                // return std::invoke(f, beg.get_buffer(), celerity::access::fixed<rank>{{*beg, hla::detail::distance(beg, end)}});
                 return std::invoke(f, beg.get_buffer(), celerity::access::fixed<rank>{{*beg, {}}});
             }
             else
@@ -136,7 +136,7 @@ namespace celerity::hla::experimental
     template <size_t Idx, KernelInput... Args, typename F>
     auto create_proxy_factory_and_range_mapper(F f, auto beg, auto end)
     {
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::detail::access_type;
         using namespace celerity::access;
 
         using arg_traits = typename kernel_traits<F, Args...>::template argument<Idx>;

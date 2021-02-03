@@ -13,10 +13,10 @@
 #include <numeric>
 
 using namespace celerity;
-using namespace celerity::algorithm;
-using namespace celerity::algorithm::traits;
-using namespace celerity::algorithm::util;
-using celerity::algorithm::chunk;
+using namespace celerity::hla;
+using namespace celerity::hla::traits;
+using namespace celerity::hla::util;
+using celerity::hla::chunk;
 
 SCENARIO("Fusing two tasks", "[fusion::simple]")
 {
@@ -432,7 +432,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
 
             THEN("kernels are fused and the result is (i + 3)")
             {
-                using algorithm::detail::computation_type;
+                using hla::detail::computation_type;
 
                 using seq_type = decltype(seq);
 
@@ -561,8 +561,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add = [](const chunk<int, 1> &x, int y) { return *x + y; };
@@ -601,8 +601,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add = [](int x, const chunk<int, 1> &y) { return x + *y; };
@@ -641,8 +641,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add = [](const chunk<int, 1> &x, int y) { return *x + y; };
@@ -681,8 +681,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add = [](const chunk<int, 1> &x, int y) { return *x + y; };
@@ -722,8 +722,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add_sec = [](int x, const chunk<int, 1> &y) { return x + *y; };
@@ -766,8 +766,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add_sec = [](const chunk<int, 1> &x, const chunk<int, 1> &y) { return *x + *y; };
@@ -810,8 +810,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add_sec = [](int x, const chunk<int, 1> &y) { return x + *y; };
@@ -849,8 +849,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add_sec = [](int x, const chunk<int, 1> &y) { return x + *y; };
@@ -890,8 +890,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add_sec = [](int x, const chunk<int, 1> &y) { return x + *y; };
@@ -933,8 +933,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add_sec = [](int x, const chunk<int, 1> &y) { return x + *y; };
@@ -976,8 +976,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
     {
         constexpr auto size = 100;
 
-        using celerity::algorithm::chunk;
-        using celerity::algorithm::detail::access_type;
+        using celerity::hla::chunk;
+        using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
         auto zip_add_sec = [](int x, const chunk<int, 1> &y) { return x + *y; };

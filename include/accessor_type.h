@@ -6,7 +6,7 @@
 #include "accessors.h"
 #include "accessor_traits.h"
 
-namespace celerity::algorithm::detail
+namespace celerity::hla::detail
 {
 
 	enum class access_type
@@ -21,7 +21,7 @@ namespace celerity::algorithm::detail
 
 }
 
-namespace celerity::algorithm::traits
+namespace celerity::hla::traits
 {
 
 	template <typename T, typename = std::void_t<>>
@@ -167,6 +167,6 @@ namespace celerity::algorithm::traits
 	using kernel_result_t = std::conditional_t<has_call_operator_v<F>,
 											   result_type_t<F>,
 											   void>;
-} // namespace celerity::algorithm::traits
+} // namespace celerity::hla::traits
 
 #endif

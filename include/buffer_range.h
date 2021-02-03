@@ -4,7 +4,7 @@
 #include "iterator.h"
 #include <type_traits>
 
-namespace celerity::algorithm::detail
+namespace celerity::hla::detail
 {
     template <typename T, int Rank>
     struct buffer_range
@@ -17,7 +17,7 @@ namespace celerity::algorithm::detail
     };
 
     template <typename T, int Rank>
-    buffer_range(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end)->buffer_range<T, Rank>;
+    buffer_range(buffer_iterator<T, Rank> beg, buffer_iterator<T, Rank> end) -> buffer_range<T, Rank>;
 
     template <int Rank, typename T>
     auto begin(const buffer_range<T, Rank> &pb)
@@ -30,9 +30,9 @@ namespace celerity::algorithm::detail
     {
         return pb.it_end;
     }
-} // namespace celerity::algorithm::detail
+} // namespace celerity::hla::detail
 
-namespace celerity::algorithm::traits
+namespace celerity::hla::traits
 {
     template <typename T>
     struct is_buffer_range : std::false_type
@@ -40,12 +40,12 @@ namespace celerity::algorithm::traits
     };
 
     template <typename T, int Rank>
-    struct is_buffer_range<algorithm::detail::buffer_range<T, Rank>> : std::true_type
+    struct is_buffer_range<hla::detail::buffer_range<T, Rank>> : std::true_type
     {
     };
 
     template <typename T>
     constexpr inline bool is_buffer_range_v = is_buffer_range<T>::value;
-} // namespace celerity::algorithm::traits
+} // namespace celerity::hla::traits
 
 #endif

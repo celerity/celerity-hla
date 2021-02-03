@@ -6,7 +6,7 @@
 #include "computation_type.h"
 #include "packaged_task_traits.h"
 
-namespace celerity::algorithm::traits
+namespace celerity::hla::traits
 {
 
     template <typename T, detail::computation_type Type>
@@ -44,6 +44,6 @@ namespace celerity::algorithm::traits
         return detail::access_type::invalid;
     }
 
-} // namespace celerity::algorithm::traits
+} // namespace celerity::hla::traits
 
 #endif // COMPUTATION_TYPE_TRAITS_H

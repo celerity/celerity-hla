@@ -4,7 +4,7 @@
 #include "packaged_task_traits.h"
 #include "experimental/traits.h"
 
-namespace celerity::algorithm
+namespace celerity::hla
 {
 	namespace detail
 	{
@@ -240,6 +240,6 @@ namespace celerity::algorithm
 
 	} // namespace traits
 
-} // namespace celerity::algorithm
+} // namespace celerity::hla
 
 #endif // T_JOINT_H
