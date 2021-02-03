@@ -160,7 +160,7 @@ void static_assert_kernel_probing()
     static_assert(hla::experimental::traits::is_block_v<hla::experimental::block<accessor_t>>);
 
     {
-        auto f = [](AnySlice auto x) {
+        auto f = [](Slice auto x) {
             x.configure(0);
             return x[0];
         };
@@ -180,7 +180,7 @@ void static_assert_kernel_probing()
     }
 
     {
-        auto f = [](AnyBlock auto x) {
+        auto f = [](Block auto x) {
             x.configure({0});
             return x[{0}];
         };
@@ -200,7 +200,7 @@ void static_assert_kernel_probing()
     }
 
     {
-        auto f = [](AnyBlock auto x, AnySlice auto y) {
+        auto f = [](Block auto x, Slice auto y) {
             x.configure({0});
             y.configure(0);
 
@@ -239,7 +239,7 @@ void static_assert_kernel_probing()
     }
 
     {
-        auto f = [](AnySlice auto x) {
+        auto f = [](Slice auto x) {
             x.configure(0);
 
             const auto b = begin(x);
@@ -265,7 +265,7 @@ void static_assert_kernel_probing()
     }
 
     {
-        auto f = [](AnyBlock auto x) {
+        auto f = [](Block auto x) {
             x.configure({0});
 
             const auto b = begin(x);
@@ -291,7 +291,7 @@ void static_assert_kernel_probing()
     }
 
     {
-        auto f = [](AnyBlock auto x, AnySlice auto y) {
+        auto f = [](Block auto x, Slice auto y) {
             x.configure({0});
             y.configure(0);
 

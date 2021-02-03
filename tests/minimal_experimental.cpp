@@ -19,25 +19,25 @@ TEST_CASE("traits")
     namespace h = celerity::hla::experimental;
 
     {
-        const auto k = [](h::AnyBlock auto x) { x.configure({1}); return 3 * (*x); };
+        const auto k = [](h::Block auto x) { x.configure({1}); return 3 * (*x); };
 
         static_assert(std::is_same_v<typename h::kernel_traits<decltype(k), h::kernel_input<int, 1>>::result_type, int>);
     } // namespace celerity::hla::experimental;
 
     {
-        const auto k = [](h::AnyBlock auto x, h::AnyBlock auto y) { x.configure({1}); return 3 * (*x) + *y; };
+        const auto k = [](h::Block auto x, h::Block auto y) { x.configure({1}); return 3 * (*x) + *y; };
 
         static_assert(std::is_same_v<typename h::kernel_traits<decltype(k), h::kernel_input<int, 1>, h::kernel_input<double, 1>>::result_type, double>);
     }
 
     {
-        const auto k = [](h::AnyBlock auto x) { x.configure({1}); return 3 * (*x); };
+        const auto k = [](h::Block auto x) { x.configure({1}); return 3 * (*x); };
 
         static_assert(std::is_same_v<typename h::kernel_traits<decltype(k), h::kernel_input<int, 1>>::result_type, int>);
     }
 
     {
-        const auto k = [](h::AnyBlock auto x, h::AnyBlock auto y) { x.configure({1}); return 3 * (*x) + *y; };
+        const auto k = [](h::Block auto x, h::Block auto y) { x.configure({1}); return 3 * (*x) + *y; };
 
         static_assert(std::is_same_v<h::kernel_traits<decltype(k), h::kernel_input<int, 1>, h::kernel_input<double, 1>>::result_type, double>);
     }
@@ -60,7 +60,7 @@ TEST_CASE("transforming a buffer (experimental)", "[celerity::hla::experimental]
             buffer<int, 1> buf_out(buf.get_range());
 
             h::transform(distr<class _346>(q), begin(buf), end(buf), begin(buf_out),
-                         [](h::AnyBlock auto x) { x.configure({1}); return 3 * (*x); });
+                         [](h::Block auto x) { x.configure({1}); return 3 * (*x); });
 
             THEN("every element is 3 in the target buffer")
             {
@@ -83,7 +83,7 @@ TEST_CASE("sequencing (experimental)", "[celerity::hla::experimental]")
     {
         namespace h = hla::experimental;
 
-        const auto t = h::transform<class _87>([](h::AnyBlock auto x) { x.configure({1}); return 3 * (*x); });
+        const auto t = h::transform<class _87>([](h::Block auto x) { x.configure({1}); return 3 * (*x); });
 
         auto buf_out = buf | t | celerity::hla::submit_to(q);
 
@@ -113,7 +113,7 @@ TEST_CASE("sequencing (experimental)", "[celerity::hla::experimental]")
     {
         namespace h = hla::experimental;
 
-        const auto t = h::transform<class _115>([](h::AnySlice auto x) { x.configure(0); return 3 * *x; });
+        const auto t = h::transform<class _115>([](h::Slice auto x) { x.configure(0); return 3 * *x; });
 
         auto buf_out = buf | t | celerity::hla::submit_to(q);
 
@@ -143,7 +143,7 @@ TEST_CASE("sequencing (experimental)", "[celerity::hla::experimental]")
     {
         namespace h = hla::experimental;
 
-        const auto t = h::transform<class _146>([](h::AnyBlock auto x) { x.configure({1}); return 3 * (*x); });
+        const auto t = h::transform<class _146>([](h::Block auto x) { x.configure({1}); return 3 * (*x); });
 
         auto buf_out = buf | t | t | celerity::hla::submit_to(q);
 

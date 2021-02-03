@@ -49,7 +49,7 @@ SCENARIO("accessing a slice", "[accessors::slice]")
             buffer<int, 2> buf_c(buf_a.get_range());
 
             hla::experimental::zip(hla::distr<class _49>(q), begin(buf_a), end(buf_a), begin(buf_b), begin(buf_c),
-                                   [](AnySlice auto a, AnySlice auto b) {
+                                   [](Slice auto a, Slice auto b) {
                                        a.configure(0);
                                        b.configure(1);
 
@@ -87,7 +87,7 @@ SCENARIO("accessing a slice", "[accessors::slice]")
             buffer<int, 2> buf_c(buf_a.get_range());
 
             hla::experimental::zip(hla::distr<class _87>(q), begin(buf_a), end(buf_a), begin(buf_b), begin(buf_c),
-                                   [](AnySlice auto a, AnySlice auto b) {
+                                   [](Slice auto a, Slice auto b) {
                                        a.configure(0);
                                        b.configure(1);
                                        return std::inner_product(begin(a), end(a), begin(b), 0);

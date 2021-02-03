@@ -150,15 +150,6 @@ namespace celerity::hla::experimental
         }
     };
 
-    // template <class T>
-    // struct range_mapper;
-
-    // template <class Acc>
-    // struct range_mapper<block<Acc>>
-    // {
-    //     static auto create() { return celerity::access::neighborhood<sizeof...(Extents)>(Extents...); }
-    // };
-
     template <typename T>
     struct is_block : std::bool_constant<false>
     {
@@ -181,13 +172,10 @@ namespace celerity::hla::experimental
     }
 
     template <typename T>
-    concept AnyBlock = is_block<T>::value || InactiveProbe<T>;
+    concept Block = is_block<T>::value || InactiveProbe<T>;
 
     template <typename T>
     concept StrictBlock = is_block<T>::value;
-
-    // template <typename T>
-    // concept Block = Anyblock<Acc> &&are_equal(T::extents, {Extents...}, std::make_index_sequence<sizeof...(Extents)>{});
 
 } // namespace celerity::hla::experimental
 

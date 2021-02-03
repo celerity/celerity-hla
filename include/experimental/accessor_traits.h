@@ -20,7 +20,7 @@ namespace celerity::hla::experimental::traits
 
     // clang-format off
     template <typename T>
-        requires(!AnySlice<T> && !AnyBlock<T> && !All<T>)                    
+        requires(!Slice<T> && !Block<T> && !All<T>)                    
     constexpr auto get_access_type() { return celerity::hla::detail::access_type::one_to_one; }
     // clang-format on
 

@@ -118,7 +118,7 @@ namespace celerity::hla::experimental
     };
 
     template <typename T>
-    concept AnySlice = celerity::hla::experimental::is_slice<T>::value || InactiveProbe<T>;
+    concept Slice = celerity::hla::experimental::is_slice<T>::value || InactiveProbe<T>;
 
     template <typename T>
     concept StrictSlice = is_slice<T>::value;

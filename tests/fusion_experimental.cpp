@@ -598,7 +598,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
-        auto zip_add = [](AnyBlock auto x, int y) { x.configure(1); return *x + y; };
+        auto zip_add = [](Block auto x, int y) { x.configure(1); return *x + y; };
 
         buffer<int, 1> buf_a{{size}};
         buffer<int, 1> buf_b{{size}};
@@ -639,7 +639,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
-        auto zip_add = [](int x, AnyBlock auto y) { y.configure(1); return x + *y; };
+        auto zip_add = [](int x, Block auto y) { y.configure(1); return x + *y; };
 
         buffer<int, 1> buf_a{{size}};
         buffer<int, 1> buf_b{{size}};
@@ -680,7 +680,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
-        auto zip_add = [](AnyBlock auto x, int y) { x.configure(1); return *x + y; };
+        auto zip_add = [](Block auto x, int y) { x.configure(1); return *x + y; };
 
         buffer<int, 1> buf_a{{size}};
         buffer<int, 1> buf_b{{size}};
@@ -721,7 +721,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
-        auto zip_add = [](AnyBlock auto x, int y) { x.configure(1); return *x + y; };
+        auto zip_add = [](Block auto x, int y) { x.configure(1); return *x + y; };
 
         buffer<int, 1> buf_a{{size}};
         buffer<int, 1> buf_b{{size}};
@@ -763,8 +763,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
-        auto zip_add_sec = [](int x, AnyBlock auto y) { y.configure(1); return x + *y; };
-        auto zip_add = [](AnyBlock auto x, int y) { x.configure(1); return *x + y; };
+        auto zip_add_sec = [](int x, Block auto y) { y.configure(1); return x + *y; };
+        auto zip_add = [](Block auto x, int y) { x.configure(1); return *x + y; };
 
         buffer<int, 1> buf_a{{size}};
         buffer<int, 1> buf_b{{size}};
@@ -808,8 +808,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
-        auto zip_add_sec = [](AnyBlock auto x, AnyBlock auto y) { x.configure(1); y.configure(1); return *x + *y; };
-        auto zip_add = [](AnyBlock auto x, int y) { x.configure(1); return *x + y; };
+        auto zip_add_sec = [](Block auto x, Block auto y) { x.configure(1); y.configure(1); return *x + *y; };
+        auto zip_add = [](Block auto x, int y) { x.configure(1); return *x + y; };
 
         buffer<int, 1> buf_a{{size}};
         buffer<int, 1> buf_b{{size}};
@@ -853,7 +853,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
-        auto zip_add_sec = [](int x, AnyBlock auto y) { y.configure(1); return x + *y; };
+        auto zip_add_sec = [](int x, Block auto y) { y.configure(1); return x + *y; };
 
         buffer<int, 1> buf_a{{size}};
         buffer<int, 1> buf_b{{size}};
@@ -895,7 +895,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
-        auto zip_add_sec = [](int x, AnyBlock auto y) { y.configure(1); return x + *y; };
+        auto zip_add_sec = [](int x, Block auto y) { y.configure(1); return x + *y; };
 
         buffer<int, 1> buf_a{{size}};
         buffer<int, 1> buf_b{{size}};
@@ -937,8 +937,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
-        auto zip_add_sec = [](int x, AnyBlock auto y) { y.configure(1); return x + *y; };
-        auto zip_add = [](AnyBlock auto x, int y) { x.configure(1); return *x + y; };
+        auto zip_add_sec = [](int x, Block auto y) { y.configure(1); return x + *y; };
+        auto zip_add = [](Block auto x, int y) { x.configure(1); return *x + y; };
 
         buffer<int, 1> buf_a{{size}};
         buffer<int, 1> buf_b{{size}};
@@ -981,7 +981,7 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
-        auto zip_add_sec = [](int x, AnyBlock auto y) { y.configure(1); return x + *y; };
+        auto zip_add_sec = [](int x, Block auto y) { y.configure(1); return x + *y; };
         auto zip_add = [](int x, int y) { return x + y; };
 
         buffer<int, 1> buf_a{{size}};
@@ -1025,8 +1025,8 @@ SCENARIO("Fusing two tasks", "[fusion::simple]")
         using celerity::hla::detail::access_type;
 
         auto mul_chunk = [](int c) { return c * 5; };
-        auto zip_add_sec = [](int x, AnyBlock auto y) { y.configure(1); return x + *y; };
-        auto zip_add = [](AnyBlock auto x, int y) { x.configure(1); return *x + y; };
+        auto zip_add_sec = [](int x, Block auto y) { y.configure(1); return x + *y; };
+        auto zip_add = [](Block auto x, int y) { x.configure(1); return *x + y; };
 
         buffer<int, 1> buf_a{{size}};
         buffer<int, 1> buf_b{{size}};
