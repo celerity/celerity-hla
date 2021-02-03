@@ -104,13 +104,17 @@ struct packaged_task_traits<detail::packaged_generate<FunctorType, OutputValueTy
     static constexpr auto rank = Rank;
     static constexpr auto computation_type = detail::computation_type::generate;
 
-    template<typename>
+    template <typename = hla::experimental::unused, typename = hla::experimental::unused>
     static constexpr detail::access_type access_type = detail::access_type::invalid;
 
     using input_value_type = void;
     using input_iterator_type = void;
+
+    template <typename = hla::experimental::unused, typename = hla::experimental::unused>
     using output_value_type = OutputValueType;
     using output_iterator_type = OutputIteratorType;
+
+    static constexpr bool is_experimental = false;
 };
 
 template <typename FunctorType, typename OutputValueType, int Rank>
@@ -119,13 +123,17 @@ struct packaged_task_traits<detail::partially_packaged_generate<FunctorType, Out
     static constexpr auto rank = Rank;
     static constexpr auto computation_type = detail::computation_type::generate;
 
-    template<typename>
+    template <typename = hla::experimental::unused, typename = hla::experimental::unused>
     static constexpr detail::access_type access_type = detail::access_type::invalid;
 
     using input_value_type = void;
     using input_iterator_type = void;
+
+    template <typename = hla::experimental::unused, typename = hla::experimental::unused>
     using output_value_type = OutputValueType;
     using output_iterator_type = void;
+
+    static constexpr bool is_experimental = false;
 };
 
 template <typename FunctorType, typename OutputValueType, int Rank>

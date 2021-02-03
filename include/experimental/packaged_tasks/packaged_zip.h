@@ -291,6 +291,8 @@ namespace celerity::algorithm::traits
 
         using input_iterator_type = FirstInputIteratorType;
         using output_iterator_type = OutputIteratorType;
+
+        static constexpr bool is_experimental = true;
     };
 
     template <typename FunctorType,
@@ -331,6 +333,8 @@ namespace celerity::algorithm::traits
 
         using input_iterator_type = FirstInputIteratorType;
         using output_iterator_type = void;
+
+        static constexpr bool is_experimental = true;
     };
 
     template <typename FunctorType,
@@ -368,6 +372,8 @@ namespace celerity::algorithm::traits
 
         using input_iterator_type = void;
         using output_iterator_type = void;
+
+        static constexpr bool is_experimental = true;
     };
 
     template <typename FunctorType,
@@ -400,6 +406,8 @@ namespace celerity::algorithm::traits
 
         using input_iterator_type = void;
         using output_iterator_type = void;
+
+        static constexpr bool is_experimental = true;
     };
 
     template <typename FunctorType,

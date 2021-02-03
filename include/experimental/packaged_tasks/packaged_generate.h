@@ -111,6 +111,8 @@ namespace celerity::algorithm::traits
         using output_value_type = OutputValueType;
 
         using output_iterator_type = OutputIteratorType;
+
+        static constexpr bool is_experimental = true;
     };
 
     template <typename FunctorType, typename OutputValueType, int Rank>
@@ -129,6 +131,8 @@ namespace celerity::algorithm::traits
         using output_value_type = OutputValueType;
 
         using output_iterator_type = void;
+
+        static constexpr bool is_experimental = true;
     };
 
     template <typename FunctorType, typename OutputValueType, int Rank>

@@ -36,6 +36,8 @@ namespace celerity::algorithm::traits
 		using input_iterator_type = void;
 		using output_value_type = void;
 		using output_iterator_type = void;
+
+		static constexpr bool is_experimental = false;
 	};
 
 	template <typename T, detail::computation_type Computation>
@@ -67,6 +69,9 @@ namespace celerity::algorithm::traits
 
 	template <typename T, typename... Sources>
 	constexpr inline detail::access_type second_input_access_type_v = get_second_input_access_type<T, Sources...>();
+
+	template <typename T>
+	constexpr inline bool is_experimental_v = packaged_task_traits<T>::is_experimental;
 
 	template <typename T>
 	struct partially_packaged_task_traits

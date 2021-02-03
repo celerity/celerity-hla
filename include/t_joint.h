@@ -142,6 +142,8 @@ namespace celerity::algorithm
 			template <typename...>
 			using output_value_type = typename traits::template output_value_type<>;
 			using output_iterator_type = typename traits::output_iterator_type;
+
+			static constexpr bool is_experimental = traits::is_experimental;
 		};
 
 		template <typename Task, typename SecondaryInputSequence, bool SequenceList>
@@ -179,6 +181,8 @@ namespace celerity::algorithm
 			using output_value_type = typename traits::template output_value_type<FirstInput, SecondInput>;
 
 			using output_iterator_type = typename traits::output_iterator_type;
+
+			static constexpr bool is_experimental = traits::is_experimental;
 		};
 
 		template <typename Task, typename SecondaryInputSequence>

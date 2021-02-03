@@ -8,6 +8,8 @@
 #include "../packaged_task_traits.h"
 #include "../partially_packaged_task.h"
 
+#include "../experimental/traits.h"
+
 namespace celerity::algorithm
 {
 
@@ -299,14 +301,18 @@ namespace celerity::algorithm
             static constexpr auto rank = Rank;
             static constexpr auto computation_type = detail::computation_type::zip;
 
-            template <typename>
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             static constexpr detail::access_type access_type = FirstInputAccessType;
 
             using input_value_type = typename std::iterator_traits<FirstInputIteratorType>::value_type;
+
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             using output_value_type = typename std::iterator_traits<OutputIteratorType>::value_type;
 
             using input_iterator_type = FirstInputIteratorType;
             using output_iterator_type = OutputIteratorType;
+
+            static constexpr bool is_experimental = false;
         };
 
         template <typename FunctorType,
@@ -318,6 +324,7 @@ namespace celerity::algorithm
                   detail::access_type SecondInputAccessType>
         struct extended_packaged_task_traits<detail::packaged_zip<FunctorType, FirstInputIteratorType, SecondInputIteratorType, OutputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType>, detail::computation_type::zip>
         {
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             static constexpr detail::access_type second_input_access_type = SecondInputAccessType;
 
             using second_input_value_type = typename std::iterator_traits<SecondInputIteratorType>::value_type;
@@ -336,14 +343,18 @@ namespace celerity::algorithm
             static constexpr auto rank = Rank;
             static constexpr auto computation_type = detail::computation_type::zip;
 
-            template <typename>
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             static constexpr detail::access_type access_type = FirstInputAccessType;
 
             using input_value_type = typename std::iterator_traits<FirstInputIteratorType>::value_type;
+
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             using output_value_type = kernel_result_t<KernelType>;
 
             using input_iterator_type = FirstInputIteratorType;
             using output_iterator_type = void;
+
+            static constexpr bool is_experimental = false;
         };
 
         template <typename FunctorType,
@@ -355,6 +366,7 @@ namespace celerity::algorithm
                   detail::access_type SecondInputAccessType>
         struct extended_packaged_task_traits<detail::partially_packaged_zip_2<FunctorType, KernelType, FirstInputIteratorType, SecondInputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType>, detail::computation_type::zip>
         {
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             static constexpr detail::access_type second_input_access_type = SecondInputAccessType;
 
             using second_input_value_type = typename std::iterator_traits<SecondInputIteratorType>::value_type;
@@ -372,14 +384,18 @@ namespace celerity::algorithm
             static constexpr auto rank = Rank;
             static constexpr auto computation_type = detail::computation_type::zip;
 
-            template <typename>
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             static constexpr detail::access_type access_type = FirstInputAccessType;
 
             using input_value_type = void;
+
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             using output_value_type = kernel_result_t<KernelType>;
 
             using input_iterator_type = void;
             using output_iterator_type = void;
+
+            static constexpr bool is_experimental = false;
         };
 
         template <typename FunctorType,
@@ -390,6 +406,7 @@ namespace celerity::algorithm
                   detail::access_type SecondInputAccessType>
         struct extended_packaged_task_traits<detail::partially_packaged_zip_1<FunctorType, KernelType, SecondInputIteratorType, Rank, FirstInputAccessType, SecondInputAccessType>, detail::computation_type::zip>
         {
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             static constexpr detail::access_type second_input_access_type = SecondInputAccessType;
 
             using second_input_value_type = typename std::iterator_traits<SecondInputIteratorType>::value_type;
@@ -405,14 +422,18 @@ namespace celerity::algorithm
             static constexpr auto rank = -1;
             static constexpr auto computation_type = detail::computation_type::zip;
 
-            template <typename>
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             static constexpr detail::access_type access_type = FirstInputAccessType;
 
             using input_value_type = void;
+
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             using output_value_type = kernel_result_t<KernelType>;
 
             using input_iterator_type = void;
             using output_iterator_type = void;
+
+            static constexpr bool is_experimental = false;
         };
 
         template <typename FunctorType,
@@ -421,7 +442,8 @@ namespace celerity::algorithm
                   detail::access_type SecondInputAccessType>
         struct extended_packaged_task_traits<detail::partially_packaged_zip_0<FunctorType, KernelType, FirstInputAccessType, SecondInputAccessType>, detail::computation_type::zip>
         {
-            static constexpr auto second_input_access_type = SecondInputAccessType;
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
+            static constexpr detail::access_type second_input_access_type = SecondInputAccessType;
 
             using second_input_value_type = void;
             using second_input_iterator_type = void;

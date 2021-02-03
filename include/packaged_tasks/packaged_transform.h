@@ -142,13 +142,17 @@ namespace celerity::algorithm
             static constexpr auto rank = Rank;
             static constexpr auto computation_type = detail::computation_type::transform;
 
-            template<typename>
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             static constexpr detail::access_type access_type = InputAccessType;
 
             using input_iterator_type = InputIteratorType;
             using input_value_type = typename std::iterator_traits<InputIteratorType>::value_type;
+
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             using output_value_type = typename std::iterator_traits<OutputIteratorType>::value_type;
             using output_iterator_type = OutputIteratorType;
+
+            static constexpr bool is_experimental = false;
         };
 
         template <int Rank, detail::access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputIteratorType>
@@ -157,13 +161,17 @@ namespace celerity::algorithm
             static constexpr auto rank = Rank;
             static constexpr auto computation_type = detail::computation_type::transform;
 
-            template<typename>
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             static constexpr detail::access_type access_type = InputAccessType;
 
             using input_iterator_type = InputIteratorType;
             using input_value_type = typename std::iterator_traits<InputIteratorType>::value_type;
+
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             using output_value_type = kernel_result_t<KernelFunctor>;
             using output_iterator_type = void;
+
+            static constexpr bool is_experimental = false;
         };
 
         template <int Rank, detail::access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputIteratorType>
@@ -178,13 +186,17 @@ namespace celerity::algorithm
             static constexpr auto rank = -1;
             static constexpr auto computation_type = detail::computation_type::transform;
 
-            template <typename _>
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             static constexpr detail::access_type access_type = InputAccessType;
 
             using input_iterator_type = void;
             using input_value_type = void;
+
+            template <typename = hla::experimental::unused, typename = hla::experimental::unused>
             using output_value_type = kernel_result_t<KernelFunctor>;
             using output_iterator_type = void;
+
+            static constexpr bool is_experimental = false;
         };
 
         template <detail::access_type InputAccessType, typename Functor, typename KernelFunctor>

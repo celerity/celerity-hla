@@ -35,18 +35,18 @@ function(add_tests TESTS)
     endforeach()
 endfunction()
 
-add_tests(#accessors.cpp
-          #algorithms.cpp
+add_tests(accessors.cpp
+          algorithms.cpp
           algorithms_experimental.cpp
-          #index_utils.cpp
+          index_utils.cpp
           traits.cpp
-          #fusion.cpp
+          fusion.cpp
           fusion_experimental.cpp
-          #sequencing.cpp
-          #subranges.cpp
+          sequencing.cpp
+          subranges.cpp
           #minimal.cpp
           minimal_experimental.cpp
           accessors_experimental.cpp
-          #fusion_disabling.cpp
+          fusion_disabling.cpp
           )
 

@@ -327,33 +327,6 @@ SCENARIO("transforming a buffer", "[celerity::algorithm]")
     }
 }
 
-#include "../include/experimental/transform.h"
-SCENARIO("transforming a buffer (experimental)", "[celerity::algorithm::experimental]")
-{
-    distr_queue q;
-
-    GIVEN("A one-dimensional buffer of a hundred 1s")
-    {
-        constexpr auto size = 100;
-
-        buffer<int, 1> buf(cl::sycl::range<1>{size});
-        fill<class _340>(q, buf, 1);
-
-        WHEN("tripling all elements into another buffer")
-        {
-            buffer<int, 1> buf_out(buf.get_range());
-
-            hla::experimental::transform(distr<class _346>(q), begin(buf), end(buf), begin(buf_out), [](hla::experimental::AnyBlock auto x) { x.configure({1}); return 3 * (*x); });
-
-            THEN("every element is 3 in the target buffer")
-            {
-                const auto r = copy_to_host(q, buf_out);
-                REQUIRE(elements_equal_to<3>(r));
-            }
-        }
-    }
-}
-
 // SCENARIO("iterating a buffer on the master", "[celerity::algorithm]")
 // {
 //     distr_queue q;

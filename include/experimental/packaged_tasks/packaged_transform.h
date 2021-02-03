@@ -154,6 +154,8 @@ namespace celerity::algorithm::traits
         using output_value_type = typename std::iterator_traits<OutputIteratorType>::value_type;
 
         using output_iterator_type = OutputIteratorType;
+
+        static constexpr bool is_experimental = true;
     };
 
     template <int Rank, detail::access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputIteratorType>
@@ -170,6 +172,8 @@ namespace celerity::algorithm::traits
         using output_value_type = typename hla::experimental::kernel_traits<KernelFunctor, InputIteratorType>::result_type;
 
         using output_iterator_type = void;
+
+        static constexpr bool is_experimental = true;
     };
 
     template <int Rank, detail::access_type InputAccessType, typename Functor, typename KernelFunctor, typename InputIteratorType>
@@ -193,6 +197,8 @@ namespace celerity::algorithm::traits
         using output_value_type = typename hla::experimental::kernel_traits<KernelFunctor, Input>::result_type;
 
         using output_iterator_type = void;
+
+        static constexpr bool is_experimental = true;
     };
 
     template <typename Functor, typename KernelFunctor>
