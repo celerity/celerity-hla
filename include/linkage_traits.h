@@ -5,20 +5,6 @@
 #include "packaged_task_traits.h"
 #include "t_joint.h"
 
-#include "experimental/traits.h"
-
-namespace celerity::hla::experimental
-{
-    template <typename ValueType, size_t Rank>
-    struct is_kernel_input<algorithm::buffer_iterator<ValueType, Rank>> : std::bool_constant<true>
-    {
-    };
-
-    template <typename ValueType, size_t Rank>
-    struct is_kernel_input<algorithm::detail::transient_iterator<ValueType, Rank>> : std::bool_constant<true>
-    {
-    };
-} // namespace celerity::hla::experimental
 namespace celerity::algorithm::traits
 {
     template <typename T>

@@ -1,3 +1,5 @@
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 function(add_tests TESTS)
     foreach(ONE_TEST_CPP ${ARGV})
 
@@ -33,11 +35,18 @@ function(add_tests TESTS)
     endforeach()
 endfunction()
 
-add_tests(accessors.cpp
-          algorithms.cpp
-          index_utils.cpp
+add_tests(#accessors.cpp
+          #algorithms.cpp
+          algorithms_experimental.cpp
+          #index_utils.cpp
           traits.cpp
-          fusion.cpp
-          sequencing.cpp
-          subranges.cpp)
-          #fusion_disabling.cpp)
+          #fusion.cpp
+          fusion_experimental.cpp
+          #sequencing.cpp
+          #subranges.cpp
+          #minimal.cpp
+          minimal_experimental.cpp
+          accessors_experimental.cpp
+          #fusion_disabling.cpp
+          )
+

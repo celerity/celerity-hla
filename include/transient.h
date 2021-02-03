@@ -7,6 +7,7 @@
 #include "item_context.h"
 #include "sequence.h"
 #include "transient_traits.h"
+#include "experimental/traits.h"
 
 namespace celerity::algorithm
 {
@@ -126,5 +127,13 @@ namespace celerity::algorithm
     } // namespace traits
 
 } // namespace celerity::algorithm
+
+namespace celerity::hla::experimental
+{
+    template <typename ValueType, size_t Rank>
+    struct is_kernel_input<algorithm::detail::transient_iterator<ValueType, Rank>> : std::bool_constant<true>
+    {
+    };
+} // namespace celerity::hla::experimental
 
 #endif // TRANSIENT_H

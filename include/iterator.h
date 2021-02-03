@@ -4,6 +4,8 @@
 #include "sycl.h"
 #include <type_traits>
 
+#include "experimental/traits.h"
+
 namespace celerity
 {
 	template <typename T, int Rank>
@@ -206,5 +208,13 @@ namespace celerity
 	}
 
 } // namespace celerity
+
+namespace celerity::hla::experimental
+{
+    template <typename ValueType, size_t Rank>
+    struct is_kernel_input<algorithm::buffer_iterator<ValueType, Rank>> : std::bool_constant<true>
+    {
+    };
+}
 
 #endif

@@ -6,6 +6,7 @@
 #include "../include/sequence.h"
 #include "../include/packaged_task_traits.h"
 #include "../include/packaged_tasks/packaged_generate.h"
+#include "../include/linkage_traits.h"
 
 #include <vector>
 #include <stdlib.h>
@@ -117,6 +118,7 @@ void static_assert_kernel_traits()
 #include "../include/experimental/probing.h"
 #include "../include/experimental/accessor_iterator.h"
 #include "../include/policy.h"
+#include "../include/experimental/kernel_traits.h"
 
 void static_assert_kernel_probing()
 {
@@ -165,12 +167,12 @@ void static_assert_kernel_probing()
 
         using f_t = decltype(f);
 
-        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 0, slice_probe<int>>);
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 0, int, 1>() == celerity::algorithm::detail::access_type::slice);
+        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, 0, slice_probe<int>, kernel_input<int, 1>>);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::slice);
 
         celerity::buffer<int, 1> b{{10}};
 
-        auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, 1, int>(f);
+        auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>>(f);
 
         static_assert(std::is_same_v<celerity::access::slice<1>, decltype(mapper)>);
 
@@ -187,12 +189,12 @@ void static_assert_kernel_probing()
 
         using f_t = decltype(f);
 
-        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 0, block_probe<int, 1>>);
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 0, int, 1>() == celerity::algorithm::detail::access_type::chunk);
+        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, 0, block_probe<int, 1>, kernel_input<int, 1>>);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::chunk);
 
         celerity::buffer<int, 1> b{{10}};
 
-        auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, 1, int>(f);
+        auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>>(f);
 
         static_assert(std::is_same_v<celerity::access::neighborhood<1>, decltype(mapper)>);
 
@@ -212,19 +214,19 @@ void static_assert_kernel_probing()
         using f_t = decltype(f);
 
         static_assert(std::is_base_of_v<celerity::hla::experimental::inactive_probe_t, celerity::hla::experimental::concrete_inactive_probe<int>>);
-        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 0, block_probe<int, 1>>);
-        static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 0, slice_probe<int>>);
+        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 0, block_probe<int, 1>, kernel_input<int, 1>, kernel_input<int, 1>>);
+        static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 0, slice_probe<int>, kernel_input<int, 1>, kernel_input<int, 1>>);
 
-        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, slice_probe<int>>);
-        static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, block_probe<int, 1>>);
+        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 1, slice_probe<int>, kernel_input<int, 1>, kernel_input<int, 1>>);
+        static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 1, block_probe<int, 1>, kernel_input<int, 1>, kernel_input<int, 1>>);
 
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 0, int, 1>() == celerity::algorithm::detail::access_type::chunk);
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, int, 1>() == celerity::algorithm::detail::access_type::slice);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 2, 0, kernel_input<int, 1>, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::chunk);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 2, 1, kernel_input<int, 1>, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::slice);
 
         celerity::buffer<int, 1> b{{10}};
 
         {
-            auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, 1, int>(f);
+            auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>, kernel_input<int, 1>>(f);
 
             static_assert(std::is_same_v<celerity::access::neighborhood<1>, decltype(mapper)>);
 
@@ -234,7 +236,7 @@ void static_assert_kernel_probing()
         }
 
         {
-            auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<1, 1, int>(f);
+            auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<1, kernel_input<int, 1>, kernel_input<int, 1>>(f);
 
             static_assert(std::is_same_v<celerity::access::slice<1>, decltype(mapper)>);
 
@@ -258,12 +260,12 @@ void static_assert_kernel_probing()
 
         using f_t = decltype(f);
 
-        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 0, slice_probe<int>>);
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 0, int, 1>() == celerity::algorithm::detail::access_type::slice);
+        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, 0, slice_probe<int>, kernel_input<int, 1>>);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::slice);
 
         celerity::buffer<int, 1> b{{10}};
 
-        auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, 1, int>(f);
+        auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>>(f);
 
         static_assert(std::is_same_v<celerity::access::slice<1>, decltype(mapper)>);
 
@@ -286,20 +288,18 @@ void static_assert_kernel_probing()
 
         using f_t = decltype(f);
 
-        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 0, block_probe<int, 1>>);
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 0, int, 1>() == celerity::algorithm::detail::access_type::chunk);
+        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, 0, block_probe<int, 1>, kernel_input<int, 1>>);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::chunk);
 
         celerity::buffer<int, 1> b{{10}};
 
-        auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, 1, int>(f);
+        auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>>(f);
 
         static_assert(std::is_same_v<celerity::access::neighborhood<1>, decltype(mapper)>);
 
         using proxy_type = std::invoke_result_t<decltype(factory), accessor_t, cl::sycl::item<1>>;
 
         static_assert(std::is_same_v<proxy_type, hla::experimental::block<accessor_t>>);
-
-        static_assert(get_kernel_arity<f_t, int>() == 1);
     }
 
     {
@@ -316,19 +316,19 @@ void static_assert_kernel_probing()
         using f_t = decltype(f);
 
         static_assert(std::is_base_of_v<celerity::hla::experimental::inactive_probe_t, celerity::hla::experimental::concrete_inactive_probe<int>>);
-        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 0, block_probe<int, 1>>);
-        static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 0, slice_probe<int>>);
+        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 0, block_probe<int, 1>, kernel_input<int, 1>, kernel_input<int, 1>>);
+        static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 0, slice_probe<int>, kernel_input<int, 1>, kernel_input<int, 1>>);
 
-        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, slice_probe<int>>);
-        static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, block_probe<int, 1>>);
+        static_assert(celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 1, slice_probe<int>, kernel_input<int, 1>, kernel_input<int, 1>>);
+        static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 2, 1, block_probe<int, 1>, kernel_input<int, 1>, kernel_input<int, 1>>);
 
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 0, int, 1>() == celerity::algorithm::detail::access_type::chunk);
-        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, int, 1>() == celerity::algorithm::detail::access_type::slice);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 2, 0, kernel_input<int, 1>, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::chunk);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 2, 1, kernel_input<int, 1>, kernel_input<int, 1>>() == celerity::algorithm::detail::access_type::slice);
 
         celerity::buffer<int, 1> b{{10}};
- 
+
         {
-            auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, 1, int>(f);
+            auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<0, kernel_input<int, 1>, kernel_input<int, 1>>(f);
 
             static_assert(std::is_same_v<celerity::access::neighborhood<1>, decltype(mapper)>);
 
@@ -338,7 +338,7 @@ void static_assert_kernel_probing()
         }
 
         {
-            auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<1, 1, int>(f);
+            auto [factory, mapper] = celerity::hla::experimental::create_proxy_factory_and_range_mapper<1, kernel_input<int, 1>, kernel_input<int, 1>>(f);
 
             static_assert(std::is_same_v<celerity::access::slice<1>, decltype(mapper)>);
 
@@ -349,10 +349,8 @@ void static_assert_kernel_probing()
 
         using execution_policy_type = celerity::algorithm::detail::distributed_execution_policy;
 
-        static_assert(!std::is_void_v<decltype(get_access<execution_policy_type, cl::sycl::access::mode::read, 0>(std::declval<celerity::handler&>(), begin(b), end(b), f))>);
-        static_assert(!std::is_void_v<decltype(get_access<execution_policy_type, cl::sycl::access::mode::read, 1>(std::declval<celerity::handler&>(), begin(b), end(b), f))>);
-
-        static_assert(get_kernel_arity<f_t, int>() == 2);
+        static_assert(!std::is_void_v<decltype(get_access<execution_policy_type, cl::sycl::access::mode::read, 0, decltype(begin(b)), decltype(begin(b))>(std::declval<celerity::handler &>(), begin(b), end(b), f))>);
+        static_assert(!std::is_void_v<decltype(get_access<execution_policy_type, cl::sycl::access::mode::read, 1, decltype(begin(b)), decltype(begin(b))>(std::declval<celerity::handler &>(), begin(b), end(b), f))>);
     }
 }
 
