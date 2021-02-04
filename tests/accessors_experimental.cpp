@@ -50,8 +50,8 @@ SCENARIO("accessing a slice", "[accessors::slice]")
 
             hla::experimental::zip(hla::distr<class _49>(q), begin(buf_a), end(buf_a), begin(buf_b), begin(buf_c),
                                    [](Slice auto a, Slice auto b) {
-                                       a.configure(0);
-                                       b.configure(1);
+                                       a.configure(1);
+                                       b.configure(0);
 
                                        auto sum = 0;
 
@@ -81,18 +81,18 @@ SCENARIO("accessing a slice", "[accessors::slice]")
                 }
             }
         }
-
+ 
         WHEN("multiplying using std::inner_product")
         {
             buffer<int, 2> buf_c(buf_a.get_range());
 
             hla::experimental::zip(hla::distr<class _87>(q), begin(buf_a), end(buf_a), begin(buf_b), begin(buf_c),
                                    [](Slice auto a, Slice auto b) {
-                                       a.configure(0);
-                                       b.configure(1);
+                                       a.configure(1);
+                                       b.configure(0);
                                        return std::inner_product(begin(a), end(a), begin(b), 0);
-                                   });
-
+                                   }); 
+       
             THEN("the result is the identity matrix times 8")
             {
                 const auto r = copy_to_host(q, buf_c);
@@ -105,7 +105,7 @@ SCENARIO("accessing a slice", "[accessors::slice]")
                         REQUIRE(r[j * rank + i] == correct_value);
                     }
                 }
-            }
+            } 
         }
     }
 }

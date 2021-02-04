@@ -18,10 +18,11 @@ namespace celerity::hla::experimental
 
         slice_probe() = default;
 
-        void configure(int dim)
+        void configure(int dim, bool transpose = false)
         {
             //assert(dim_ >= 0 && "invalid dim");
             dim_ = dim;
+            transposed_ = transpose;
 
             throw *this;
         }
@@ -30,6 +31,12 @@ namespace celerity::hla::experimental
         {
             //assert(dim_ >= 0 && "dim not set");
             return dim_;
+        }
+
+        bool get_transposed() const
+        {
+            //assert(dim_ >= 0 && "dim not set");
+            return transposed_;
         }
 
         int get_range() const { return {}; }
@@ -54,6 +61,7 @@ namespace celerity::hla::experimental
 
     private:
         int dim_ = -1;
+        bool transposed_ = false;
     };
 
     template <typename Acc>
@@ -66,25 +74,64 @@ namespace celerity::hla::experimental
         using value_type = algo::traits::accessor_value_type_t<Acc>;
         static constexpr auto rank = algo::traits::accessor_rank_v<Acc>;
 
-        slice(const int dim, Acc acc, const cl::sycl::item<rank> item, const cl::sycl::range<rank> range)
-            : dim_(dim), range_(range[dim_]), item_(std::move(item)), acc_(std::move(acc))
+        slice(const int dim, const bool transposed, const Acc &acc, const cl::sycl::item<rank> &item, const cl::sycl::range<rank> &range)
+            : dim_(dim), range_(range[dim_]), id_([&](auto id) {
+                  if constexpr (rank == 2)
+                  {
+                      if (transposed)
+                      {
+                          id[1 - dim_] = id_[dim_];
+                      }
+                  }
+
+                  return id;
+              }(item.get_id())),
+              acc_(acc)
         {
         }
 
-        void configure(int) {}
+        void configure(int, bool) const {}
+        void configure(int) const {}
 
         int get_range() const { return range_; }
 
-        value_type operator*() const
+        auto operator*() const
         {
-            return acc_[item_];
+            return acc_[id_];
         }
 
         auto operator[](int pos) const
         {
-            auto id = item_.get_id();
-            id[dim_] = pos;
-            return acc_[id];
+            if constexpr (rank == 1)
+            {
+                return acc_[{pos}];
+            }
+            else if constexpr (rank == 2)
+            {
+                if (dim_ == 0)
+                {
+                    return acc_[{static_cast<size_t>(pos), id_[1]}];
+                }
+                else
+                {
+                    return acc_[{id_[0], static_cast<size_t>(pos)}];
+                }
+            }
+            else
+            {
+                if (dim_ == 0)
+                {
+                    return acc_[{static_cast<size_t>(pos), id_[1], id_[2]}];
+                }
+                else if (dim_ == 1)
+                {
+                    return acc_[{id_[0], static_cast<size_t>(pos), id_[2]}];
+                }
+                else
+                {
+                    return acc_[{id_[0], id_[1], static_cast<size_t>(pos)}];
+                }
+            }
         }
 
         slice(const slice<Acc> &) = default;
@@ -98,8 +145,8 @@ namespace celerity::hla::experimental
     private:
         const int dim_;
         const int range_;
-        const cl::sycl::item<rank> item_;
-        accessor_type acc_;
+        const cl::sycl::id<rank> id_;
+        const accessor_type acc_;
     };
 
     template <typename T>

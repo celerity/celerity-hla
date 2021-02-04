@@ -72,8 +72,8 @@ namespace celerity::hla::experimental
         const auto p = probe<Idx, Args...>(f, probe_type{});
         const auto range = beg.get_buffer().get_range();
 
-        const auto factory = [dim = p.get_dim(), range]<typename Acc>(Acc acc, auto item) {
-            return slice<Acc>{dim, acc, item, range};
+        const auto factory = [dim = p.get_dim(), transposed = p.get_transposed(), range]<typename Acc>(const Acc &acc, auto item) {
+            return slice<Acc>{dim, transposed, acc, item, range};
         };
 
         const auto acc_meta_factory = [p, beg](auto f) {

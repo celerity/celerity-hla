@@ -15,17 +15,17 @@ namespace celerity::hla::experimental
         using factory_type = ProxyFactoryType;
 
         template <typename... Args>
-        auto construct_proxy(Args &&...args) const
+        auto construct_proxy(Args &&... args) const
         {
             return std::invoke(factory_, std::forward<Args>(args)...);
         }
 
     protected:
-        accessor_base(ProxyFactoryType factory)
+        accessor_base(const ProxyFactoryType &factory)
             : factory_(factory) {}
 
     private:
-        factory_type factory_;
+        const factory_type factory_;
     };
 
     template <typename ProxyFactoryType, celerity::hla::detail::access_type ProxyConcept>
@@ -34,8 +34,8 @@ namespace celerity::hla::experimental
     public:
         using base = accessor_base<ProxyFactoryType>;
 
-        explicit accessor(ProxyFactoryType factory)
-            : base(std::move(factory)) {}
+        explicit accessor(const ProxyFactoryType &factory)
+            : base(factory) {}
 
         decltype(auto) operator[](const auto item) const
         {
