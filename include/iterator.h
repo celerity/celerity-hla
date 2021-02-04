@@ -53,11 +53,13 @@ namespace celerity::hla
 		{
 			pos_ = next(pos_, range_, offset);
 
-			if (pos_[0] < range_[0])
-				return *this;
+			if constexpr (Rank > 1)
+			{
+				if (pos_[0] < range_[0])
+					return *this;
 
-			for (auto i = 0; i < Rank; ++i)
-				pos_[i] = range_[i];
+				pos_ = range_;
+			}
 
 			return *this;
 		}

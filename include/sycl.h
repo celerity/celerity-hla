@@ -159,16 +159,20 @@ namespace celerity::hla
 	template <int Rank>
 	constexpr cl::sycl::id<Rank> next(cl::sycl::id<Rank> idx, cl::sycl::range<Rank> max_id, int distance = 1)
 	{
-		cl::sycl::id<Rank> out = idx;
-
-		out[Rank - 1] += distance;
-
-		if constexpr (Rank > 1)
+		if constexpr (Rank == 1)
 		{
-			detail::dispatch_next(out, max_id, std::make_index_sequence<Rank - 1>{});
+			return {idx[0] + distance};
 		}
+		else
+		{
+			cl::sycl::id<Rank> out = idx;
 
-		return out;
+			out[Rank - 1] += distance;
+
+			detail::dispatch_next(out, max_id, std::make_index_sequence<Rank - 1>{});
+
+			return out;
+		}
 	}
 
 	// TODO: is this really max_id or range?
