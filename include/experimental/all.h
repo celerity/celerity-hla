@@ -17,7 +17,7 @@ namespace celerity::hla::experimental
 
         all_probe() = default;
 
-        auto operator[](cl::sycl::rel_id<rank> rel_id) const -> value_type { return {}; }
+        auto operator[](cl::sycl::id<rank> id) const -> value_type { return {}; }
         auto get_range() const -> cl::sycl::range<rank> { return {}; }
     };
 

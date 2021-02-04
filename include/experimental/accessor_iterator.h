@@ -241,6 +241,16 @@ namespace std
         using iterator_category = std::forward_iterator_tag;
     };
 
+    template <celerity::hla::experimental::InactiveProbe InactiveProbe>
+    struct iterator_traits<celerity::hla::experimental::inactive_probe_iterator<InactiveProbe>>
+    {
+        using difference_type = long;
+        using value_type = typename InactiveProbe::value_type;
+        using pointer = std::add_pointer_t<value_type>;
+        using reference = std::add_lvalue_reference_t<value_type>;
+        using iterator_category = std::forward_iterator_tag;
+    };
+
 } // namespace std
 
 #endif // CELERITY_HLA_ACCESSOR_ITERATOR_H

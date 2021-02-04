@@ -1,6 +1,7 @@
 #ifndef CELERITY_HLA_BLOCK_H
 #define CELERITY_HLA_BLOCK_H
 
+#include "../sycl.h"
 #include "../celerity_helper.h"
 #include "../celerity_accessor_traits.h"
 

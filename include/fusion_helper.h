@@ -1,6 +1,7 @@
 #ifndef FUSION_HELPER_H
 #define FUSION_HELPER_H
 
+#include "t_joint.h"
 #include "computation_type.h"
 #include "packaged_task_traits.h"
 
