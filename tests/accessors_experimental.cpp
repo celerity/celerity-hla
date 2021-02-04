@@ -92,7 +92,7 @@ SCENARIO("accessing a slice", "[accessors::slice]")
                                        b.configure(0);
                                        return std::inner_product(begin(a), end(a), begin(b), 0);
                                    }); 
-       
+        
             THEN("the result is the identity matrix times 8")
             {
                 const auto r = copy_to_host(q, buf_c);
@@ -107,7 +107,7 @@ SCENARIO("accessing a slice", "[accessors::slice]")
                 }
             } 
         }
-    }
+    }  
 }
 //         WHEN("multiplying transpose using std::inner_product")
 //         {
