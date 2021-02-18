@@ -15,7 +15,23 @@
 namespace celerity::hla::experimental
 {
     template <typename T>
+    concept One = !Slice<T> && !Block<T> && !All<T>;
+
+    template <typename T>
     concept CallableObject = celerity::hla::traits::has_call_operator_v<std::remove_cv_t<T>>;
+
+    template <typename T>
+    requires(Slice<T> || Block<T> || All<T>) //
+        auto default_val(T)
+    {
+        return typename T::value_type{};
+    }
+
+    template <One T>
+    auto default_val(T)
+    {
+        return T{};
+    }
 
     template <size_t Idx, KernelInput... Args, typename ProbeType, typename F>
     constexpr auto probing_invoke(F f, ProbeType probe)
