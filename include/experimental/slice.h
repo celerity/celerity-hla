@@ -75,12 +75,12 @@ namespace celerity::hla::experimental
         static constexpr auto rank = algo::traits::accessor_rank_v<Acc>;
 
         slice(const int dim, const bool transposed, const Acc &acc, const cl::sycl::item<rank> &item, const cl::sycl::range<rank> &range)
-            : dim_(dim), range_(range[dim_]), id_([&](auto id) {
+            : dim_(dim), range_(range[dim_]), id_([=](auto id) {
                   if constexpr (rank == 2)
                   {
                       if (transposed)
                       {
-                          id[1 - dim_] = id_[dim_];
+                          id[1 - dim] = id[dim];
                       }
                   }
 
