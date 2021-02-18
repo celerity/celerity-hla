@@ -117,31 +117,4 @@ namespace celerity::hla::detail
 
 } // namespace celerity::hla::detail
 
-namespace celerity::hla
-{
-  template <size_t Rank>
-  auto skip(cl::sycl::id<Rank> distance)
-  {
-    using namespace detail;
-
-    return iterator_transform<Rank>{
-        [=](auto &beg, auto) { beg += distance; }};
-  }
-
-  template <size_t Rank>
-  auto take(cl::sycl::range<Rank> range)
-  {
-    using namespace detail;
-
-    return iterator_transform<Rank>{
-        [=](auto &beg, auto &end) {
-          const auto shifted_range = range + to_range(*beg);
-          beg.set_range(shifted_range);
-          end.set_range(shifted_range);
-          end.set_pos(shifted_range);
-        }};
-  }
-
-} // namespace celerity::hla
-
 #endif // !SUBRANGE_H
