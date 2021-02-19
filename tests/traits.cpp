@@ -160,6 +160,20 @@ void static_assert_kernel_probing()
     static_assert(hla::experimental::traits::is_block_v<hla::experimental::block<accessor_t>>);
 
     {
+        double factor = 3.0f;
+        auto f = [factor](One auto x) {
+            return factor * x;
+        };
+
+        using f_t = decltype(f);
+
+        static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, 0, slice_probe<int>, kernel_input<int, 1>>);
+        static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, 0, block_probe<int, 1>, kernel_input<int, 1>>);
+        static_assert(!celerity::hla::experimental::is_invocable_using_probes_v<f_t, 1, 0, all_probe<int, 1>, kernel_input<int, 1>>);
+        static_assert(celerity::hla::experimental::get_access_concept<f_t, 1, 0, kernel_input<int, 1>>() == celerity::hla::detail::access_type::one_to_one);
+    }
+
+    {
         auto f = [](Slice auto x) {
             x.configure(0);
             return x[0];
