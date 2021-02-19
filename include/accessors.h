@@ -43,18 +43,21 @@ namespace celerity::hla
 			return this->operator[](idx_);
 		}
 
-		T operator[](int pos) const
+		T operator[](size_t pos) const
 		{
 			return item_.apply([pos, this](const auto &item) {
 				using id_type = std::decay_t<decltype(item.get_id())>;
 
 				if constexpr (Transpose && std::is_same_v<id_type, cl::sycl::id<2>>)
 				{
-					auto id = item.get_id();
-					id[1 - Dim] = id[Dim];
-					id[Dim] = pos;
-
-					return accessor_.template get(id);
+					if constexpr (Dim == 0)
+					{
+						return accessor_.template get<2>({pos, item.get_id()[0]});
+					}
+					else
+					{
+						return accessor_.template get<2>({item.get_id()[1], pos});
+					}
 				}
 				else if constexpr (Transpose)
 				{
@@ -64,9 +67,34 @@ namespace celerity::hla
 				}
 				else
 				{
-					auto id = item.get_id();
-					id[Dim] = pos;
-					return accessor_.template get(id);
+					if constexpr (std::is_same_v<id_type, cl::sycl::id<2>>)
+					{
+						if constexpr (Dim == 0)
+						{
+							return accessor_.template get<2>({pos, item.get_id()[1]});
+						}
+						else
+						{
+							return accessor_.template get<2>({item.get_id()[0], pos});
+						}
+					}
+					else if constexpr (std::is_same_v<id_type, cl::sycl::id<3>>)
+					{
+						const auto id = item.get_id();
+
+						if constexpr (Dim == 0)
+						{
+							return accessor_.template get<3>({pos, id[1], id[2]});
+						}
+						else if constexpr (Dim == 1)
+						{
+							return accessor_.template get<3>({id[0], pos, id[2]});
+						}
+						else
+						{
+							return accessor_.template get<3>({id[0], id[1], pos});
+						}
+					}
 				}
 			});
 		}
