@@ -5,24 +5,19 @@ A high-level API on top of [Celerity](https://github.com/celerity/celerity-runti
 ## Overview
 
 ```cpp
-using namespace celerity;
-
-distr_queue q;
-
-buffer<int, 2> in_a{{16, 16}};
+buffer<int, 2> in_a{{16, 16}}, 
 buffer<int, 2> in_b{{16, 16}};
 
 constexpr float alpha = 2.0f;
 
 // matrix-matrix multiplication
-const auto multiply = [](hla::Slice auto a, hla::Slice auto b){ 
-    a.configure(1);
-    b.configure(0);
+const auto multiply = [](const hla::slice<int, 1>& a, 
+                         const hla::slice<int, 0>& b) { 
     return std::inner_product(begin(a), end(a), begin(b), 0);
 };
 
 // out = alpha*(A*B)
-auto out = in_a | hla::zip<class _1>(multiply) << in_b
+auto out = in_a | hla::transform<class _1>(multiply) << in_b
                 | hla::transform<class _2>([=](int i){ return alpha*i; })
                 | hla::submit_to(q);
 ```
@@ -31,4 +26,4 @@ auto out = in_a | hla::zip<class _1>(multiply) << in_b
 
  - Celerity >= v0.2.1
  - CMake (3.5.1 or newer)
- - A compiler with C++20 concepts support (tested with clang-10)
+ - A C++17 compiler
