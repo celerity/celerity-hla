@@ -1,6 +1,6 @@
 # Celerity HLA
 
-A high-level API on top of Celerity to support functional, C++20 range-adaptors-like patterns.
+A high-level API on top of [Celerity](https://github.com/celerity/celerity-runtime) to support functional, C++20 range-adaptors-like patterns.
 
 ## Overview
 
