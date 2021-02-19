@@ -48,38 +48,38 @@ namespace celerity::hla::detail
         template <int Rank>
         decltype(auto) get(cl::sycl::id<Rank> id) const noexcept
         {
-            return apply<Rank>(mode_, target_, [=](auto &acc) { return acc[id]; });
+            return apply<Rank>(mode_, target_, [id](auto &acc) { return acc[id]; });
         }
 
     private:
         template <typename F>
-        decltype(auto) apply(F f) const noexcept
+        decltype(auto) apply(const F& f) const noexcept
         {
             return apply(rank_, mode_, target_, f);
         }
 
         template <typename F>
-        decltype(auto) apply(F f) noexcept
+        decltype(auto) apply(const F& f) noexcept
         {
             return apply(rank_, mode_, target_, f);
         }
 
         template <typename AccessorType, typename F>
-        decltype(auto) apply(F f) const noexcept
+        decltype(auto) apply(const F& f) const noexcept
         {
             const auto &acc = (*reinterpret_cast<const AccessorType *>(&storage_));
             return std::invoke(f, acc);
         }
 
         template <typename AccessorType, typename F>
-        decltype(auto) apply(F f) noexcept
+        decltype(auto) apply(const F& f) noexcept
         {
             auto &acc = (*reinterpret_cast<AccessorType *>(&storage_));
             return std::invoke(f, acc);
         }
 
         template <int Rank, cl::sycl::access::mode Mode, typename F>
-        decltype(auto) apply(cl::sycl::access::target target, F f) const noexcept
+        decltype(auto) apply(cl::sycl::access::target target, const F& f) const noexcept
         {
             using namespace cl::sycl::access;
 
@@ -87,10 +87,6 @@ namespace celerity::hla::detail
             {
             case target::global_buffer:
                 return apply<device_accessor<T, Rank, Mode, target::global_buffer>>(f);
-#ifndef CELERITY_STD_COMPILING_FOR_DEVICE
-            case target::host_buffer:
-                return apply<host_accessor<T, Rank, Mode>>(f);
-#endif
             default:
                 on_error("any_accessor", "invalid access target");
             }
@@ -99,7 +95,7 @@ namespace celerity::hla::detail
         }
 
         template <int Rank, cl::sycl::access::mode Mode, typename F>
-        decltype(auto) apply(cl::sycl::access::target target, F f) noexcept
+        decltype(auto) apply(cl::sycl::access::target target, const F& f) noexcept
         {
             using namespace cl::sycl::access;
 
@@ -107,10 +103,6 @@ namespace celerity::hla::detail
             {
             case target::global_buffer:
                 return apply<device_accessor<T, Rank, Mode, target::global_buffer>>(f);
-#ifndef CELERITY_STD_COMPILING_FOR_DEVICE
-            case target::host_buffer:
-                return apply<host_accessor<T, Rank, Mode>>(f);
-#endif
             default:
                 on_error("any_accessor", "invalid access target");
             }
@@ -119,7 +111,7 @@ namespace celerity::hla::detail
         }
 
         template <int Rank, typename F>
-        decltype(auto) apply(cl::sycl::access::mode mode, cl::sycl::access::target target, F f) const noexcept
+        decltype(auto) apply(cl::sycl::access::mode mode, cl::sycl::access::target target, const F& f) const noexcept
         {
             using namespace cl::sycl::access;
 
@@ -139,7 +131,7 @@ namespace celerity::hla::detail
         }
 
         template <int Rank, typename F>
-        decltype(auto) apply(cl::sycl::access::mode mode, cl::sycl::access::target target, F f) noexcept
+        decltype(auto) apply(cl::sycl::access::mode mode, cl::sycl::access::target target, const F& f) noexcept
         {
             using namespace cl::sycl::access;
 
@@ -159,7 +151,7 @@ namespace celerity::hla::detail
         }
 
         template <typename F>
-        decltype(auto) apply(int rank, cl::sycl::access::mode mode, cl::sycl::access::target target, F f) const noexcept
+        decltype(auto) apply(int rank, cl::sycl::access::mode mode, cl::sycl::access::target target, const F& f) const noexcept
         {
             using namespace cl::sycl::access;
 
@@ -179,7 +171,7 @@ namespace celerity::hla::detail
         }
 
         template <typename F>
-        decltype(auto) apply(int rank, cl::sycl::access::mode mode, cl::sycl::access::target target, F f) noexcept
+        decltype(auto) apply(int rank, cl::sycl::access::mode mode, cl::sycl::access::target target, const F& f) noexcept
         {
             using namespace cl::sycl::access;
 
