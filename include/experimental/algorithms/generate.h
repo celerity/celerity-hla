@@ -27,13 +27,14 @@ namespace celerity::hla::experimental
                 auto out_acc = get_out_access<policy_type, mode::discard_write>(cgh, beg, end);
 
                 return [=](hla::detail::item_context<Rank, T()> &ctx) {
+                    auto out_item = ctx.get_out();
                     if constexpr (hla::traits::arity_v<F> == 1)
                     {
-                        out_acc[ctx.get_out()] = f(ctx.get_item());
+                        out_acc[out_item] = f(ctx.get_item());
                     }
                     else
                     {
-                        out_acc[ctx.get_out()] = f();
+                        out_acc[out_item] = f();
                     }
                 };
             };

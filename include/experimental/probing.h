@@ -88,7 +88,7 @@ namespace celerity::hla::experimental
         const auto p = probe<Idx, Args...>(f, probe_type{});
         const auto range = beg.get_buffer().get_range();
 
-        const auto factory = [dim = p.get_dim(), transposed = p.get_transposed(), range]<typename Acc>(const Acc &acc, auto item) {
+        const auto factory = [dim = p.get_dim(), transposed = p.get_transposed(), range]<typename Acc>(const Acc &acc, const auto& item) {
             return slice<Acc>{dim, transposed, acc, item, range};
         };
 
@@ -113,7 +113,7 @@ namespace celerity::hla::experimental
 
         const auto p = probe<Idx, Args...>(f, probe_type{});
 
-        const auto factory = [p]<typename Acc>(Acc acc, auto item) {
+        const auto factory = [p]<typename Acc>(Acc acc, const auto& item) {
             return block<Acc>(p, acc, item);
         };
 
@@ -128,7 +128,7 @@ namespace celerity::hla::experimental
     auto create_all_proxy_factory_and_range_mapper(F f, auto beg, auto end)
     {
         const auto range = beg.get_buffer().get_range();
-        const auto factory = [range]<typename Acc>(Acc acc, auto) {
+        const auto factory = [range]<typename Acc>(Acc acc, const auto&) {
             return all<Acc>{acc, range};
         };
 
@@ -171,7 +171,7 @@ namespace celerity::hla::experimental
         }
         else if constexpr (arg_traits::access_concept == access_type::one_to_one)
         {
-            const auto factory = [](auto acc, auto...) { return acc; };
+            const auto factory = [](auto acc, auto&&...) { return acc; };
             const auto acc_meta_factory = [beg](auto f) {
                 return std::invoke(f, beg.get_buffer(), one_to_one<arg_traits::rank>());
             };

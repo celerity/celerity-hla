@@ -23,11 +23,13 @@ namespace celerity::hla::experimental
             using policy_type = hla::traits::strip_queue_t<ExecutionPolicy>;
 
             return [=](celerity::handler &cgh) {
-                auto in_acc = get_access<policy_type, mode::read, 0>(cgh, beg, end, f);
+                const auto in_acc = get_access<policy_type, mode::read, 0>(cgh, beg, end, f);
                 auto out_acc = get_out_access<policy_type, mode::discard_write>(cgh, out, out);
 
                 return [=](hla::detail::item_context<Rank, U(T)> &ctx) {
-                    out_acc[ctx.get_out()] = f(in_acc[ctx.get_in()]);
+                    auto in_item = ctx.template get_in<0>();
+                    auto out_item = ctx.get_out();
+                    out_acc[out_item] = f(in_acc[in_item]);
                 };
             };
         }

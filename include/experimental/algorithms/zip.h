@@ -5,6 +5,7 @@
 #include "../../task.h"
 #include "../../policy.h"
 #include "../../require.h"
+#include "../../celerity_helper.h"
 
 #include "../../experimental/packaged_tasks/packaged_transform.h"
 #include "../../experimental/packaged_tasks/packaged_zip.h"
@@ -28,7 +29,7 @@ namespace celerity::hla::experimental
         auto zip_impl(FirstInputIteratorType<T, Rank> beg,
                       FirstInputIteratorType<T, Rank> end,
                       SecondInputIteratorType<U, Rank> beg2,
-                      OutputIteratorType<V, Rank> out,
+                      OutputIteratorType<V, Rank> out_beg,
                       const F &f)
         {
             using namespace cl::sycl::access;
@@ -36,12 +37,15 @@ namespace celerity::hla::experimental
             using policy_type = hla::traits::strip_queue_t<ExecutionPolicy>;
 
             return [=](celerity::handler &cgh) {
-                auto first_in_acc = get_access<policy_type, mode::read, 0, FirstInputIteratorType<T, Rank>, SecondInputIteratorType<U, Rank>>(cgh, beg, end, f);
-                auto second_in_acc = get_access<policy_type, mode::read, 1, FirstInputIteratorType<T, Rank>, SecondInputIteratorType<U, Rank>>(cgh, beg2, beg2, f);
-                auto out_acc = get_out_access<policy_type, mode::discard_write>(cgh, out, out);
+                const auto first_in = get_access<policy_type, mode::read, 0, FirstInputIteratorType<T, Rank>, SecondInputIteratorType<U, Rank>>(cgh, beg, end, f);
+                const auto second_in = get_access<policy_type, mode::read, 1, FirstInputIteratorType<T, Rank>, SecondInputIteratorType<U, Rank>>(cgh, beg2, beg2, f);
+                auto out = get_out_access<policy_type, mode::write>(cgh, out_beg, out_beg);
 
                 return [=](hla::detail::item_context<Rank, V(T, U)> &ctx) {
-                    out_acc[ctx.get_out()] = f(first_in_acc[ctx.template get_in<0>()], second_in_acc[ctx.template get_in<1>()]);
+                    auto first_in_item = ctx.template get_in<0>();
+                    auto second_in_item = ctx.template get_in<1>();
+                    auto out_item = ctx.get_out();
+                    out[out_item] = f(first_in[first_in_item], second_in[second_in_item]);
                 };
             };
         }

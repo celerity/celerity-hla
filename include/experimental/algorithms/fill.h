@@ -27,7 +27,8 @@ namespace celerity::hla::experimental
                 auto out_acc = get_out_access<policy_type, mode::discard_write>(cgh, beg, end);
 
                 return [=](hla::detail::item_context<Rank, T(void)> &ctx) {
-                    out_acc[ctx.get_out()] = value;
+                    auto out_item = ctx.get_out();
+                    out_acc[out_item] = value;
                 };
             };
         }

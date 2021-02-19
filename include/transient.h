@@ -21,7 +21,12 @@ namespace celerity::hla
         public:
             transient_accessor() {}
 
-            auto operator[](item_shared_data<Rank, T> ctx) const -> std::conditional_t<Mode == cl::sycl::access::mode::read, T, T &>
+            auto operator[](const item_shared_data<Rank, T> &ctx) const -> std::conditional_t<Mode == cl::sycl::access::mode::read, T, T &>
+            {
+                return ctx.get();
+            }
+
+            auto operator[](const item_shared_data<Rank, const T> &ctx) const
             {
                 return ctx.get();
             }

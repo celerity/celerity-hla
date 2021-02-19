@@ -46,22 +46,12 @@ namespace celerity::hla::detail
 		explicit accessor_proxy(AccessorType acc, cl::sycl::id<Rank>, cl::sycl::range<Rank>)
 			: base(acc) {}
 
-		decltype(auto) operator[](const cl::sycl::item<Rank> item) const
+		decltype(auto) operator[](item_shared_data<Rank, T> &item) const
 		{
 			return base::get_accessor()[item];
 		}
 
-		decltype(auto) operator[](const cl::sycl::item<Rank> item)
-		{
-			return base::get_accessor()[item];
-		}
-
-		decltype(auto) operator[](item_shared_data<Rank, T> item) const
-		{
-			return base::get_accessor()[item];
-		}
-
-		decltype(auto) operator[](item_shared_data<Rank, T> item)
+		decltype(auto) operator[](item_shared_data<Rank, const T> &item) const
 		{
 			return base::get_accessor()[item];
 		}

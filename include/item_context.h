@@ -13,35 +13,56 @@ namespace celerity::hla
         class item_shared_data
         {
         public:
-            item_shared_data(const item_shared_data &rhs) = default;
-            item_shared_data(T &data, cl::sycl::item<Rank> item)
+            item_shared_data(const item_shared_data &rhs) = delete;
+            item_shared_data(T &data, const cl::sycl::item<Rank> &item)
                 : data_(data), item_(item) {}
 
             T &get() const { return data_; }
 
-            operator cl::sycl::item<Rank>()
+            operator cl::sycl::item<Rank>() const
             {
                 return item_;
             }
 
-            operator cl::sycl::id<Rank>()
+            operator cl::sycl::id<Rank>() const
             {
                 return item_.get_id();
             }
 
-            item_shared_data &operator=(const item_shared_data &rhs)
-            {
-                // TODO: assert(item_ == rhs.item_);
-
-                data_ = rhs.data_;
-
-                return *this;
-            }
-
         private:
             T &data_;
-            cl::sycl::item<Rank> item_;
+            const cl::sycl::item<Rank> &item_;
         };
+
+        template <typename Context>
+        Context make_copy_in(const auto &ctx)
+        {
+            return Context{ctx.get_item(), ctx.template get_in<0>().get()};
+        }
+
+        template <typename Context>
+        Context make_copy_out(const auto &ctx)
+        {
+            return Context{ctx.get_item(), ctx.get_out_value()};
+        }
+
+        template <typename Context>
+        Context make_copy_out(const auto &ctxA, const auto &ctxB)
+        {
+            return Context{ctxA.get_item(), ctxA.get_out_value(), ctxB.get_out_value()};
+        }
+
+        template <typename Context>
+        Context make_copy_in_out(const auto &ctxIn, const auto &ctxOut)
+        {
+            return Context{ctxIn.get_item(), ctxIn.template get_in<0>().get(), ctxOut.get_out_value()};
+        }
+
+        template <typename Context>
+        Context make_out_only(const auto &ctx)
+        {
+            return Context{ctx.get_item()};
+        }
 
         template <int Rank, typename ContextType>
         class item_context;
@@ -61,28 +82,32 @@ namespace celerity::hla
             item_context(item_context &&) = delete;
             item_context &operator=(item_context &&) = delete;
 
-            explicit item_context(cl::sycl::item<Rank> item)
+            explicit item_context(const item_type &item)
                 : item_(item) {}
 
-            template <typename U>
-            void copy_in(item_context<Rank, U()> &)
-            {
-            }
-
             template <typename... Us>
-            void copy_out(item_context<Rank, OutType(Us...)> &other)
+            void copy_out(const item_context<Rank, OutType(Us...)> &other)
             {
-                get_out() = other.get_out();
+                out_ = other.get_out_value();
             }
 
             item_shared_data<Rank, OutType> get_out() { return {out_, item_}; }
+            item_shared_data<Rank, const OutType> get_out() const { return {out_, item_}; }
+
+            OutType get_out_value() const { return out_; }
 
             cl::sycl::item<Rank> get_item() const { return item_; }
 
         private:
+            const cl::sycl::item<Rank> item_;
             OutType out_;
-            cl::sycl::item<Rank> item_;
         };
+
+        template <typename Context, int Rank, typename OutType>
+        Context make_copy_in(const item_context<Rank, OutType()> &ctx)
+        {
+            return Context{ctx.get_item()};
+        }
 
         template <int Rank, typename InType>
         class item_context<Rank, void(InType)>
@@ -99,15 +124,17 @@ namespace celerity::hla
             item_context(item_context &&) = delete;
             item_context &operator=(item_context &&) = delete;
 
-            explicit item_context(cl::sycl::item<Rank> item)
-                : item_(item) {}
+            explicit item_context(const item_type &item)
+                : item_(item), in_() {}
+
+            item_context(const cl::sycl::item<Rank> &item, InType in, auto)
+                : item_(item), in_(in) {}
 
             template <typename ItemContext>
             explicit item_context(ItemContext &ctx)
-                : item_(ctx.get_item())
+                : item_(ctx.get_item()), in_(ctx.get_out_value())
             {
-                static_assert(std::is_convertible_v<std::decay_t<decltype(get_in())>, decltype(ctx.get_out())>);
-                get_in() = ctx.get_out();
+                // static_assert(std::is_convertible_v<std::decay_t<decltype(get_in())>, decltype(ctx.get_out())>);
             }
 
             template <typename ItemContextA, typename ItemContextB>
@@ -116,24 +143,21 @@ namespace celerity::hla
             {
             }
 
-            template <typename U>
-            void copy_in(item_context<Rank, U(InType)> &other)
-            {
-                get_in() = other.get_in();
-            }
-
             template <typename... Us>
             void copy_out(item_context<Rank, void(Us...)> &other)
             {
             }
 
-            item_shared_data<Rank, InType> get_in() { return {in_, item_}; }
+            template <int Index = 0>
+            item_shared_data<Rank, const InType> get_in() const { return {in_, item_}; }
 
             cl::sycl::item<Rank> get_item() const { return item_; }
 
+            InType get_in_value() const { return in_; }
+
         private:
-            InType in_;
-            cl::sycl::item<Rank> item_;
+            const cl::sycl::item<Rank> item_;
+            const InType in_;
         };
 
         template <int Rank, typename OutType, typename InType>
@@ -151,44 +175,34 @@ namespace celerity::hla
             item_context(item_context &&) = delete;
             item_context &operator=(item_context &&) = delete;
 
-            explicit item_context(cl::sycl::item<Rank> item)
-                : item_(item) {}
+            explicit item_context(const item_type &item)
+                : item_(item), in_() {}
 
-            template <typename ItemContext>
-            explicit item_context(ItemContext &ctx)
-                : item_(ctx.get_item())
-            {
-                static_assert(std::is_convertible_v<std::decay_t<decltype(get_in())>, decltype(ctx.get_out())>);
-                get_in() = ctx.get_out();
-            }
+            explicit item_context(cl::sycl::item<Rank> item, const in_type &in)
+                : item_(item), in_(in) {}
 
-            template <typename ItemContextA, typename ItemContextB>
-            item_context(ItemContextA &a, ItemContextB &)
-                : item_context(a)
-            {
-            }
-
-            template <typename U>
-            void copy_in(item_context<Rank, U(InType)> &other)
-            {
-                get_in() = other.get_in();
-            }
+            explicit item_context(cl::sycl::item<Rank> item, const in_type &in, auto)
+                : item_(item), in_(in) {}
 
             template <typename... Us>
             void copy_out(item_context<Rank, OutType(Us...)> &other)
             {
-                get_out() = other.get_out();
+                out_ = other.get_out_value();
             }
 
-            item_shared_data<Rank, InType> get_in() { return {in_, item_}; }
+            template <int Index = 0>
+            item_shared_data<Rank, const InType> get_in() const { return {in_, item_}; }
+
             item_shared_data<Rank, OutType> get_out() { return {out_, item_}; }
+
+            OutType get_out_value() const { return out_; }
 
             cl::sycl::item<Rank> get_item() const { return item_; }
 
         private:
-            InType in_;
+            const cl::sycl::item<Rank> item_;
+            const InType in_;
             OutType out_;
-            cl::sycl::item<Rank> item_;
         };
 
         template <int Rank, typename OutType, typename T, typename... Ts>
@@ -207,68 +221,58 @@ namespace celerity::hla
             item_context(item_context &&) = delete;
             item_context &operator=(item_context &&) = delete;
 
-            explicit item_context(cl::sycl::item<Rank> item)
-                : item_(item) {}
+            explicit item_context(const item_type &item)
+                : item_(item), in_() {}
 
-            // template<typename ItemContext>
-            // explicit item_context(ItemContextA a)
-            //     : item_(item)
-            // {
-            //     static_assert(std::is_convertible_v<std::decay_t<decltype(get_in<0>)>, decltype(a.get_out())>);
-            //     get_in<0> = a.get_out();
-            // }
-
-            template <typename ItemContextA, typename ItemContextB>
-            item_context(ItemContextA &a, ItemContextB &b)
-                : item_(a.get_item())
+            template <typename ItemContext>
+            explicit item_context(const item_type &item, const auto &ctx)
+                : item_(item), in_({ctx.get_out_value(), {}})
             {
-                static_assert(std::is_convertible_v<std::decay_t<decltype(get_in<0>())>, decltype(a.get_out())>);
-                static_assert(std::is_convertible_v<std::decay_t<decltype(get_in<1>())>, decltype(b.get_out())>);
+                static_assert(std::is_convertible_v<std::decay_t<decltype(get_in<0>())>, decltype(ctx.get_out())>);
+            }
 
-                //assert(a.get_item() == b.get_item());
+            item_context(const cl::sycl::item<Rank> &item, auto in_0)
+                : item_(item), in_(in_0, {})
+            {
+            }
 
-                get_in<0>() = a.get_out();
-                get_in<1>() = b.get_out();
+            item_context(const cl::sycl::item<Rank> &item, auto in_0, auto in_1)
+                : item_(item), in_(in_0, in_1)
+            {
+                // static_assert(std::is_convertible_v<std::decay_t<decltype(get_in<0>())>, decltype(in_0)>);
+                // static_assert(std::is_convertible_v<std::decay_t<decltype(get_in<1>())>, decltype(in_1)>);
             }
 
             template <size_t Index>
-            auto get_in()
+            auto get_in() const
             {
                 static_assert(Index < std::tuple_size_v<decltype(in_)>);
                 return item_shared_data{std::get<Index>(in_), item_};
             }
 
-            template <typename U>
-            void copy_in(item_context<Rank, U(T, Ts...)> &other)
-            {
-                static_assert(sizeof...(Ts) == 1);
-                get_in<0>() = other.template get_in<0>();
-                get_in<1>() = other.template get_in<1>();
-            }
-
-            template <typename U>
-            void copy_in_rev(item_context<Rank, U(T, Ts...)> &other)
-            {
-                static_assert(sizeof...(Ts) == 1);
-                get_in<0>() = other.template get_in<0>();
-                get_in<1>() = other.template get_in<1>();
-            }
-
             template <typename... Us>
             void copy_out(item_context<Rank, OutType(Us...)> &other)
             {
-                get_out() = other.get_out();
+                out_ = other.get_out_value();
             }
 
             item_shared_data<Rank, OutType> get_out() { return {out_, item_}; }
 
+            OutType get_out_value() const { return out_; }
+
             cl::sycl::item<Rank> get_item() const { return item_; }
 
         private:
-            std::tuple<T, Ts...> in_;
+            const cl::sycl::item<Rank> item_;
+            const std::tuple<const T, const Ts...> in_;
             OutType out_;
-            cl::sycl::item<Rank> item_;
         };
+
+        template <int Rank, typename OutType, typename T, typename... Ts>
+        item_context<Rank, OutType(T, Ts...)> make_copy_in(const item_context<Rank, OutType(T, Ts...)> &ctx)
+        {
+            return {ctx.get_item(), ctx.template get_in<0>().get(), ctx.template get_in<1>().get()};
+        }
 
         template <typename FirstContext, typename LastContext>
         struct combined_context;

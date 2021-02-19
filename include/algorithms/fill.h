@@ -24,7 +24,8 @@ namespace celerity::hla
                 auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, beg, end);
 
                 return [=](item_context<Rank, T(void)> &ctx) {
-                    out_acc[ctx.get_out()] = value;
+                    auto out_data = ctx.get_out();
+                    out_acc[out_data] = value;
                 };
             };
         }

@@ -48,12 +48,10 @@ namespace celerity::hla
                     const auto kernels_b = sequence(std::invoke(b.get_sequence(), cgh));
 
                     return [=](combined_context_type &ctx) {
-                        context_a_type ctx_a(ctx.get_item());
-                        ctx_a.copy_in(ctx);
-
+                        auto ctx_a = make_copy_in<context_a_type>(ctx);
                         kernels_a(ctx_a);
 
-                        context_b_type ctx_b{ctx_a, ctx};
+                        auto ctx_b = make_copy_out<context_b_type>(ctx_a, ctx);
                         kernels_b(ctx_b);
 
                         ctx.copy_out(ctx_b);
@@ -101,14 +99,13 @@ namespace celerity::hla
                     const auto kernels_c = sequence(std::invoke(seq_c, cgh));
 
                     return [=](combined_context_type &ctx) {
-                        context_a_type ctx_a{ctx.get_item()};
-                        ctx_a.copy_in(ctx);
+                        auto ctx_a = make_copy_in<context_a_type>(ctx);
                         kernels_a(ctx_a);
 
-                        context_b_type ctx_b{ctx.get_item()};
+                        auto ctx_b = make_out_only<context_b_type>(ctx);
                         kernels_b(ctx_b);
 
-                        context_c_type ctx_c{ctx_a, ctx_b};
+                        auto ctx_c = make_copy_out<context_c_type>(ctx_a, ctx_b);
                         kernels_c(ctx_c);
 
                         ctx.copy_out(ctx_c);
@@ -147,11 +144,14 @@ namespace celerity::hla
                     const auto kernels_c = sequence(std::invoke(seq_c, cgh));
 
                     return [=](context_c_type &ctx_c) {
-                        context_b_type ctx_b{ctx_c.get_item()};
+                        auto ctx_b = make_out_only<context_b_type>(ctx_c);
                         kernels_b(ctx_b);
 
-                        ctx_c.template get_in<1>() = ctx_b.get_out();
-                        kernels_c(ctx_c);
+                        auto ctx_d = make_copy_in_out<context_c_type>(ctx_c, ctx_b);
+                        // ctx_c.template get_in<1>() = ctx_b.get_out(); //TODO
+                        kernels_c(ctx_d);
+
+                        ctx_c.copy_out(ctx_d);
                     };
                 };
 

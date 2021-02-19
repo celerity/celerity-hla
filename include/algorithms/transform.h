@@ -29,7 +29,9 @@ namespace celerity::hla
                 auto out_acc = get_access<policy_type, mode::discard_write, one_to_one>(cgh, out, out);
 
                 return [=](item_context<Rank, U(T)> &ctx) {
-                    out_acc[ctx.get_out()] = f(in_acc[ctx.get_in()]);
+                    auto in_data = ctx.template get_in<0>();
+                    auto out_data = ctx.get_out();
+                    out_acc[out_data] = f(in_acc[in_data]);
                 };
             };
         }
@@ -49,7 +51,9 @@ namespace celerity::hla
                 auto out_acc = get_access<policy_type, mode::write, one_to_one>(cgh, out, out);
 
                 return [=](item_context<Rank, U(T)> &ctx) {
-                    out_acc[ctx.get_out()] = f(ctx.get_item(), in_acc[ctx.get_in()]);
+                    auto in_data = ctx.template get_in<0>();
+                    auto out_data = ctx.get_out();
+                    out_acc[out_data] = f(ctx.get_item(), in_acc[in_data]);
                 };
             };
         }
@@ -83,7 +87,11 @@ namespace celerity::hla
                 auto out_acc = get_access<policy_type, mode::discard_write, one_to_one>(cgh, out, out);
 
                 return [=](item_context<Rank, V(T, U)> &ctx) {
-                    out_acc[ctx.get_out()] = f(first_in_acc[ctx.template get_in<0>()], second_in_acc[ctx.template get_in<1>()]);
+                    auto first_in_data = ctx.template get_in<0>();
+                    auto second_in_data = ctx.template get_in<1>();
+                    auto out_data = ctx.get_out();
+
+                    out_acc[out_data] = f(first_in_acc[first_in_data], second_in_acc[second_in_data]);
                 };
             };
         }
@@ -116,7 +124,11 @@ namespace celerity::hla
                 auto out_acc = get_access<policy_type, mode::discard_write, one_to_one>(cgh, out, out);
 
                 return [=](item_context<Rank, V(T, U)> &ctx) {
-                    out_acc[ctx.get_out()] = f(ctx.get_item(), first_in_acc[ctx.template get_in<0>()], second_in_acc[ctx.template get_in<1>()]);
+                    auto first_in_data = ctx.template get_in<0>();
+                    auto second_in_data = ctx.template get_in<1>();
+                    auto out_data = ctx.get_out();
+
+                    out_acc[out_data] = f(ctx.get_item(), first_in_acc[first_in_data], second_in_acc[second_in_data]);
                 };
             };
         }
